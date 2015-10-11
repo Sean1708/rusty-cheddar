@@ -121,7 +121,7 @@ fn parse_header(
         .ok().expect("Can not write functions to header file.");
     output_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
 
-    base::MacEager::items(::syntax::util::small_vector::SmallVector::many(items))
+    base::MacEager::items(syntax::util::small_vector::SmallVector::many(items))
 }
 
 
