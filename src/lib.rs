@@ -5,14 +5,12 @@
 extern crate rustc;
 extern crate syntax;
 
-// TODO: import ast::TokenTree and token::Token
 use rustc::plugin;
 use syntax::ast;
 use syntax::ast::TokenTree;
 use syntax::codemap;
 use syntax::ext::base;
 use syntax::parse::token;
-use syntax::parse::token::Token;
 use syntax::parse::token::InternedString;
 use syntax::ptr;
 
@@ -77,6 +75,9 @@ fn parse_header(
     //     - also use the correct spans, I'm ignoring most of them at them moment
     // TODO: spans don't need to be references.
     // TODO: can we automatically set the crate-type dylib attribute?
+    // TODO: layout the header file as like for like with the cheddar! block (a *block* of cheddar. lol)
+    //     - leave all comments, docstrings and items (enums, structs and fns) in same place
+    // TODO: retain arbitrary attributes
 
     // Create the parent directories for the header file.
     // TODO: Do we need the .with_file_name("")?
@@ -84,7 +85,7 @@ fn parse_header(
     let mut output_file = fs::File::create(&output_file_path).ok().expect("Can not open the header file.");
     output_file.write_all(format!(
         // TODO: stdbool.h
-        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n\n",
+        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n\n\n",
         // TODO: can we use .to_str_lossy()? It uses unicode though so probably not.
         output_file_path.file_stem().expect("Why no file stem?").to_str().expect("File stem not stringable."),
     ).as_bytes()).ok().expect("Can not write guard to header file.");
@@ -113,11 +114,11 @@ fn parse_header(
         opt_cur = toktree.next();
     }
 
-    output_file.write_all(format!("// Enums\n\n{}", enum_buf).as_bytes())
+    output_file.write_all(format!("// Enums\n\n{}\n", enum_buf).as_bytes())
         .ok().expect("Can not write enums to header file.");
-    output_file.write_all(format!("// Structs\n\n{}", struct_buf).as_bytes())
+    output_file.write_all(format!("// Structs\n\n{}\n", struct_buf).as_bytes())
         .ok().expect("Can not write structs to header file.");
-    output_file.write_all(format!("// Functions\n\n{}", func_buf).as_bytes())
+    output_file.write_all(format!("// Functions\n\n{}\n", func_buf).as_bytes())
         .ok().expect("Can not write functions to header file.");
     output_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
 
