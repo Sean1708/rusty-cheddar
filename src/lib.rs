@@ -93,7 +93,7 @@ fn parse_header(
     let mut enum_buf = String::new();
     let mut struct_buf = String::new();
     let mut func_buf = String::new();
-    let mut items = Vec::new();
+    let mut items = vec![];
 
     let mut opt_cur = toktree.next();
     while let Some(cur) = opt_cur {
@@ -144,7 +144,7 @@ fn parse_enum<'a>(
     };
     buffer.push_str(&format!("typedef enum {} {{\n", ident.name.as_str()));
 
-    let mut variants = Vec::new();
+    let mut variants = vec![];
     // Find the vector of enum variants.
     if let Some(&ast::TokenTree::TtDelimited(_, ref delims)) = toktree.next() {
         for tok in &delims.tts {
@@ -199,7 +199,7 @@ fn parse_struct<'a>(
     };
     buffer.push_str(&format!("typedef struct {} {{\n", ident.name.as_str()));
 
-    let mut fields = Vec::new();
+    let mut fields = vec![];
     // TODO: This is fucking hairy.
     // Find the struct fields and types, ignoring other tokens.
     if let Some(&ast::TokenTree::TtDelimited(_, ref delims)) = toktree.next() {
