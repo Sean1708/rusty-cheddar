@@ -85,7 +85,7 @@ fn parse_header(
     let mut output_file = fs::File::create(&output_file_path).ok().expect("Can not open the header file.");
     output_file.write_all(format!(
         // TODO: stdbool.h
-        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n\n\n",
+        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n#include <stdbool.h>\n\n\n",
         // TODO: can we use .to_str_lossy()? It uses unicode though so probably not.
         output_file_path.file_stem().expect("Why no file stem?").to_str().expect("File stem not stringable."),
     ).as_bytes()).ok().expect("Can not write guard to header file.");
@@ -274,11 +274,8 @@ fn rust_to_c(typ: &str) -> &str {
         "u32" => "uint32_t",
         "u64" => "uint64_t",
         "usize" => "uintptr_t",
-        // TODO: bool, with stdbool.h
-        // This is why we write out structs and enums as `typedef ...`. If we allowed users to
-        // choose when to `typdef` then we would have to carry around information on which types have
-        // been `typedef`ed and which haven't then adjust this return value accordingly. It's
-        // doable but not really worth it IMO.
+        // This is why we write out structs and enums as `typedef ...`.
+        // We #include<stdbool.h> so bool is handled.
         t => t,
     }
 }
