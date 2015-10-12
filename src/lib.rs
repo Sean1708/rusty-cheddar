@@ -78,6 +78,7 @@ fn parse_header(
     // TODO: layout the header file as like for like with the cheddar! block (a *block* of cheddar. lol)
     //     - leave all comments, docstrings and items (enums, structs and fns) in same place
     // TODO: retain arbitrary attributes
+    // TODO: I've just found syntax::parser, I should probably use that.
 
     // Create the parent directories for the header file.
     // TODO: Do we need the .with_file_name("")?
@@ -101,16 +102,19 @@ fn parse_header(
             ast::TokenTree::TtToken(_, token::Token::Ident(n, _)) => match &*n.name.as_str() {
                 "enum" => items.push(parse_enum(
                     &mut toktree, &mut enum_buf, context, &span
-                ).ok().expect("Enum failure!")),
+                ).ok().expect("Enumeration failure!")),
                 "struct" => items.push(parse_struct(
                     &mut toktree, &mut struct_buf, context, &span
                 ).ok().expect("Structural failure!")),
-                "fn" => {},
+                "fn" => items.push(parse_func(
+                    &mut toktree, &mut func_buf, context, span
+                ).ok().expect("Functional failure!")),
+                // Ignore all other tokens.
                 _ => {},
             },
+            // Ignore delimited blocks.
             _ => {},
         }
-        // println!("{:#?}", cur);
         opt_cur = toktree.next();
     }
 
@@ -122,6 +126,7 @@ fn parse_header(
         .ok().expect("Can not write functions to header file.");
     output_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
 
+    // println!("{:#?}", items);
     base::MacEager::items(syntax::util::small_vector::SmallVector::many(items))
 }
 
@@ -164,7 +169,7 @@ fn parse_enum<'a>(
     let c = context.meta_word(*span, InternedString::new("C"));
     let repr = context.meta_list(*span, InternedString::new("repr"), vec![c]);
     // Create the enum.
-    let it = ptr::P(ast::Item {
+    Ok(ptr::P(ast::Item {
         ident: ident,
         attrs: vec![context.attribute(*span, repr)],
         id: ast::DUMMY_NODE_ID,
@@ -181,9 +186,7 @@ fn parse_enum<'a>(
         ),
         vis: ast::Visibility::Public,
         span: *span,
-    });
-    println!("{:#?}", it);
-    Ok(it)
+    }))
 }
 
 fn parse_struct<'a>(
@@ -212,6 +215,7 @@ fn parse_struct<'a>(
                 if let Some(&ast::TokenTree::TtToken(_, token::Token::Colon)) = elem_iter.next() {
                     if let Some(&ast::TokenTree::TtToken(_, token::Token::Ident(typ, _))) = elem_iter.next() {
                         buffer.push_str(&format!("\t{} {};\n", rust_to_c(&typ.name.as_str()), id.name.as_str()));
+                        // TODO: does this need to use ident_of()?
                         let ty = context.ident_of(&typ.name.as_str());
                         fields.push(codemap::spanned(span.lo, span.hi, ast::StructField_ {
                             kind: ast::StructFieldKind::NamedField(id, ast::Visibility::Public),
@@ -237,7 +241,7 @@ fn parse_struct<'a>(
     let c = context.meta_word(*span, InternedString::new("C"));
     let repr = context.meta_list(*span, InternedString::new("repr"), vec![c]);
     // Create the struct.
-    let it = ptr::P(ast::Item {
+    Ok(ptr::P(ast::Item {
         ident: ident,
         attrs: vec![context.attribute(*span, repr)],
         id: ast::DUMMY_NODE_ID,
@@ -254,9 +258,122 @@ fn parse_struct<'a>(
         ),
         vis: ast::Visibility::Public,
         span: *span,
-    });
-    println!("{:#?}", it);
-    Ok(it)
+    }))
+}
+
+fn parse_func<'a>(
+    toktree: &mut iter::Peekable<slice::Iter<'a, ast::TokenTree>>,
+    buffer: &mut String,
+    context: &mut base::ExtCtxt,
+    span: codemap::Span,
+) -> Result<ptr::P<ast::Item>, String> {
+    let func_ident = match toktree.next() {
+        // Find the name of the function.
+        Some(&ast::TokenTree::TtToken(_, token::Token::Ident(i, _))) => i,
+        _ => return Err("no function identifier".to_owned()),
+    };
+
+    let mut in_args = vec![];
+    // TODO: can we just stringify fields of the Arg struct instead?
+    let mut c_args = String::new();
+    if let Some(&ast::TokenTree::TtDelimited(_, ref intoks)) = toktree.next() {
+        // TODO: I was very tired when I wrote this bit.
+        let intoks = (*intoks).clone();
+        let intoks = &intoks.tts;
+        let mut intoks = intoks.iter();
+        let mut opt_tok = intoks.next();
+        while let Some(tok) = opt_tok {
+            // Find argument identifier.
+            if let &ast::TokenTree::TtToken(_, token::Token::Ident(arg_ident, _)) = tok {
+                match intoks.next() {
+                    // Skip over the colon.
+                    Some(&ast::TokenTree::TtToken(_, token::Token::Colon)) => {
+                        // Find type identifier and write shit to the buffers.
+                        if let Some(&ast::TokenTree::TtToken(_, token::Token::Ident(typ, _))) = intoks.next() {
+                            c_args.push_str(&format!("{} {}, ", rust_to_c(&typ.name.as_str()), &arg_ident.name.as_str()));
+                            let ty = context.ty_ident(span, typ);
+                            in_args.push(context.arg(span, arg_ident, ty));
+                        } else {
+                            return Err("colon must be followed by a type identifier".to_owned());
+                        }
+                    },
+                    _ => return Err("argument identifier must be followed by a colon".to_owned()),
+                };
+            };
+            opt_tok = intoks.next();
+        }
+        // Delete the trailing comma and space from the input arguments.
+        c_args.pop();
+        c_args.pop();
+    }
+
+    let c_out: String;
+    let out_type = match toktree.peek() {
+        Some(&&ast::TokenTree::TtToken(_, token::Token::RArrow)) => {
+            // Skip the RArrow so we can nab the type.
+            toktree.next();
+            if let Some(&ast::TokenTree::TtToken(_, token::Token::Ident(typ, _))) = toktree.next() {
+                c_out = typ.name.as_str().to_string();
+                context.ty_ident(span, typ)
+            } else {
+                return Err("right arrow must be followed by a type identifier".to_owned());
+            }
+        },
+        // Assume () if no RArrow.
+        _ => {
+            c_out = "void".to_owned();
+            context.ty(span, ast::Ty_::TyTup(vec![]))
+        },
+    };
+
+    buffer.push_str(&format!("{} {}({});", c_out, &func_ident.name.as_str(), c_args));
+
+    let block;
+    if let Some(d) = toktree.next() {
+        // TODO: still fucking shattered.
+        let d = d.clone();
+        match d {
+            delim @ ast::TokenTree::TtDelimited(_, _) => {
+                let mut parser = context.new_parser_from_tts(&[delim]);
+                block = match parser.parse_block() {
+                    Ok(b) => b,
+                    _ => return Err("function must have a body".to_owned()),
+                };
+            },
+            _ => return Err("function must have a body".to_owned()),
+        }
+    } else {
+        return Err("function must have a body".to_owned());
+    }
+
+    let fn_decl = context.fn_decl(in_args, out_type);
+    let no_mangle = context.meta_word(span, InternedString::new("no_mangle"));
+    Ok(ptr::P(ast::Item {
+        ident: func_ident,
+        attrs: vec![context.attribute(span, no_mangle)],
+        id: ast::DUMMY_NODE_ID,
+        node: ast::Item_::ItemFn(
+            fn_decl,
+            // TODO: This makes me **very** uneasy!
+            ast::Unsafety::Normal,
+            // TODO: I don't really know what this means.
+            //     - I assume it's for RFC 911.
+            ast::Constness::NotConst,
+            // TODO: What is cdecl? Should we use system?
+            syntax::abi::Abi::C,
+            ast::Generics {
+                lifetimes: vec![],
+                ty_params: syntax::owned_slice::OwnedSlice::empty(),
+                where_clause: ast::WhereClause {
+                    id: ast::DUMMY_NODE_ID,
+                    predicates: vec![],
+                },
+            },
+            block,
+        ),
+        vis: ast::Visibility::Public,
+        span: span,
+    }))
 }
 
 fn rust_to_c(typ: &str) -> &str {
