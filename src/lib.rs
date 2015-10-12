@@ -326,7 +326,7 @@ fn parse_func<'a>(
         },
     };
 
-    buffer.push_str(&format!("{} {}({});", c_out, &func_ident.name.as_str(), c_args));
+    buffer.push_str(&format!("{} {}({});\n", c_out, &func_ident.name.as_str(), c_args));
 
     let block;
     if let Some(d) = toktree.next() {
