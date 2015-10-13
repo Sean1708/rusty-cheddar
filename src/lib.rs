@@ -11,6 +11,7 @@ use syntax::ast::TokenTree;
 use syntax::codemap;
 use syntax::ext::base;
 use syntax::parse::token;
+use syntax::parse::token::Token;
 use syntax::parse::token::InternedString;
 use syntax::ptr;
 
@@ -37,33 +38,28 @@ use syntax::ext::build::AstBuilder;
 fn parse_header(
     context: &mut base::ExtCtxt, span: codemap::Span, toktree: &[ast::TokenTree]
 ) -> Box<base::MacResult + 'static> {
-    let mut toktree = toktree.iter().peekable();
-    // TODO: turn option into error then use plugin_try!
-    let possible_path = match toktree.peek() {
-        Some(t) => t.clone(),
-        None => {
-            context.span_err(span, "macro contains no tokens");
-            return base::DummyResult::any(span);
-        },
-    };
-    // Check whether the first token specifies a path.
-    let output_file_path = if let ast::TokenTree::TtToken(
-        _, token::Token::Literal(token::Lit::Str_(s), _)
-    ) = *possible_path {
-        // Skip it if it does.
-        toktree.next();
-        path::PathBuf::from(s.as_str().to_string())
+    let parser;
+    let header_path = if !toktree.is_empty() {
+        if let TokenTree::TtToken(_, Token::Literal(token::Lit::Str_(s), _)) = toktree[0] {
+            // If the first token is a string, use it for the header path.
+            parser = context.new_parser_from_tts(&toktree[1..]);
+            path::PathBuf::from(s.as_str().to_string())
+        } else {
+            // Otherwise build a default path
+            parser = context.new_parser_from_tts(toktree);
+            // TODO: There must be a better way to do this!
+            let mut temp = path::PathBuf::new();
+            // TODO: what if they're not using cargo?
+            temp.push("target");
+            // TODO: temp.push("debug") for Debug builds, "release" for release builds
+            temp.push("include");
+            // TODO: a better default name
+            temp.push("header.h");
+            temp
+        }
     } else {
-        // otherwise build a default path
-        // TODO: There must be a better way to do this!
-        let mut temp = path::PathBuf::new();
-        // TODO: what if they're not using cargo?
-        temp.push("target");
-        // TODO: temp.push("debug") for Debug builds, "release" for release builds
-        temp.push("include");
-        // TODO: a better default name
-        temp.push("header.h");
-        temp
+        context.span_err(span, "the block of cheddar contains no tokens");
+        return base::DummyResult::any(span);
     };
 
     // TODO: have a way to specify tabs vs x number of spaces
@@ -80,15 +76,15 @@ fn parse_header(
     // TODO: retain arbitrary attributes
     // TODO: I've just found syntax::parser, I should probably use that.
 
-    // Create the parent directories for the header file.
-    // TODO: Do we need the .with_file_name("")?
-    fs::create_dir_all(output_file_path.with_file_name("")).ok().expect("Can not create directories for output file.");
-    let mut output_file = fs::File::create(&output_file_path).ok().expect("Can not open the header file.");
-    output_file.write_all(format!(
-        // TODO: stdbool.h
+    // Create the parent directories and header file.
+    fs::create_dir_all(header_path.with_file_name(""))
+        .ok().expect("Can not create directories for output file.");
+    let mut header_file = fs::File::create(&header_path)
+        .ok().expect("Can not open the header file.");
+    header_file.write_all(format!(
         "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n#include <stdbool.h>\n\n\n",
         // TODO: can we use .to_str_lossy()? It uses unicode though so probably not.
-        output_file_path.file_stem().expect("Why no file stem?").to_str().expect("File stem not stringable."),
+        header_path.file_stem().expect("Why no file stem?").to_str().expect("File stem not stringable."),
     ).as_bytes()).ok().expect("Can not write guard to header file.");
 
     let mut enum_buf = String::new();
@@ -96,38 +92,39 @@ fn parse_header(
     let mut func_buf = String::new();
     let mut items = vec![];
 
-    let mut opt_cur = toktree.next();
-    while let Some(cur) = opt_cur {
-        match *cur {
-            ast::TokenTree::TtToken(_, token::Token::Ident(n, _)) => match &*n.name.as_str() {
-                "enum" => items.push(parse_enum(
-                    &mut toktree, &mut enum_buf, context, &span
-                ).ok().expect("Enumeration failure!")),
-                "struct" => items.push(parse_struct(
-                    &mut toktree, &mut struct_buf, context, &span
-                ).ok().expect("Structural failure!")),
-                "fn" => items.push(parse_func(
-                    &mut toktree, &mut func_buf, context, span
-                ).ok().expect("Functional failure!")),
-                // Ignore all other tokens.
-                _ => {},
-            },
-            // Ignore delimited blocks.
-            _ => {},
-        }
-        opt_cur = toktree.next();
-    }
+    // let mut opt_cur = toktree.next();
+    // while let Some(cur) = opt_cur {
+    //     match *cur {
+    //         ast::TokenTree::TtToken(_, token::Token::Ident(n, _)) => match &*n.name.as_str() {
+    //             "enum" => items.push(parse_enum(
+    //                 &mut toktree, &mut enum_buf, context, &span
+    //             ).ok().expect("Enumeration failure!")),
+    //             "struct" => items.push(parse_struct(
+    //                 &mut toktree, &mut struct_buf, context, &span
+    //             ).ok().expect("Structural failure!")),
+    //             "fn" => items.push(parse_func(
+    //                 &mut toktree, &mut func_buf, context, span
+    //             ).ok().expect("Functional failure!")),
+    //             // Ignore all other tokens.
+    //             _ => {},
+    //         },
+    //         // Ignore delimited blocks.
+    //         _ => {},
+    //     }
+    //     opt_cur = toktree.next();
+    // }
 
-    output_file.write_all(format!("// Enums\n\n{}\n", enum_buf).as_bytes())
-        .ok().expect("Can not write enums to header file.");
-    output_file.write_all(format!("// Structs\n\n{}\n", struct_buf).as_bytes())
-        .ok().expect("Can not write structs to header file.");
-    output_file.write_all(format!("// Functions\n\n{}\n", func_buf).as_bytes())
-        .ok().expect("Can not write functions to header file.");
-    output_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
+    // output_file.write_all(format!("// Enums\n\n{}\n", enum_buf).as_bytes())
+    //     .ok().expect("Can not write enums to header file.");
+    // output_file.write_all(format!("// Structs\n\n{}\n", struct_buf).as_bytes())
+    //     .ok().expect("Can not write structs to header file.");
+    // output_file.write_all(format!("// Functions\n\n{}\n", func_buf).as_bytes())
+    //     .ok().expect("Can not write functions to header file.");
+    // output_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
 
-    // println!("{:#?}", items);
-    base::MacEager::items(syntax::util::small_vector::SmallVector::many(items))
+    // // println!("{:#?}", items);
+    // base::MacEager::items(syntax::util::small_vector::SmallVector::many(items))
+    base::DummyResult::any(span)
 }
 
 
