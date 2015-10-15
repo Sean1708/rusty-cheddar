@@ -94,8 +94,8 @@ fn parse_header(
         match tok {
             Token::Eof => break,
             // If the token is not Eof then see if it's a cheddar-able item.
-            ref tok => match tok {
-                &Token::Ident(n, _) => match &*n.name.as_str() {
+            tok => match tok {
+                Token::Ident(n, _) => match &*n.name.as_str() {
                     "enum" => match parse_enum(&mut parser, &mut item_buf, context) {
                         Ok(i) => items.push(i),
                         Err(_) => return DummyResult::any(span),
@@ -105,20 +105,22 @@ fn parse_header(
                         Err(_) => return DummyResult::any(span),
                     },
                     "fn" => match parse_func(&mut parser, &mut item_buf, context) {
-                        Ok(_) => {},
-                        Err(_) => {},
+                        Ok(i) => items.push(i),
+                        Err(_) => return DummyResult::any(span),
                     },
                     // Ignore any other identifiers.
-                    _ => {},
+                    _ => if let Err(_) = parser.bump() {
+                        context.span_err(parser.span, "could not read token");
+                        return DummyResult::any(span);
+                    },
                 },
                 // Ignore non-identifier tokens.
-                _ => {},
+                _ => if let Err(_) = parser.bump() {
+                    context.span_err(parser.span, "could not read token");
+                    return DummyResult::any(span);
+                },
             },
         };
-        if let Err(_) = parser.bump() {
-            context.span_err(parser.span, "could not read token");
-            return DummyResult::any(span);
-        }
     };
 
     header_file.write_all(item_buf.as_bytes()).ok().expect("Can not write to header file.");
