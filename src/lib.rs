@@ -64,8 +64,7 @@ fn parse_header(
             temp.push("target");
             // TODO: temp.push("debug") for Debug builds, "release" for release builds
             temp.push("include");
-            // TODO: a better default name
-            temp.push("header.h");
+            temp.push(&format!("{}.h", context.ecfg.crate_name));
             temp
         }
     };
