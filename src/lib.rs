@@ -60,26 +60,12 @@ fn parse_header(
         _ => {
             filename_span = span;
             let mut temp = path::PathBuf::new();
-            // TODO: what if they're not using cargo?
             temp.push("target");
-            // TODO: temp.push("debug") for Debug builds, "release" for release builds
             temp.push("include");
             temp.push(&format!("{}.h", context.ecfg.crate_name));
             temp
         }
     };
-
-    // TODO: add docstrings to the header file somehow.
-    // TODO: have a way to specify tabs vs x number of spaces
-    //     - #[plugin(cheddar(spaces=4))] or #[plugin(cheddar(tabs))]
-    //     - compute the string in plugin_registrar and save it as an environment variable
-    //     - pull that environment variable in parse_header and pass it to the functions
-    //     - is it really worth it?
-    // TODO: can we automatically set the crate-type dylib attribute?
-    // TODO: layout the header file as like for like with the cheddar! block (a *block* of cheddar. lol)
-    //     - leave all comments, docstrings and items (enums, structs and fns) in same place
-    // TODO: retain arbitrary attributes
-    // TODO: test failures, especially file opening ones!
 
     // Create the parent directories and header file.
     cheddar_try!(
@@ -96,7 +82,6 @@ fn parse_header(
     cheddar_try!(
         header_file.write_all(format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            // TODO: there must be a better way to do this.
             header_path.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
         ).as_bytes()),
         filename_span,
@@ -185,7 +170,6 @@ fn parse_enum<'a>(
                 ));
             },
             _ => {
-                // TODO: I want to avoid calling span_err at all really.
                 context.span_err(parser.span, "expected enum variants");
                 return Err(FatalError);
             },
@@ -198,7 +182,6 @@ fn parse_enum<'a>(
     let c = context.meta_word(kwd_span, InternedString::new("C"));
     let repr = context.meta_list(kwd_span, InternedString::new("repr"), vec![c]);
     // Use kwd_span.expn_id since all IDs are DUMMY_NODE_ID at this stage.
-    // TODO: Is this how Span works in an item? Or does it go from open curly bracket?
     let item_span = codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, };
     // Create the enum, can't use context.item_enum because we need Public visibility.
     Ok(ptr::P(ast::Item {
@@ -382,12 +365,8 @@ fn parse_func<'a>(
         id: ast::DUMMY_NODE_ID,
         node: ast::Item_::ItemFn(
             fn_decl,
-            // TODO: This makes me **very** uneasy!
             ast::Unsafety::Normal,
-            // TODO: I don't really know what this means.
-            //     - I assume it's for RFC 911.
             ast::Constness::NotConst,
-            // TODO: What is cdecl? Should we use system?
             syntax::abi::Abi::C,
             ast::Generics {
                 lifetimes: vec![],
@@ -405,10 +384,6 @@ fn parse_func<'a>(
 }
 
 fn rust_to_c(typ: &str) -> &str {
-    // TODO: warn on String or &str.
-    // TODO: are there any types that we should just die on?
-    //     - or should we assume that the programmer has handled it?
-    // TODO: How do we handle pointers?
     match typ {
         "f32" => "float",
         "f64" => "double",
