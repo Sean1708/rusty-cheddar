@@ -9,8 +9,10 @@ use rustc::plugin;
 use syntax::ast;
 use syntax::ast::TokenTree;
 use syntax::codemap;
+use syntax::diagnostic::FatalError;
 use syntax::ext::base;
 use syntax::ext::base::DummyResult;
+use syntax::parse;
 use syntax::parse::parser;
 use syntax::parse::token;
 use syntax::parse::token::Token;
@@ -85,7 +87,7 @@ fn parse_header(
 
     // Create the parent directories and header file.
     cheddar_try!(
-        // Without .with_file_name() the header file is created as a directory.
+        // Without .with_file_name("") the header file is created as a directory.
         fs::create_dir_all(header_path.with_file_name("")),
         filename_span,
         "can not create directories for header path",
@@ -98,6 +100,7 @@ fn parse_header(
     cheddar_try!(
         header_file.write_all(format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
+            // TODO: there must be a better way to do this.
             header_path.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
         ).as_bytes()),
         filename_span,
@@ -159,27 +162,16 @@ fn parse_enum<'a>(
     parser: &mut parser::Parser<'a>,
     buffer: &mut String,
     context: &mut base::ExtCtxt,
-// TODO: think more about how to do errors.
-//     - See if we can get a pattern going so we can write a macro.
-//     - Alternatively I think most of these things use PResult so we could use try!();
-) -> Result<ptr::P<ast::Item>, ()> {
+) -> parse::PResult<ptr::P<ast::Item>> {
     let kwd_span = parser.span;
     // Current token is still Ident("enum").
-    if let Err(_) = parser.eat_keyword(token::keywords::Keyword::Enum) {
-        return Err(());
-    }
+    try!(parser.eat_keyword(token::keywords::Keyword::Enum));
 
-    let ident = match parser.parse_ident() {
-        Ok(tok) => tok,
-        Err(_) => return Err(()),
-    };
-
+    let ident = try!(parser.parse_ident());
     buffer.push_str(&format!("typedef enum {} {{\n", ident.name.as_str()));
 
     // A Brace is a curly bracket.
-    if let Err(_) = parser.expect(&Token::OpenDelim(token::DelimToken::Brace)) {
-        return Err(());
-    }
+    try!(parser.expect(&Token::OpenDelim(token::DelimToken::Brace)));
 
     let close_span;
     let mut variants = vec![];
@@ -196,18 +188,16 @@ fn parse_enum<'a>(
                     variants.push(ptr::P(context.variant(parser.span, id, vec![])));
                     buffer.push_str(&format!("\t{},\n", id.name.as_str()));
                     // TODO: This forces a trailing comma.
-                    if let Err(_) = parser.expect(&Token::Comma) {
-                        return Err(());
-                    };
+                    try!(parser.expect(&Token::Comma));
                 },
                 _ => {
                     context.span_err(parser.span, "expected enum variants");
-                    return Err(());
+                    return Err(FatalError);
                 },
             };
         } else {
             context.span_err(parser.span, "could not read token");
-            return Err(());
+            return Err(FatalError);
         };
     };
 
@@ -243,36 +233,27 @@ fn parse_struct<'a>(
     parser: &mut parser::Parser<'a>,
     buffer: &mut String,
     context: &mut base::ExtCtxt,
-) -> Result<ptr::P<ast::Item>, ()> {
+) -> parse::PResult<ptr::P<ast::Item>> {
     let kwd_span = parser.span;
     // Current token is still Ident("struct").
-    if let Err(_) = parser.eat_keyword(token::keywords::Keyword::Struct) {
-        return Err(());
-    }
+    try!(parser.eat_keyword(token::keywords::Keyword::Struct));
 
-    let ident = match parser.parse_ident() {
-        Ok(tok) => tok,
-        Err(_) => return Err(()),
-    };
-
+    let ident = try!(parser.parse_ident());
     buffer.push_str(&format!("typedef struct {} {{\n", ident.name.as_str()));
 
     // A Brace is a curly bracket.
-    if let Err(_) = parser.expect(&Token::OpenDelim(token::DelimToken::Brace)) {
-        return Err(());
-    }
+    try!(parser.expect(&Token::OpenDelim(token::DelimToken::Brace)));
 
     // Find the vector of struct fields.
     let close_span;
     let mut fields = vec![];
     loop {
+        // TODO: why not just use .bump_and_get()?
         let tok =  parser.token.clone();
         match tok {
             Token::CloseDelim(token::DelimToken::Brace) => {
                 close_span = parser.span;
-                if let Err(_) = parser.expect(&Token::CloseDelim(token::DelimToken::Brace)) {
-                    return Err(());
-                };
+                try!(parser.expect(&Token::CloseDelim(token::DelimToken::Brace)));
                 break
             },
             Token::Ident(id, _) => {
@@ -281,19 +262,14 @@ fn parse_struct<'a>(
                 // TODO: See how the rust parser handles .bump().
                 if let Err(_) = parser.bump() {
                     context.span_err(parser.span, "something horrible has happened");
-                    return Err(());
+                    return Err(FatalError);
                 };
 
-                if let Err(_) = parser.expect(&Token::Colon) {
-                    return Err(());
-                };
+                try!(parser.expect(&Token::Colon));
 
                 // TODO: Should this be after .parse_ident()?
                 let typ_span = parser.span;
-                let typ = match parser.parse_ident() {
-                    Ok(t) => t,
-                    Err(_) => return Err(()),
-                };
+                let typ = try!(parser.parse_ident());
 
                 buffer.push_str(&format!("\t{} {};\n", rust_to_c(&typ.name.as_str()), id.name.as_str()));
                 fields.push(codemap::spanned(id_span.lo, typ_span.hi, ast::StructField_ {
@@ -304,13 +280,11 @@ fn parse_struct<'a>(
                 }));
 
                 // TODO: This forces a trailing comma.
-                if let Err(_) = parser.expect(&Token::Comma) {
-                    return Err(());
-                };
+                try!(parser.expect(&Token::Comma));
             },
             _ => {
                 context.span_err(parser.span, "expected struct fields");
-                return Err(());
+                return Err(FatalError);
             },
         };
     };
@@ -345,21 +319,12 @@ fn parse_func<'a>(
     parser: &mut parser::Parser<'a>,
     buffer: &mut String,
     context: &mut base::ExtCtxt,
-) -> Result<ptr::P<ast::Item>, ()> {
+) -> parse::PResult<ptr::P<ast::Item>> {
     let kwd_span = parser.span;
     // Current token is still Ident("struct").
-    if let Err(_) = parser.eat_keyword(token::keywords::Keyword::Fn) {
-        return Err(());
-    }
-
-    let ident = match parser.parse_ident() {
-        Ok(tok) => tok,
-        Err(_) => return Err(()),
-    };
-
-    if let Err(_) = parser.expect(&Token::OpenDelim(token::DelimToken::Paren)) {
-        return Err(());
-    }
+    try!(parser.eat_keyword(token::keywords::Keyword::Fn));
+    let ident = try!(parser.parse_ident());
+    try!(parser.expect(&Token::OpenDelim(token::DelimToken::Paren)));
 
     let close_span;
     let mut in_args = vec![];
@@ -374,17 +339,11 @@ fn parse_func<'a>(
                 Token::Ident(id, _) => {
                     // TODO: should this just be span?
                     let id_span = parser.last_span;
-
-                    if let Err(_) = parser.expect(&Token::Colon) {
-                        return Err(());
-                    };
+                    try!(parser.expect(&Token::Colon));
 
                     // TODO: Should this be after .parse_ident()?
                     let typ_span = parser.span;
-                    let typ = match parser.parse_ident() {
-                        Ok(t) => t,
-                        Err(_) => return Err(()),
-                    };
+                    let typ = try!(parser.parse_ident());
 
                     c_args.push_str(&format!(
                         "{} {}, ", rust_to_c(&typ.name.as_str()), id.name.as_str()
@@ -399,20 +358,19 @@ fn parse_func<'a>(
                     ));
 
                     // TODO: use this above!
-                    if let Err(_) = parser.expect_one_of(
-                        &[Token::Comma], &[Token::CloseDelim(token::DelimToken::Paren)]
-                    ) {
-                        return Err(());
-                    };
+                    try!(parser.expect_one_of(
+                        &[Token::Comma],
+                        &[Token::CloseDelim(token::DelimToken::Paren)],
+                    ));
                 },
                 _ => {
                     context.span_err(parser.span, "expected function arguments");
-                    return Err(());
+                    return Err(FatalError);
                 },
             };
         } else {
             context.span_err(parser.span, "could not read token");
-            return Err(());
+            return Err(FatalError);
         }
     }
     // Delete the trailing comma and space from the input arguments.
@@ -422,17 +380,14 @@ fn parse_func<'a>(
     let c_out: String;
     let out_type = match parser.token {
         Token::RArrow => {
-            if let Err(_) = parser.expect(&Token::RArrow) {
-                return Err(());
-            }
+            try!(parser.expect(&Token::RArrow));
 
-            // TODO: This would be a perfect use of try!
             match parser.parse_ident() {
                 Ok(t) => {
                     c_out = rust_to_c(&t.name.as_str()).to_owned();
                     context.ty_ident(parser.last_span, t)
                 },
-                Err(_) => return Err(()),
+                Err(e) => return Err(e),
             }
         },
         // Assume () if no RArrow.
@@ -445,11 +400,7 @@ fn parse_func<'a>(
     buffer.push_str(&format!("{} {}({});\n\n", c_out, &ident.name.as_str(), c_args));
 
     // TODO: another perfect use of try!
-    let block = match parser.parse_block() {
-        Ok(b) => b,
-        Err(_) => return Err(()),
-    };
-
+    let block = try!(parser.parse_block());
     let fn_decl = context.fn_decl(in_args, out_type);
     let no_mangle = context.meta_word(kwd_span, InternedString::new("no_mangle"));
     Ok(ptr::P(ast::Item {
