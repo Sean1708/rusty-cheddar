@@ -58,7 +58,7 @@ fn parse_header(
         },
         // Otherwise build a default path
         _ => {
-            filename_span = parser.last_span;
+            filename_span = span;
             let mut temp = path::PathBuf::new();
             // TODO: what if they're not using cargo?
             temp.push("target");
@@ -79,8 +79,6 @@ fn parse_header(
     // TODO: layout the header file as like for like with the cheddar! block (a *block* of cheddar. lol)
     //     - leave all comments, docstrings and items (enums, structs and fns) in same place
     // TODO: retain arbitrary attributes
-    // TODO: check all spans are what we think they are!
-    //     - do this by iserting a context.span_note everywhere there is a span
     // TODO: test failures, especially file opening ones!
 
     // Create the parent directories and header file.
@@ -183,7 +181,7 @@ fn parse_enum<'a>(
                 break
             },
             Token::Ident(id, _) => {
-                variants.push(ptr::P(context.variant(parser.span, id, vec![])));
+                variants.push(ptr::P(context.variant(parser.last_span, id, vec![])));
                 buffer.push_str(&format!("\t{},\n", id.name.as_str()));
                 try!(parser.expect_one_of(
                     &[Token::Comma],
@@ -203,6 +201,9 @@ fn parse_enum<'a>(
     // Create the #[repr(C)] attribute, the enum keyword span simplicity.
     let c = context.meta_word(kwd_span, InternedString::new("C"));
     let repr = context.meta_list(kwd_span, InternedString::new("repr"), vec![c]);
+    // Use kwd_span.expn_id since all IDs are DUMMY_NODE_ID at this stage.
+    // TODO: Is this how Span works in an item? Or does it go from open curly bracket?
+    let item_span = codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, };
     // Create the enum, can't use context.item_enum because we need Public visibility.
     Ok(ptr::P(ast::Item {
         ident: ident,
@@ -220,9 +221,7 @@ fn parse_enum<'a>(
             },
         ),
         vis: ast::Visibility::Public,
-        // Use kwd_span.expn_id since all IDs are DUMMY_NODE_ID at this stage.
-        // TODO: Is this how Span works in an item? Or does it go from open curly bracket?
-        span: codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, },
+        span: item_span,
     }))
 }
 
@@ -252,11 +251,9 @@ fn parse_struct<'a>(
                 break
             },
             Token::Ident(id, _) => {
-                // TODO: should this be last_span?
-                let id_span = parser.span;
+                let id_span = parser.last_span;
                 try!(parser.expect(&Token::Colon));
 
-                // TODO: Should this be after .parse_ident()?
                 let typ_span = parser.span;
                 let typ = try!(parser.parse_ident());
 
@@ -285,6 +282,7 @@ fn parse_struct<'a>(
     // Create the #[repr(C)] attribute.
     let c = context.meta_word(kwd_span, InternedString::new("C"));
     let repr = context.meta_list(kwd_span, InternedString::new("repr"), vec![c]);
+    let item_span = codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, };
     // Create the struct.
     Ok(ptr::P(ast::Item {
         ident: ident,
@@ -302,7 +300,7 @@ fn parse_struct<'a>(
             },
         ),
         vis: ast::Visibility::Public,
-        span: codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, },
+        span: item_span,
     }))
 }
 
@@ -317,30 +315,26 @@ fn parse_func<'a>(
     let ident = try!(parser.parse_ident());
     try!(parser.expect(&Token::OpenDelim(token::DelimToken::Paren)));
 
-    let close_span;
     let mut in_args = vec![];
     let mut c_args = String::new();
     loop {
         let tok = try!(parser.bump_and_get());
         match tok {
-            Token::CloseDelim(token::DelimToken::Paren) => {
-                close_span = parser.last_span;
-                break
-            },
+            Token::CloseDelim(token::DelimToken::Paren) => break,
             Token::Ident(id, _) => {
-                // TODO: should this just be span?
                 let id_span = parser.last_span;
                 try!(parser.expect(&Token::Colon));
 
-                // TODO: Should this be after .parse_ident()?
                 let typ_span = parser.span;
                 let typ = try!(parser.parse_ident());
 
                 c_args.push_str(&format!(
                     "{} {}, ", rust_to_c(&typ.name.as_str()), id.name.as_str()
                 ));
+
                 in_args.push(context.arg(
-                    codemap::Span { lo: id_span.lo,
+                    codemap::Span {
+                        lo: id_span.lo,
                         hi: typ_span.hi,
                         expn_id: id_span.expn_id,
                     },
@@ -388,6 +382,7 @@ fn parse_func<'a>(
     let block = try!(parser.parse_block());
     let fn_decl = context.fn_decl(in_args, out_type);
     let no_mangle = context.meta_word(kwd_span, InternedString::new("no_mangle"));
+    let item_span = codemap::Span { lo: kwd_span.lo, hi: block.span.hi, expn_id: kwd_span.expn_id, };
     Ok(ptr::P(ast::Item {
         ident: ident,
         attrs: vec![context.attribute(kwd_span, no_mangle)],
@@ -412,7 +407,7 @@ fn parse_func<'a>(
             block,
         ),
         vis: ast::Visibility::Public,
-        span: codemap::Span { lo: kwd_span.lo, hi: close_span.hi, expn_id: kwd_span.expn_id, },
+        span: item_span,
     }))
 }
 
