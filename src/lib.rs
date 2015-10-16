@@ -374,7 +374,7 @@ fn parse_func<'a>(
                 context.ty_ident(parser.last_span, typ)
             }))
         },
-        // Assume () if no RArrow.
+        // Assume () if no ->.
         _ => {
             c_out = "void".to_owned();
             context.ty(parser.span, ast::Ty_::TyTup(vec![]))
@@ -385,7 +385,6 @@ fn parse_func<'a>(
 
     buffer.push_str(&format!("{} {}({});\n\n", c_out, &ident.name.as_str(), c_args));
 
-    // TODO: another perfect use of try!
     let block = try!(parser.parse_block());
     let fn_decl = context.fn_decl(in_args, out_type);
     let no_mangle = context.meta_word(kwd_span, InternedString::new("no_mangle"));
@@ -417,7 +416,6 @@ fn parse_func<'a>(
     }))
 }
 
-// TODO: Can we use AsRef or Deref here?
 fn rust_to_c(typ: &str) -> &str {
     // TODO: warn on String or &str.
     // TODO: are there any types that we should just die on?
