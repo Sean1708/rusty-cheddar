@@ -180,6 +180,7 @@ fn parse_enum<'a>(
                 buffer.push_str(&format!("\t{},\n", id.name.as_str()));
                 try!(parser.expect_one_of(
                     &[Token::Comma],
+                    // Don't eat the bracket so that we can use it to break.
                     &[Token::CloseDelim(token::DelimToken::Brace)],
                 ));
             },
@@ -259,6 +260,7 @@ fn parse_struct<'a>(
 
                 try!(parser.expect_one_of(
                     &[Token::Comma],
+                    // Don't eat the bracket so that we can use it to break.
                     &[Token::CloseDelim(token::DelimToken::Brace)],
                 ));
             },
@@ -334,6 +336,7 @@ fn parse_func<'a>(
 
                 try!(parser.expect_one_of(
                     &[Token::Comma],
+                    // Don't eat the bracket so that we can use it to break.
                     &[Token::CloseDelim(token::DelimToken::Paren)],
                 ));
             },
