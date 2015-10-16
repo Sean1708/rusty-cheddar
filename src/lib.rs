@@ -24,26 +24,30 @@ use std::io::Write;
 use syntax::ext::build::AstBuilder;
 
 
-// macro_rules! cheddar_try {
-// }
-
-// TODO: some sort of bump! macro.
-//     - will prob need one for parse_header, the other for parse_*
-//     - or possibly use context.span_fatal
-
-
 // TODO: add docstrings to the header file somehow.
 fn parse_header(
     context: &mut base::ExtCtxt, span: codemap::Span, toktree: &[ast::TokenTree]
 ) -> Box<base::MacResult + 'static> {
+    macro_rules! cheddar_try {
+        ($action:expr, $span:expr, $msg:expr,) => {cheddar_try!($action, $span, $msg)};
+        ($action:expr, $span:expr, $msg:expr) => {{
+            match $action {
+                Ok(v) => v,
+                Err(_) => {
+                    context.span_err($span, $msg);
+                    return DummyResult::any(span);
+                },
+            }
+        }};
+    }
+
+    let filename_span;
     let mut parser = context.new_parser_from_tts(toktree);
     let header_path = match parser.token {
         // If the first token is a string, use it for the header path.
         Token::Literal(token::Lit::Str_(s), _) => {
-            if let Err(_) = parser.bump() {
-                context.span_err(parser.span, "could not read token");
-                return DummyResult::any(span);
-            }
+            filename_span = parser.span;
+            cheddar_try!(parser.bump(), parser.span, "could not read token");
             path::PathBuf::from(s.as_str().to_string())
         },
         // If the first token is Eof then we can't do anything.
@@ -53,6 +57,7 @@ fn parse_header(
         },
         // Otherwise build a default path
         _ => {
+            filename_span = parser.last_span;
             // TODO: There must be a better way to do this!
             let mut temp = path::PathBuf::new();
             // TODO: what if they're not using cargo?
@@ -74,20 +79,38 @@ fn parse_header(
     // TODO: layout the header file as like for like with the cheddar! block (a *block* of cheddar. lol)
     //     - leave all comments, docstrings and items (enums, structs and fns) in same place
     // TODO: retain arbitrary attributes
+    // TODO: check all spans are what we think they are!
+    //     - do this by iserting a context.span_note everywhere there is a span
+    // TODO: test failures, especially file opening ones!
 
     // Create the parent directories and header file.
-    fs::create_dir_all(header_path.with_file_name(""))
-        .ok().expect("Can not create directories for output file.");
-    let mut header_file = fs::File::create(&header_path)
-        .ok().expect("Can not open the header file.");
-    header_file.write_all(format!(
-        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n#include <stdint.h>\n#include <stdbool.h>\n\n\n",
-        header_path.file_stem().expect("Why no file stem?").to_str().expect("File stem not stringable."),
-    ).as_bytes()).ok().expect("Can not write guard to header file.");
+    cheddar_try!(
+        // Without .with_file_name() the header file is created as a directory.
+        fs::create_dir_all(header_path.with_file_name("")),
+        filename_span,
+        "can not create directories for header path",
+    );
+    let mut header_file = cheddar_try!(
+        fs::File::create(&header_path),
+        filename_span,
+        "can not create header file",
+    );
+    cheddar_try!(
+        header_file.write_all(format!(
+            "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
+            header_path.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
+        ).as_bytes()),
+        filename_span,
+        "can not write guard to header file",
+    );
+    cheddar_try!(
+        header_file.write_all(b"#include <stdint.h>\n#include <stdbool.h>\n\n"),
+        filename_span,
+        "can not write includes to header file",
+    );
 
     let mut item_buf = String::new();
     let mut items = vec![];
-
     loop {
         // TODO: I feel like I shouldn't need a clone() here.
         let tok = parser.token.clone();
@@ -109,22 +132,24 @@ fn parse_header(
                         Err(_) => return DummyResult::any(span),
                     },
                     // Ignore any other identifiers.
-                    _ => if let Err(_) = parser.bump() {
-                        context.span_err(parser.span, "could not read token");
-                        return DummyResult::any(span);
-                    },
+                    _ => cheddar_try!(parser.bump(), parser.span, "could not read token"),
                 },
                 // Ignore non-identifier tokens.
-                _ => if let Err(_) = parser.bump() {
-                    context.span_err(parser.span, "could not read token");
-                    return DummyResult::any(span);
-                },
+                _ => cheddar_try!(parser.bump(), parser.span, "could not read token"),
             },
         };
     };
 
-    header_file.write_all(item_buf.as_bytes()).ok().expect("Can not write to header file.");
-    header_file.write_all(b"#endif\n").ok().expect("Can not write endif to header file.");
+    cheddar_try!(
+        header_file.write_all(item_buf.as_bytes()),
+        filename_span,
+        "can not write items to header file",
+    );
+    cheddar_try!(
+        header_file.write_all(b"#endif\n"),
+        filename_span,
+        "can not write endif to header file",
+    );
 
     base::MacEager::items(syntax::util::small_vector::SmallVector::many(items))
 }
