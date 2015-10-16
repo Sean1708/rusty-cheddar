@@ -176,30 +176,26 @@ fn parse_enum<'a>(
     let close_span;
     let mut variants = vec![];
     // Find the vector of enum variants.
-    // TODO: there must be an better way to do this!
     loop {
-        if let Ok(tok) =  parser.bump_and_get() {
-            match tok {
-                Token::CloseDelim(token::DelimToken::Brace) => {
-                    close_span = parser.last_span;
-                    break
-                },
-                Token::Ident(id, _) => {
-                    variants.push(ptr::P(context.variant(parser.span, id, vec![])));
-                    buffer.push_str(&format!("\t{},\n", id.name.as_str()));
-                    try!(parser.expect_one_of(
-                        &[Token::Comma],
-                        &[Token::CloseDelim(token::DelimToken::Brace)],
-                    ));
-                },
-                _ => {
-                    context.span_err(parser.span, "expected enum variants");
-                    return Err(FatalError);
-                },
-            };
-        } else {
-            context.span_err(parser.span, "could not read token");
-            return Err(FatalError);
+        let tok =  try!(parser.bump_and_get());
+        match tok {
+            Token::CloseDelim(token::DelimToken::Brace) => {
+                close_span = parser.last_span;
+                break
+            },
+            Token::Ident(id, _) => {
+                variants.push(ptr::P(context.variant(parser.span, id, vec![])));
+                buffer.push_str(&format!("\t{},\n", id.name.as_str()));
+                try!(parser.expect_one_of(
+                    &[Token::Comma],
+                    &[Token::CloseDelim(token::DelimToken::Brace)],
+                ));
+            },
+            _ => {
+                // TODO: I want to avoid calling span_err at all really.
+                context.span_err(parser.span, "expected enum variants");
+                return Err(FatalError);
+            },
         };
     };
 
@@ -250,23 +246,15 @@ fn parse_struct<'a>(
     let close_span;
     let mut fields = vec![];
     loop {
-        // TODO: why not just use .bump_and_get()?
-        let tok =  parser.token.clone();
+        let tok =  try!(parser.bump_and_get());
         match tok {
             Token::CloseDelim(token::DelimToken::Brace) => {
                 close_span = parser.span;
-                try!(parser.expect(&Token::CloseDelim(token::DelimToken::Brace)));
                 break
             },
             Token::Ident(id, _) => {
-                // TODO: should this be after .bump()?
+                // TODO: should this be last_span?
                 let id_span = parser.span;
-                // TODO: See how the rust parser handles .bump().
-                if let Err(_) = parser.bump() {
-                    context.span_err(parser.span, "something horrible has happened");
-                    return Err(FatalError);
-                };
-
                 try!(parser.expect(&Token::Colon));
 
                 // TODO: Should this be after .parse_ident()?
@@ -334,47 +322,43 @@ fn parse_func<'a>(
     let mut in_args = vec![];
     let mut c_args = String::new();
     loop {
-        if let Ok(tok) = parser.bump_and_get() {
-            match tok {
-                Token::CloseDelim(token::DelimToken::Paren) => {
-                    close_span = parser.last_span;
-                    break
-                },
-                Token::Ident(id, _) => {
-                    // TODO: should this just be span?
-                    let id_span = parser.last_span;
-                    try!(parser.expect(&Token::Colon));
+        let tok = try!(parser.bump_and_get());
+        match tok {
+            Token::CloseDelim(token::DelimToken::Paren) => {
+                close_span = parser.last_span;
+                break
+            },
+            Token::Ident(id, _) => {
+                // TODO: should this just be span?
+                let id_span = parser.last_span;
+                try!(parser.expect(&Token::Colon));
 
-                    // TODO: Should this be after .parse_ident()?
-                    let typ_span = parser.span;
-                    let typ = try!(parser.parse_ident());
+                // TODO: Should this be after .parse_ident()?
+                let typ_span = parser.span;
+                let typ = try!(parser.parse_ident());
 
-                    c_args.push_str(&format!(
-                        "{} {}, ", rust_to_c(&typ.name.as_str()), id.name.as_str()
-                    ));
-                    in_args.push(context.arg(
-                        codemap::Span { lo: id_span.lo,
-                            hi: typ_span.hi,
-                            expn_id: id_span.expn_id,
-                        },
-                        id,
-                        context.ty_ident(typ_span, typ),
-                    ));
+                c_args.push_str(&format!(
+                    "{} {}, ", rust_to_c(&typ.name.as_str()), id.name.as_str()
+                ));
+                in_args.push(context.arg(
+                    codemap::Span { lo: id_span.lo,
+                        hi: typ_span.hi,
+                        expn_id: id_span.expn_id,
+                    },
+                    id,
+                    context.ty_ident(typ_span, typ),
+                ));
 
-                    try!(parser.expect_one_of(
-                        &[Token::Comma],
-                        &[Token::CloseDelim(token::DelimToken::Paren)],
-                    ));
-                },
-                _ => {
-                    context.span_err(parser.span, "expected function arguments");
-                    return Err(FatalError);
-                },
-            };
-        } else {
-            context.span_err(parser.span, "could not read token");
-            return Err(FatalError);
-        }
+                try!(parser.expect_one_of(
+                    &[Token::Comma],
+                    &[Token::CloseDelim(token::DelimToken::Paren)],
+                ));
+            },
+            _ => {
+                context.span_err(parser.span, "expected function arguments");
+                return Err(FatalError);
+            },
+        };
     }
     // Delete the trailing comma and space from the input arguments.
     c_args.pop();
@@ -384,14 +368,11 @@ fn parse_func<'a>(
     let out_type = match parser.token {
         Token::RArrow => {
             try!(parser.expect(&Token::RArrow));
-
-            match parser.parse_ident() {
-                Ok(t) => {
-                    c_out = rust_to_c(&t.name.as_str()).to_owned();
-                    context.ty_ident(parser.last_span, t)
-                },
-                Err(e) => return Err(e),
-            }
+            // A type should always follow a ->.
+            try!(parser.parse_ident().map(|typ| {
+                c_out = rust_to_c(&typ.name.as_str()).to_owned();
+                context.ty_ident(parser.last_span, typ)
+            }))
         },
         // Assume () if no RArrow.
         _ => {
