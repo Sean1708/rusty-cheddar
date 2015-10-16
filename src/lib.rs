@@ -26,7 +26,6 @@ use std::io::Write;
 use syntax::ext::build::AstBuilder;
 
 
-// TODO: add docstrings to the header file somehow.
 fn parse_header(
     context: &mut base::ExtCtxt, span: codemap::Span, toktree: &[ast::TokenTree]
 ) -> Box<base::MacResult + 'static> {
@@ -60,7 +59,6 @@ fn parse_header(
         // Otherwise build a default path
         _ => {
             filename_span = parser.last_span;
-            // TODO: There must be a better way to do this!
             let mut temp = path::PathBuf::new();
             // TODO: what if they're not using cargo?
             temp.push("target");
@@ -72,6 +70,7 @@ fn parse_header(
         }
     };
 
+    // TODO: add docstrings to the header file somehow.
     // TODO: have a way to specify tabs vs x number of spaces
     //     - #[plugin(cheddar(spaces=4))] or #[plugin(cheddar(tabs))]
     //     - compute the string in plugin_registrar and save it as an environment variable
@@ -116,6 +115,7 @@ fn parse_header(
     let mut items = vec![];
     loop {
         // TODO: I feel like I shouldn't need a clone() here.
+        //     - what about .bump_and_get()?
         let tok = parser.token.clone();
         match tok {
             Token::Eof => break,
@@ -364,13 +364,14 @@ fn parse_func<'a>(
     c_args.pop();
     c_args.pop();
 
-    let c_out: String;
+    // Must be mutable for closure.
+    let mut c_out = String::new();
     let out_type = match parser.token {
         Token::RArrow => {
             try!(parser.expect(&Token::RArrow));
             // A type should always follow a ->.
             try!(parser.parse_ident().map(|typ| {
-                c_out = rust_to_c(&typ.name.as_str()).to_owned();
+                c_out.push_str(rust_to_c(&typ.name.as_str()));
                 context.ty_ident(parser.last_span, typ)
             }))
         },
@@ -380,6 +381,8 @@ fn parse_func<'a>(
             context.ty(parser.span, ast::Ty_::TyTup(vec![]))
         },
     };
+    // Make it immutable again.
+    let c_out = c_out;
 
     buffer.push_str(&format!("{} {}({});\n\n", c_out, &ident.name.as_str(), c_args));
 
