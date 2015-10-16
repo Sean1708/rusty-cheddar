@@ -111,9 +111,7 @@ fn parse_header(
     let mut item_buf = String::new();
     let mut items = vec![];
     loop {
-        // TODO: I feel like I shouldn't need a clone() here.
-        //     - what about .bump_and_get()?
-        let tok = parser.token.clone();
+        let tok = cheddar_try!(parser.bump_and_get(), parser.span, "could not read token");
         match tok {
             Token::Eof => break,
             // If the token is not Eof then see if it's a cheddar-able item.
@@ -132,10 +130,10 @@ fn parse_header(
                         Err(_) => return DummyResult::any(span),
                     },
                     // Ignore any other identifiers.
-                    _ => cheddar_try!(parser.bump(), parser.span, "could not read token"),
+                    _ => {},
                 },
                 // Ignore non-identifier tokens.
-                _ => cheddar_try!(parser.bump(), parser.span, "could not read token"),
+                _ => {},
             },
         };
     };
@@ -160,10 +158,7 @@ fn parse_enum<'a>(
     buffer: &mut String,
     context: &mut base::ExtCtxt,
 ) -> parse::PResult<ptr::P<ast::Item>> {
-    let kwd_span = parser.span;
-    // Current token is still Ident("enum").
-    try!(parser.eat_keyword(token::keywords::Keyword::Enum));
-
+    let kwd_span = parser.last_span;
     let ident = try!(parser.parse_ident());
     buffer.push_str(&format!("typedef enum {} {{\n", ident.name.as_str()));
 
@@ -230,10 +225,7 @@ fn parse_struct<'a>(
     buffer: &mut String,
     context: &mut base::ExtCtxt,
 ) -> parse::PResult<ptr::P<ast::Item>> {
-    let kwd_span = parser.span;
-    // Current token is still Ident("struct").
-    try!(parser.eat_keyword(token::keywords::Keyword::Struct));
-
+    let kwd_span = parser.last_span;
     let ident = try!(parser.parse_ident());
     buffer.push_str(&format!("typedef struct {} {{\n", ident.name.as_str()));
 
@@ -309,9 +301,7 @@ fn parse_func<'a>(
     buffer: &mut String,
     context: &mut base::ExtCtxt,
 ) -> parse::PResult<ptr::P<ast::Item>> {
-    let kwd_span = parser.span;
-    // Current token is still Ident("struct").
-    try!(parser.eat_keyword(token::keywords::Keyword::Fn));
+    let kwd_span = parser.last_span;
     let ident = try!(parser.parse_ident());
     try!(parser.expect(&Token::OpenDelim(token::DelimToken::Paren)));
 
