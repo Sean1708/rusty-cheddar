@@ -187,8 +187,10 @@ fn parse_enum<'a>(
                 Token::Ident(id, _) => {
                     variants.push(ptr::P(context.variant(parser.span, id, vec![])));
                     buffer.push_str(&format!("\t{},\n", id.name.as_str()));
-                    // TODO: This forces a trailing comma.
-                    try!(parser.expect(&Token::Comma));
+                    try!(parser.expect_one_of(
+                        &[Token::Comma],
+                        &[Token::CloseDelim(token::DelimToken::Brace)],
+                    ));
                 },
                 _ => {
                     context.span_err(parser.span, "expected enum variants");
@@ -279,8 +281,10 @@ fn parse_struct<'a>(
                     attrs: vec![],
                 }));
 
-                // TODO: This forces a trailing comma.
-                try!(parser.expect(&Token::Comma));
+                try!(parser.expect_one_of(
+                    &[Token::Comma],
+                    &[Token::CloseDelim(token::DelimToken::Brace)],
+                ));
             },
             _ => {
                 context.span_err(parser.span, "expected struct fields");
@@ -357,7 +361,6 @@ fn parse_func<'a>(
                         context.ty_ident(typ_span, typ),
                     ));
 
-                    // TODO: use this above!
                     try!(parser.expect_one_of(
                         &[Token::Comma],
                         &[Token::CloseDelim(token::DelimToken::Paren)],
@@ -434,6 +437,8 @@ fn parse_func<'a>(
 // TODO: Can we use AsRef or Deref here?
 fn rust_to_c(typ: &str) -> &str {
     // TODO: warn on String or &str.
+    // TODO: are there any types that we should just die on?
+    //     - or should we assume that the programmer has handled it?
     // TODO: How do we handle pointers?
     match typ {
         "f32" => "float",
