@@ -3,7 +3,7 @@ name = "rusty-cheddar"
 version = "0.0.0"
 authors = ["Sean Marshallsay <srm.1708@gmail.com>"]
 
-description = "A compiler plugin to automatically generate C-style header files."
+description = "A compiler drop-in to automatically generate C-style header files."
 readme = "README.md"
 
 homepage = "https://github.com/Sean1708/rusty-cheddar"
@@ -11,6 +11,5 @@ repository = "https://github.com/Sean1708/rusty-cheddar.git"
 
 license = "MIT"
 
-[lib]
+[[bin]]
 name = "cheddar"
-plugin = true
