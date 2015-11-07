@@ -32,6 +32,25 @@ use std::error::Error;
 use syntax::visit::Visitor;
 
 
+macro_rules! expect {
+    ($e:expr,) => (expect!($e));
+    ($e:expr) => ({
+        match $e {
+            Some(val) => val,
+            None => panic!("called `expect!()` on a `None` value"),
+        }
+    });
+
+    ($e:expr, $msg:expr,) => (expect!($e, $msg));
+    ($e:expr, $msg:expr) => ({
+        match $e {
+            Some(val) => val,
+            None => panic!("{}", $msg),
+        }
+    });
+}
+
+
 struct CheddarCalls {
     dir: Option<PathBuf>,
     file: Option<PathBuf>,
