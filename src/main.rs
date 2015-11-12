@@ -2,7 +2,7 @@
 //     - Anything called once and only once shall be specified by full path.
 //     - Anything called between one and five times exclusive shall be specified by one level of
 //         indirection.
-//     - If a module is used fice times or more, it shall be imported.
+//     - If a module is used five times or more, it shall be imported.
 //     - Anything called five times or more shall be specfied only by the item name.
 //     - If you import a final item then always import it's parent.
 #![feature(rustc_private)]
@@ -29,6 +29,7 @@ use std::path::PathBuf;
 // Trait
 use rustc_driver::CompilerCalls;
 use std::error::Error;
+use syntax::print::pprust;
 use syntax::visit::Visitor;
 
 
@@ -169,7 +170,7 @@ fn check_repr_c(a: &ast::Attribute) -> bool {
 //     - span errors
 //         - need span and msg
 //     - internal errors
-//         - nedd file! line! and maybe message
+//         - need file! line! and maybe message
 //     - io errors
 //     - general errors
 //         - just message
@@ -197,6 +198,7 @@ impl CheddarVisitor {
         };
         // If it's not #[repr(C)] then it can't be called from C.
         if !i.attrs.iter().any(check_repr_c) { return; }
+        // TODO: Docstrings are stored in atrributes.
 
         let name = i.ident.name.as_str();
         self.buffer.push_str(&format!("typedef enum {} {{\n", name));
@@ -228,24 +230,91 @@ impl CheddarVisitor {
                     None => self.buffer.push_str(&format!("\t{},\n", var.name.name.as_str())),
                 };
             }
-
-            self.buffer.push_str(&format!("}} {};\n\n", name));
         } else {
             // TODO: definitely need a better error type!
+            // TODO: is it even possible to reach this branch?
             self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
         }
+
+        self.buffer.push_str(&format!("}} {};\n\n", name));
+    }
+
+    fn parse_struct(&mut self, i: &ast::Item) {
+        // If it's not visible it can't be called from C.
+        // TODO: Maybe a macro or method for this?
+        match i.vis {
+            ast::Visibility::Inherited => return,
+            _ => {},
+        }
+        // If it's not #[repr(C)] it can't be called from C.
+        if !i.attrs.iter().any(check_repr_c) { return; }
+        // TODO: Docstrings are stored in atrributes.
+
+        let name = i.ident.name.as_str();
+        self.buffer.push_str(&format!("typedef struct {} {{\n", name));
+        if let ast::Item_::ItemStruct(ref variants, ref generics) = i.node {
+            if generics.is_parameterized() {
+                // TODO: this isn't an io error. In fact this needs span info.
+                self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] structs can not be parameterized"));
+                return;
+            }
+
+            if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
+                for var in variant_vec {
+                    // TODO: how about print::pprust::ty_to_string()
+                    let name = expect!(var.node.ident());
+                    let ty = pprust::ty_to_string(&*var.node.ty);
+                    let ty = rust_to_c(&ty);
+                    self.buffer.push_str(&format!("\t{} {};\n", ty, name));
+                }
+            // TODO: how should we handle Unit and Tuple Structs?
+            } else {
+                // TODO: again needs span info.
+                self.error = Err(io::Error::new(io::ErrorKind::Other, "currently can not handle unit or tuple structs"));
+                return;
+            }
+        } else {
+            // TODO: definitely need a better error type!
+            // TODO: is it even possible to reach this branch?
+            self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
+        }
+
+        self.buffer.push_str(&format!("}} {};\n\n", name));
     }
 }
+
+fn rust_to_c(typ: &str) -> &str {
+    match typ {
+        "f32" => "float",
+        "f64" => "double",
+        "i8" => "int8_t",
+        "i16" => "int16_t",
+        "i32" => "int32_t",
+        "i64" => "int64_t",
+        "isize" => "intptr_t",
+        "u8" => "uint8_t",
+        "u16" => "uint16_t",
+        "u32" => "uint32_t",
+        "u64" => "uint64_t",
+        "usize" => "uintptr_t",
+        // This is why we write out structs and enums as `typedef ...`.
+        // We #include<stdbool.h> so bool is handled.
+        t => t,
+    }
+}
+
 
 impl<'v> Visitor<'v> for CheddarVisitor {
     // We use visit_item() because we need access to the attributes.
     fn visit_item(&mut self, i: &'v ast::Item) {
         // No point doing anything if we've had an error
+        // TODO: Should we return or just let compilation continue?
         if let Err(_) = self.error { return; }
         // Dispatch to correct method.
         match i.node {
             // TODO: Maybe these methods should return a Result?
             ast::Item_::ItemEnum(_, _) => self.parse_enum(i),
+            ast::Item_::ItemStruct(_, _) => self.parse_struct(i),
             _ => {},
         };
         // Just keep on walkin'.
