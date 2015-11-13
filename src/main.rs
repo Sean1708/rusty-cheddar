@@ -102,6 +102,8 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
         input: config::Input,
         input_path: Option<PathBuf>
     ) -> (config::Input, Option<PathBuf>) {
+        // TODO: this is Some("") when called with no file for some reason.
+        // println!("{:?}", input_path);
         self.default_calls.some_input(input, input_path)
     }
 
@@ -191,6 +193,7 @@ impl CheddarVisitor {
     }
 
     fn parse_enum(&mut self, i: &ast::Item) {
+        // TODO: these first few things are the same for all three so move them to visit_item.
         // If it's not visible it can't be called from C.
         match i.vis {
             ast::Visibility::Inherited => return,
@@ -218,8 +221,10 @@ impl CheddarVisitor {
                     return
                 }
                 match var.disr_expr {
+                    // TODO: could all this be handled by variant_to_string
                     // Handle a variant with default values.
                     Some(ref expr) => match expr.node {
+                        // TODO: we can use lit_to_string!
                         // TODO: This only handles positive integers.
                         ast::Expr_::ExprLit(ref lit) => match lit.node {
                             ast::Lit_::LitInt(ref i, _) => self.buffer.push_str(&format!("\t{} = {},\n", var.name.name.as_str(), i)),
@@ -241,7 +246,6 @@ impl CheddarVisitor {
 
     fn parse_struct(&mut self, i: &ast::Item) {
         // If it's not visible it can't be called from C.
-        // TODO: Maybe a macro or method for this?
         match i.vis {
             ast::Visibility::Inherited => return,
             _ => {},
@@ -261,7 +265,6 @@ impl CheddarVisitor {
 
             if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
                 for var in variant_vec {
-                    // TODO: how about print::pprust::ty_to_string()
                     let name = expect!(var.node.ident());
                     let ty = pprust::ty_to_string(&*var.node.ty);
                     let ty = rust_to_c(&ty);
@@ -276,15 +279,77 @@ impl CheddarVisitor {
         } else {
             // TODO: definitely need a better error type!
             // TODO: is it even possible to reach this branch?
+            // TODO: just use unreachable?
             self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
         }
 
         self.buffer.push_str(&format!("}} {};\n\n", name));
     }
+
+    fn parse_fn(&mut self, i: &ast::Item) {
+        // If it's not visible it can't be called from C.
+        match i.vis {
+            ast::Visibility::Inherited => return,
+            _ => {},
+        }
+
+        // TODO: Like this but check for #[no_mangle] instead.
+        // If it's not #[repr(C)] it can't be called from C.
+        // if !i.attrs.iter().any(check_repr_c) { return; }
+        // TODO: Docstrings are stored in atrributes.
+
+        let name = i.ident.name.as_str();
+
+        if let ast::Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = i.node {
+            use syntax::abi::Abi;
+            match abi {
+                // If it doesn't have a C ABI it can't be called from C.
+                Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
+                _ => return,
+            }
+            if generics.is_parameterized() {
+                // TODO: this isn't an io error. In fact this needs span info.
+                self.error = Err(io::Error::new(io::ErrorKind::Other, "`extern \"C\"` funcs can not be parameterized"));
+                return;
+            }
+
+            let fn_decl: &ast::FnDecl = &*fn_decl;
+            let output_type = &fn_decl.output;
+            let output_type = match output_type {
+                // TODO: Use the span, Sean.
+                &ast::FunctionRetTy::NoReturn(_) => {
+                    // TODO: are there cases when this is ok?
+                    self.error = Err(io::Error::new(io::ErrorKind::Other, "panics across a C boundary are bad!"));
+                    return;
+                },
+                &ast::FunctionRetTy::DefaultReturn(_) => "void".to_owned(),
+                &ast::FunctionRetTy::Return(ref ty) => {
+                    let ty = pprust::ty_to_string(&*ty);
+                    rust_to_c(&ty).to_owned()
+                },
+            };
+
+            self.buffer.push_str(&format!("{} {}(", output_type, name));
+
+            for arg in &fn_decl.inputs {
+                let arg_name = pprust::pat_to_string(&*arg.pat);
+                let arg_type = pprust::ty_to_string(&*arg.ty);
+                self.buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
+            }
+
+            // Remove the trailing comma and space.
+            self.buffer.pop();
+            self.buffer.pop();
+
+            self.buffer.push_str(");\n\n");
+        }
+    }
 }
 
 fn rust_to_c(typ: &str) -> &str {
+    // TODO: pointers (esp. function pointers).
     match typ {
+        "()" => "void",
         "f32" => "float",
         "f64" => "double",
         "i8" => "int8_t",
@@ -298,7 +363,7 @@ fn rust_to_c(typ: &str) -> &str {
         "u64" => "uint64_t",
         "usize" => "uintptr_t",
         // This is why we write out structs and enums as `typedef ...`.
-        // We #include<stdbool.h> so bool is handled.
+        // We `#include <stdbool.h>` so bool is handled.
         t => t,
     }
 }
@@ -313,8 +378,9 @@ impl<'v> Visitor<'v> for CheddarVisitor {
         // Dispatch to correct method.
         match i.node {
             // TODO: Maybe these methods should return a Result?
-            ast::Item_::ItemEnum(_, _) => self.parse_enum(i),
-            ast::Item_::ItemStruct(_, _) => self.parse_struct(i),
+            ast::Item_::ItemEnum(..) => self.parse_enum(i),
+            ast::Item_::ItemStruct(..) => self.parse_struct(i),
+            ast::Item_::ItemFn(..) => self.parse_fn(i),
             _ => {},
         };
         // Just keep on walkin'.
