@@ -35,6 +35,7 @@ use syntax::print::pprust;
 use syntax::visit::Visitor;
 
 
+// TODO: we need to get rid of this eventually.
 macro_rules! expect {
     ($e:expr,) => (expect!($e));
     ($e:expr) => ({
@@ -231,8 +232,32 @@ impl CheddarVisitor {
         CheddarVisitor { buffer: String::new(), error: Ok(()) }
     }
 
-    //fn parse_ty(&mut self, i: &ast::Item) {
-    //    // If it's not visible
+    fn parse_ty(&mut self, i: &ast::Item) {
+        // TODO: Maybe use check_repr_c in the future!
+        let (_, docs) = parse_attr(&i.attrs, |_| true, retrieve_docstring);
+        self.buffer.push_str(&docs);
+
+        let new_type = i.ident.name.as_str();
+        let old_type = match i.node {
+            ast::Item_::ItemTy(ref ty, ref generics) => {
+                if generics.is_parameterized() {
+                    // TODO: How to distinguish between types intended for C and public Rust types?
+                    //     - Do we even need to?
+                    //         - If not we should just leave this check out.
+                    self.error = Err(io::Error::new(io::ErrorKind::Other, "C types can not be parameterized"));
+                    return;
+                }
+
+                pprust::ty_to_string(&*ty)
+            },
+            _ => {
+                self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
+                return;
+            },
+        };
+
+        self.buffer.push_str(&format!("typedef {} {};\n\n", rust_to_c(&old_type), new_type));
+    }
 
     fn parse_enum(&mut self, i: &ast::Item) {
         let (repr_c, docs) = parse_attr(&i.attrs, check_repr_c, retrieve_docstring);
@@ -414,7 +439,7 @@ impl<'v> Visitor<'v> for CheddarVisitor {
             // TODO: Check for ItemStatic and ItemConst as well.
             //     - How would this work?
             //     - Is it even possible?
-            // ast::Item_::ItemTy(..) => self.parse_ty(i),
+            ast::Item_::ItemTy(..) => self.parse_ty(i),
             ast::Item_::ItemEnum(..) => self.parse_enum(i),
             ast::Item_::ItemStruct(..) => self.parse_struct(i),
             ast::Item_::ItemFn(..) => self.parse_fn(i),
