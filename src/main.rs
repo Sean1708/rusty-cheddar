@@ -1,3 +1,5 @@
+// TODO: MAKE THINGS CLEARER!!!
+//     - Give your variables descriptive names!!!
 // RULES:
 //     - Anything called once and only once shall be specified by full path.
 //     - Anything called between one and five times exclusive shall be specified by one level of
@@ -123,11 +125,12 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
         _sess: &session::Session
     ) -> rustc_driver::driver::CompileController<'a> {
         let mut control = rustc_driver::driver::CompileController::basic();
+        control.after_expand.stop = rustc_driver::Compilation::Stop;
         // TODO: let file = RefCell::new(self.file.clone());
         // TODO: let dir = RefCell::new(self.dir.clone());
         control.after_expand.callback = box |state| {
             // As far as I'm aware this should always be Some in this callback.
-            let krate = state.expanded_crate.expect(concat!(file!(), ":", line!()));
+            let krate = expect!(state.expanded_crate);
 
             // TODO: let dir = dir.unwrap_or(state.out_dir.map(|p| p.to_path_buf()).unwrap_or(state.session.working_dir.clone()));
             // TODO: let file = file.unwrap_or(state.crate_name.map(|p| PathBuf::from(p)).expect(concat!(file!(), ":", line!())));
@@ -156,6 +159,22 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
 }
 
 
+// TODO: I think this should be a method of CheddarVisitor so that we can set errors as needed.
+fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, String)
+    where C: Fn(&ast::Attribute) -> bool,
+          R: Fn(&ast::Attribute) -> String,
+{
+    let mut check_passed = false;
+    let mut retrieved_str = String::new();
+    for attr in attrs {
+        // Don't want to accidently set it to false after it's been set to true.
+        if !check_passed { check_passed = check(attr); }
+        retrieved_str.push_str(&retrieve(attr));
+    }
+
+    (check_passed, retrieved_str)
+}
+
 fn check_repr_c(a: &ast::Attribute) -> bool {
     match a.node.value.node {
         // TODO: use word.first() so we don't panic.
@@ -168,11 +187,31 @@ fn check_repr_c(a: &ast::Attribute) -> bool {
     }
 }
 
+fn check_no_mangle(attr: &ast::Attribute) -> bool {
+    match attr.node.value.node {
+        ast::MetaItem_::MetaWord(ref name) if *name == "no_mangle" => true,
+        _ => false,
+    }
+}
+
+// TODO: How do we do this without allocating so many Strings?
+fn retrieve_docstring(a: &ast::Attribute) -> String {
+    match a.node.value.node {
+        ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
+            // Docstring attributes omit the trailing newline.
+            ast::Lit_::LitStr(ref docs, _) => docs.to_string() + "\n",
+            _ => String::new(),
+        },
+        _ => String::new(),
+    }
+}
+
 // TODO: custom error type
 //     - span errors
 //         - need span and msg
 //     - internal errors
 //         - need file! line! and maybe message
+//         - maybe differentiate unreachable errors?
 //     - io errors
 //     - general errors
 //         - just message
@@ -192,16 +231,14 @@ impl CheddarVisitor {
         CheddarVisitor { buffer: String::new(), error: Ok(()) }
     }
 
+    //fn parse_ty(&mut self, i: &ast::Item) {
+    //    // If it's not visible
+
     fn parse_enum(&mut self, i: &ast::Item) {
-        // TODO: these first few things are the same for all three so move them to visit_item.
-        // If it's not visible it can't be called from C.
-        match i.vis {
-            ast::Visibility::Inherited => return,
-            _ => {},
-        };
+        let (repr_c, docs) = parse_attr(&i.attrs, check_repr_c, retrieve_docstring);
         // If it's not #[repr(C)] then it can't be called from C.
-        if !i.attrs.iter().any(check_repr_c) { return; }
-        // TODO: Docstrings are stored in atrributes.
+        if !repr_c { return; }
+        self.buffer.push_str(&docs);
 
         let name = i.ident.name.as_str();
         self.buffer.push_str(&format!("typedef enum {} {{\n", name));
@@ -213,12 +250,13 @@ impl CheddarVisitor {
             }
 
             // TODO: refactor this into it's own function?
+            // TODO: Docstrings on variants?
             for var in &definition.variants {
                 let var = &var.node;
                 if !var.data.is_unit() {
                     // TODO: also not io error
                     self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] enums must have unit variants"));
-                    return
+                    return;
                 }
                 match var.disr_expr {
                     // TODO: could all this be handled by variant_to_string
@@ -245,14 +283,10 @@ impl CheddarVisitor {
     }
 
     fn parse_struct(&mut self, i: &ast::Item) {
-        // If it's not visible it can't be called from C.
-        match i.vis {
-            ast::Visibility::Inherited => return,
-            _ => {},
-        }
-        // If it's not #[repr(C)] it can't be called from C.
-        if !i.attrs.iter().any(check_repr_c) { return; }
-        // TODO: Docstrings are stored in atrributes.
+        let (repr_c, docs) = parse_attr(&i.attrs, check_repr_c, retrieve_docstring);
+        // If it's not #[repr(C)] then it can't be called from C.
+        if !repr_c { return; }
+        self.buffer.push_str(&docs);
 
         let name = i.ident.name.as_str();
         self.buffer.push_str(&format!("typedef struct {} {{\n", name));
@@ -287,16 +321,10 @@ impl CheddarVisitor {
     }
 
     fn parse_fn(&mut self, i: &ast::Item) {
-        // If it's not visible it can't be called from C.
-        match i.vis {
-            ast::Visibility::Inherited => return,
-            _ => {},
-        }
-
-        // TODO: Like this but check for #[no_mangle] instead.
-        // If it's not #[repr(C)] it can't be called from C.
-        // if !i.attrs.iter().any(check_repr_c) { return; }
-        // TODO: Docstrings are stored in atrributes.
+        let (no_mangle, docs) = parse_attr(&i.attrs, check_no_mangle, retrieve_docstring);
+        // If it's not #[no_mangle] then it can't be called from C.
+        if !no_mangle { return; }
+        self.buffer.push_str(&docs);
 
         let name = i.ident.name.as_str();
 
@@ -343,6 +371,7 @@ impl CheddarVisitor {
 
             self.buffer.push_str(");\n\n");
         }
+        // TODO: Shoule there be an else here?
     }
 }
 
@@ -375,9 +404,17 @@ impl<'v> Visitor<'v> for CheddarVisitor {
         // No point doing anything if we've had an error
         // TODO: Should we return or just let compilation continue?
         if let Err(_) = self.error { return; }
+        // If it's not visible it can't be called from C.
+        if let ast::Visibility::Inherited = i.vis { return; }
+
         // Dispatch to correct method.
         match i.node {
             // TODO: Maybe these methods should return a Result?
+            //     - then we could leverage try! in the methods and only assign to self.error here.
+            // TODO: Check for ItemStatic and ItemConst as well.
+            //     - How would this work?
+            //     - Is it even possible?
+            // ast::Item_::ItemTy(..) => self.parse_ty(i),
             ast::Item_::ItemEnum(..) => self.parse_enum(i),
             ast::Item_::ItemStruct(..) => self.parse_struct(i),
             ast::Item_::ItemFn(..) => self.parse_fn(i),
