@@ -19,9 +19,7 @@ extern crate syntax;
 
 // External
 use rustc::session;
-use rustc::session::config;
 use syntax::ast;
-use syntax::diagnostics::registry;
 use syntax::visit;
 
 // Std
@@ -56,86 +54,19 @@ macro_rules! expect {
 }
 
 
-struct CheddarCalls {
-    dir: Option<PathBuf>,
-    file: Option<PathBuf>,
-    default_calls: rustc_driver::RustcDefaultCalls,
-}
-
-impl CheddarCalls {
-    fn new() -> CheddarCalls {
-        CheddarCalls {
-            dir: None,
-            file: None,
-            default_calls: rustc_driver::RustcDefaultCalls,
-        }
-    }
-}
+struct CheddarCalls;
 
 impl<'a> CompilerCalls<'a> for CheddarCalls {
-    fn early_callback(
-        &mut self,
-        m: &getopts::Matches,
-        r: &registry::Registry,
-        c: syntax::diagnostic::ColorConfig,
-    ) -> rustc_driver::Compilation {
-        self.default_calls.early_callback(m, r, c)
-    }
-
-    fn late_callback(
-        &mut self,
-        m: &getopts::Matches,
-        s: &session::Session,
-        i: &config::Input,
-        odir: &Option<PathBuf>,
-        ofile: &Option<PathBuf>,
-    ) -> rustc_driver::Compilation {
-        let dir = self.dir.clone();
-        let dir = dir.or(odir.clone());
-        self.dir = dir;
-
-        let file = self.file.clone();
-        let file = file.or(ofile.clone());
-        self.file = file;
-
-        self.default_calls.late_callback(m, s, i, odir, ofile)
-    }
-
-    fn some_input(
-        &mut self,
-        input: config::Input,
-        input_path: Option<PathBuf>
-    ) -> (config::Input, Option<PathBuf>) {
-        // TODO: this is Some("") when called with no file for Some reason.
-        // println!("{:?}", input_path);
-        self.default_calls.some_input(input, input_path)
-    }
-
-    fn no_input(
-        &mut self,
-        m: &getopts::Matches,
-        o: &config::Options,
-        odir: &Option<PathBuf>,
-        ofile: &Option<PathBuf>,
-        r: &registry::Registry
-    ) -> Option<(config::Input, Option<PathBuf>)> {
-        self.default_calls.no_input(m, o, odir, ofile, r)
-    }
-
     fn build_controller(
         &mut self,
         _sess: &session::Session
     ) -> rustc_driver::driver::CompileController<'a> {
         let mut control = rustc_driver::driver::CompileController::basic();
         control.after_expand.stop = rustc_driver::Compilation::Stop;
-        // TODO: let file = RefCell::new(self.file.clone());
-        // TODO: let dir = RefCell::new(self.dir.clone());
         control.after_expand.callback = box |state| {
             // As far as I'm aware this should always be Some in this callback.
             let krate = expect!(state.expanded_crate);
 
-            // TODO: let dir = dir.unwrap_or(state.out_dir.map(|p| p.to_path_buf()).unwrap_or(state.session.working_dir.clone()));
-            // TODO: let file = file.unwrap_or(state.crate_name.map(|p| PathBuf::from(p)).expect(concat!(file!(), ":", line!())));
             let header_file = PathBuf::from("cheddar.h");
             let mut visitor = CheddarVisitor::new();
 
@@ -468,5 +399,5 @@ fn main() {
     // TODO: check this isn't already there.
     //     - or maybe check whether this is here in early_callback().
     args.push("--crate-type=dylib".to_owned());
-    rustc_driver::run_compiler(&args, &mut CheddarCalls::new());
+    rustc_driver::run_compiler(&args, &mut CheddarCalls);
 }
