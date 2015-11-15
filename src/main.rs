@@ -95,6 +95,7 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
 
 
 // TODO: I think this should be a method of CheddarVisitor so that we can set errors as needed.
+// TODO: Maybe it would be wise to use syntax::attr here.
 fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, String)
     where C: Fn(&ast::Attribute) -> bool,
           R: Fn(&ast::Attribute) -> String,
@@ -113,9 +114,12 @@ fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, S
 fn check_repr_c(a: &ast::Attribute) -> bool {
     match a.node.value.node {
         // TODO: use word.first() so we don't panic.
-        ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word[0].node {
-            // Return true only if attribute is #[repr(C)].
-            ast::MetaItem_::MetaWord(ref name) if *name == "C" => true,
+        ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word.first() {
+            Some(p) => match p.node {
+                // Return true only if attribute is #[repr(C)].
+                ast::MetaItem_::MetaWord(ref name) if *name == "C" => true,
+                _ => false,
+            },
             _ => false,
         },
         _ => false,
