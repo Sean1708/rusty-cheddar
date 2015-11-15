@@ -198,6 +198,7 @@ fn check_no_mangle(attr: &ast::Attribute) -> bool {
 }
 
 // TODO: How do we do this without allocating so many Strings?
+//     - With Some() of course!
 fn retrieve_docstring(a: &ast::Attribute) -> String {
     match a.node.value.node {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
@@ -279,26 +280,13 @@ impl CheddarVisitor {
             // TODO: refactor this into it's own function?
             // TODO: Docstrings on variants?
             for var in &definition.variants {
-                let var = &var.node;
-                if !var.data.is_unit() {
+                if !var.node.data.is_unit() {
                     // TODO: also not io error
                     self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] enums must have unit variants"));
                     return;
                 }
-                match var.disr_expr {
-                    // TODO: could all this be handled by variant_to_string
-                    // Handle a variant with default values.
-                    Some(ref expr) => match expr.node {
-                        // TODO: we can use lit_to_string!
-                        // TODO: This only handles positive integers.
-                        ast::Expr_::ExprLit(ref lit) => match lit.node {
-                            ast::Lit_::LitInt(ref i, _) => self.buffer.push_str(&format!("\t{} = {},\n", var.name.name.as_str(), i)),
-                            _ => panic!("<more error handling>"),
-                        },
-                        _ => panic!("<insert proper error handling here>"),
-                    },
-                    None => self.buffer.push_str(&format!("\t{},\n", var.name.name.as_str())),
-                };
+
+                self.buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
             }
         } else {
             // TODO: definitely need a better error type!
