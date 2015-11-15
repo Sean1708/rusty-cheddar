@@ -27,6 +27,7 @@ use syntax::visit;
 // Std
 use std::io;
 use std::path::PathBuf;
+use std::process::Command;
 
 // Trait
 use rustc_driver::CompilerCalls;
@@ -476,6 +477,20 @@ fn main() {
         let arg = args.remove(i);
         PathBuf::from(arg)
     });
+    // TODO: We have to explicitly pass --sysroot, is there anyway around this?
+    // TODO: We should probably do something better than panic here.
+    let sysroot_output = Command::new("rustc").arg("--print=sysroot").output();
+    let sysroot = match sysroot_output {
+        Ok(ref output) => {
+            if output.status.success() {
+                String::from_utf8_lossy(&output.stdout)
+            } else {
+                panic!("`rust --print=sysroot` failed: {}", String::from_utf8_lossy(&output.stderr));
+            }
+        },
+        Err(error) => panic!("could not run `rust --print=sysroot`: {}", error),
+    };
+    args.push(format!("--sysroot={}", sysroot.trim()));
     // TODO: check this isn't already there.
     //     - or maybe check whether this is here in early_callback().
     args.push("--crate-type=dylib".to_owned());
