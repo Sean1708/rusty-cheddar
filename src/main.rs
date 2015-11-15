@@ -143,10 +143,12 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
                 // TODO: this be horrible.
                 header_file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
             ));
+            visitor.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
             visitor.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
 
             visit::walk_crate(&mut visitor, krate);
 
+            visitor.buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
             visitor.buffer.push_str("#endif\n");
 
             if let Err(e) = visitor.error {
