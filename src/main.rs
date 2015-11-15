@@ -277,14 +277,17 @@ impl CheddarVisitor {
                 return;
             }
 
-            // TODO: refactor this into it's own function?
-            // TODO: Docstrings on variants?
             for var in &definition.variants {
                 if !var.node.data.is_unit() {
                     // TODO: also not io error
                     self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] enums must have unit variants"));
                     return;
                 }
+
+                let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
+                // TODO: Some way to indent the docs.
+                //     - maybe have a prepend argument to retrieve_docstring then wrap it in a closure
+                self.buffer.push_str(&docs);
 
                 self.buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
             }
@@ -314,12 +317,14 @@ impl CheddarVisitor {
 
             if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
                 for var in variant_vec {
+                    let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
+                    self.buffer.push_str(&docs);
+
                     let name = expect!(var.node.ident());
                     let ty = pprust::ty_to_string(&*var.node.ty);
                     let ty = rust_to_c(&ty);
                     self.buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
-            // TODO: how should we handle Unit and Tuple Structs?
             } else {
                 // TODO: again needs span info.
                 self.error = Err(io::Error::new(io::ErrorKind::Other, "currently can not handle unit or tuple structs"));
