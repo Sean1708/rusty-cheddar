@@ -63,10 +63,10 @@ struct CheddarCalls {
 }
 
 impl CheddarCalls {
-    fn new(dir: Option<PathBuf>, file: Option<PathBuf>) -> CheddarCalls {
+    fn new() -> CheddarCalls {
         CheddarCalls {
-            dir: dir,
-            file: file,
+            dir: None,
+            file: None,
             default_calls: rustc_driver::RustcDefaultCalls,
         }
     }
@@ -447,36 +447,9 @@ impl<'v> Visitor<'v> for CheddarVisitor {
 }
 
 
-// TODO: take ref to String
-fn index_of(haystack: &Vec<String>, needle: String) -> Option<usize> {
-    for (index, elem) in haystack.iter().enumerate() {
-        if *elem == needle {
-            return Some(index);
-        }
-    }
-    None
-}
-
 fn main() {
     let mut args: Vec<_> = std::env::args().collect();
-    // TODO: can we do this in early_callback?
-    // TODO: better error checking.
-    let index = index_of(&args, "--cheddar-dir".to_owned());
-    let dir = index.map(|i| {
-        // Remove --cheddar-dir.
-        args.remove(i);
-        // Get directory path.
-        let arg = args.remove(i);
-        PathBuf::from(arg)
-    });
-    let index = index_of(&args, "--cheddar-file".to_owned());
-    let file = index.map(|i| {
-        // Remove --cheddar-file.
-        args.remove(i);
-        // Get file path.
-        let arg = args.remove(i);
-        PathBuf::from(arg)
-    });
+
     // TODO: We have to explicitly pass --sysroot, is there anyway around this?
     // TODO: We should probably do something better than panic here.
     let sysroot_output = Command::new("rustc").arg("--print=sysroot").output();
@@ -491,8 +464,9 @@ fn main() {
         Err(error) => panic!("could not run `rust --print=sysroot`: {}", error),
     };
     args.push(format!("--sysroot={}", sysroot.trim()));
+
     // TODO: check this isn't already there.
     //     - or maybe check whether this is here in early_callback().
     args.push("--crate-type=dylib".to_owned());
-    rustc_driver::run_compiler(&args, &mut CheddarCalls::new(dir, file));
+    rustc_driver::run_compiler(&args, &mut CheddarCalls::new());
 }
