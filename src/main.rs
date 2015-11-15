@@ -105,7 +105,7 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
         input: config::Input,
         input_path: Option<PathBuf>
     ) -> (config::Input, Option<PathBuf>) {
-        // TODO: this is Some("") when called with no file for some reason.
+        // TODO: this is Some("") when called with no file for Some reason.
         // println!("{:?}", input_path);
         self.default_calls.some_input(input, input_path)
     }
