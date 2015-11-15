@@ -6,7 +6,7 @@
 //         indirection.
 //     - If a module is used five times or more, it shall be imported.
 //     - Anything called five times or more shall be specfied only by the item name.
-//     - If you import a final item then always import it's parent.
+//     - If you import a final item then import it's parent, unless it is a trait.
 #![feature(rustc_private)]
 #![feature(box_syntax)]
 
@@ -20,38 +20,19 @@ extern crate syntax;
 // External
 use rustc::session;
 use syntax::ast;
+use syntax::print::pprust;
 use syntax::visit;
 
 // Std
-use std::io;
 use std::path::PathBuf;
 use std::process::Command;
 
 // Trait
 use rustc_driver::CompilerCalls;
 use std::error::Error;
-use syntax::print::pprust;
+use std::fmt::Display;
+use syntax::codemap::Pos;
 use syntax::visit::Visitor;
-
-
-// TODO: we need to get rid of this eventually.
-macro_rules! expect {
-    ($e:expr,) => (expect!($e));
-    ($e:expr) => ({
-        match $e {
-            Some(val) => val,
-            None => panic!("called `expect!()` on a `None` value"),
-        }
-    });
-
-    ($e:expr, $msg:expr,) => (expect!($e, $msg));
-    ($e:expr, $msg:expr) => ({
-        match $e {
-            Some(val) => val,
-            None => panic!("{}", $msg),
-        }
-    });
-}
 
 
 struct CheddarCalls;
@@ -65,7 +46,7 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
         control.after_expand.stop = rustc_driver::Compilation::Stop;
         control.after_expand.callback = box |state| {
             // As far as I'm aware this should always be Some in this callback.
-            let krate = expect!(state.expanded_crate);
+            let krate = state.expanded_crate.expect(concat!(file!(), ":", line!(), ": no crate found"));
 
             let header_file = PathBuf::from("cheddar.h");
             let mut visitor = CheddarVisitor::new();
@@ -83,11 +64,13 @@ impl<'a> CompilerCalls<'a> for CheddarCalls {
             visitor.buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
             visitor.buffer.push_str("#endif\n");
 
-            if let Err(e) = visitor.error {
-                state.session.err(&format!("error creating header file: {}", e.description()));
-            } else {
-                println!("{}", visitor.buffer);
-            }
+            match visitor.error {
+                Err(Cherror::Span(span, msg)) => state.session.span_err(span, msg),
+                Err(Cherror::Internal(file, line, msg)) => {
+                    state.session.fatal(&format!("{}:{}: {}", file, line, msg.unwrap_or("unknown")));
+                },
+                _ => println!("{}", visitor.buffer),
+            };
         };
         control
     }
@@ -113,7 +96,6 @@ fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, S
 
 fn check_repr_c(a: &ast::Attribute) -> bool {
     match a.node.value.node {
-        // TODO: use word.first() so we don't panic.
         ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word.first() {
             Some(p) => match p.node {
                 // Return true only if attribute is #[repr(C)].
@@ -140,22 +122,37 @@ fn retrieve_docstring(a: &ast::Attribute) -> String {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
             // Docstring attributes omit the trailing newline.
             ast::Lit_::LitStr(ref docs, _) => docs.to_string() + "\n",
+            // TODO: Is this an error?
             _ => String::new(),
         },
         _ => String::new(),
     }
 }
 
-// TODO: custom error type
-//     - span errors
-//         - need span and msg
-//     - internal errors
-//         - need file! line! and maybe message
-//         - maybe differentiate unreachable errors?
-//     - io errors
-//     - general errors
-//         - just message
-type Chesult = std::io::Result<()>;
+
+type FileName = &'static str;
+type LineNumber = u32;
+#[derive(Debug)]
+enum Cherror {
+    Span(syntax::codemap::Span, &'static str),
+    Internal(FileName, LineNumber, Option<&'static str>),
+}
+type Chesult = Result<(), Cherror>;
+
+impl Display for Cherror {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            Cherror::Span(span, msg) => write!(f, "error in bytes {} to {}: {}", span.lo.to_usize(), span.hi.to_usize(), msg),
+            Cherror::Internal(file, line, msg) => write!(f, "internal error:{}:{}: {}", file, line, msg.unwrap_or("unknown")),
+        }
+    }
+}
+
+impl Error for Cherror {
+    fn description(&self) -> &str {
+        "error in rusty-cheddar"
+    }
+}
 
 struct CheddarVisitor {
     buffer: String,
@@ -164,6 +161,23 @@ struct CheddarVisitor {
     /// We don't want to panic the compiler so we store error information and handle any error
     /// messages once we've walked the crate.
     error: Chesult,
+}
+
+macro_rules! fail {
+    ($container:expr, $span:expr, $msg:expr) => {{
+        $container = Err(Cherror::Span($span, $msg));
+        return;
+    }};
+
+    ($container:expr, $msg:expr) => {{
+        $container = Err(Cherror::Internal(file!(), line!(), Some($msg)));
+        return;
+    }};
+
+    ($container:expr) => {{
+        $container = Err(Cherror::Internal(file!(), line!(), None));
+        return;
+    }};
 }
 
 impl CheddarVisitor {
@@ -183,15 +197,14 @@ impl CheddarVisitor {
                     // TODO: How to distinguish between types intended for C and public Rust types?
                     //     - Do we even need to?
                     //         - If not we should just leave this check out.
-                    self.error = Err(io::Error::new(io::ErrorKind::Other, "C types can not be parameterized"));
-                    return;
+                    fail!(self.error, i.span, "C types can not be parameterized");
                 }
 
                 pprust::ty_to_string(&*ty)
             },
             _ => {
-                self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
-                return;
+                // TODO: Show which incorrect Item_.
+                fail!(self.error, "parse_ty called on wrong Item_");
             },
         };
 
@@ -208,16 +221,12 @@ impl CheddarVisitor {
         self.buffer.push_str(&format!("typedef enum {} {{\n", name));
         if let ast::Item_::ItemEnum(ref definition, ref generics) = i.node {
             if generics.is_parameterized() {
-                // TODO: this isn't an io error. In fact this needs span info.
-                self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] enums can not be parameterized"));
-                return;
+                fail!(self.error, i.span, "cheddar can not handle parameterized #[repr(C)] enums");
             }
 
             for var in &definition.variants {
                 if !var.node.data.is_unit() {
-                    // TODO: also not io error
-                    self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] enums must have unit variants"));
-                    return;
+                    fail!(self.error, var.span, "cheddar can not handle #[repr(C)] enums with non-unit variants");
                 }
 
                 let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
@@ -228,9 +237,8 @@ impl CheddarVisitor {
                 self.buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
             }
         } else {
-            // TODO: definitely need a better error type!
-            // TODO: is it even possible to reach this branch?
-            self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
+            // TODO: Show which incorrect Item_.
+            fail!(self.error, "parse_enum called in wrong Item_");
         }
 
         self.buffer.push_str(&format!("}} {};\n\n", name));
@@ -244,11 +252,10 @@ impl CheddarVisitor {
 
         let name = i.ident.name.as_str();
         self.buffer.push_str(&format!("typedef struct {} {{\n", name));
+
         if let ast::Item_::ItemStruct(ref variants, ref generics) = i.node {
             if generics.is_parameterized() {
-                // TODO: this isn't an io error. In fact this needs span info.
-                self.error = Err(io::Error::new(io::ErrorKind::Other, "#[repr(C)] structs can not be parameterized"));
-                return;
+                fail!(self.error, i.span, "cheddar can not handle parameterized #[repr(C)] structs");
             }
 
             if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
@@ -256,21 +263,19 @@ impl CheddarVisitor {
                     let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
                     self.buffer.push_str(&docs);
 
-                    let name = expect!(var.node.ident());
+                    let name = match var.node.ident() {
+                        Some(name) => name,
+                        None => fail!(self.error, "a tuple struct snuck through"),
+                    };
                     let ty = pprust::ty_to_string(&*var.node.ty);
                     let ty = rust_to_c(&ty);
                     self.buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
             } else {
-                // TODO: again needs span info.
-                self.error = Err(io::Error::new(io::ErrorKind::Other, "currently can not handle unit or tuple structs"));
-                return;
+                fail!(self.error, i.span, "cheddar can not handle unit or tuple #[repr(C)] structs");
             }
         } else {
-            // TODO: definitely need a better error type!
-            // TODO: is it even possible to reach this branch?
-            // TODO: just use unreachable?
-            self.error = Err(io::Error::new(io::ErrorKind::Other, concat!("internal error: ", file!(), ":", line!())));
+            fail!(self.error, "parse_struct called on wrong Item_");
         }
 
         self.buffer.push_str(&format!("}} {};\n\n", name));
@@ -292,19 +297,16 @@ impl CheddarVisitor {
                 _ => return,
             }
             if generics.is_parameterized() {
-                // TODO: this isn't an io error. In fact this needs span info.
-                self.error = Err(io::Error::new(io::ErrorKind::Other, "`extern \"C\"` funcs can not be parameterized"));
-                return;
+                fail!(self.error, i.span, "cheddar can not handle parameterized extern functions");
             }
 
             let fn_decl: &ast::FnDecl = &*fn_decl;
             let output_type = &fn_decl.output;
             let output_type = match output_type {
                 // TODO: Use the span, Sean.
-                &ast::FunctionRetTy::NoReturn(_) => {
+                &ast::FunctionRetTy::NoReturn(span) => {
                     // TODO: are there cases when this is ok?
-                    self.error = Err(io::Error::new(io::ErrorKind::Other, "panics across a C boundary are bad!"));
-                    return;
+                    fail!(self.error, span, "panics across a C boundary are naughty!");
                 },
                 &ast::FunctionRetTy::DefaultReturn(_) => "void".to_owned(),
                 &ast::FunctionRetTy::Return(ref ty) => {
@@ -326,8 +328,10 @@ impl CheddarVisitor {
             self.buffer.pop();
 
             self.buffer.push_str(");\n\n");
+        } else {
+            // TODO: show which Item_.
+            fail!(self.error, "parse_fn called on wrong Item_");
         }
-        // TODO: Shoule there be an else here?
     }
 }
 
