@@ -248,10 +248,10 @@ fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, S
     (check_passed, retrieved_str)
 }
 
-fn check_repr_c(a: &ast::Attribute) -> bool {
-    match a.node.value.node {
+fn check_repr_c(attr: &ast::Attribute) -> bool {
+    match attr.node.value.node {
         ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word.first() {
-            Some(p) => match p.node {
+            Some(word) => match word.node {
                 // Return true only if attribute is #[repr(C)].
                 ast::MetaItem_::MetaWord(ref name) if *name == "C" => true,
                 _ => false,
@@ -271,8 +271,8 @@ fn check_no_mangle(attr: &ast::Attribute) -> bool {
 
 // TODO: How do we do this without allocating so many Strings?
 //     - With Some() of course!
-fn retrieve_docstring(a: &ast::Attribute) -> String {
-    match a.node.value.node {
+fn retrieve_docstring(attr: &ast::Attribute) -> String {
+    match attr.node.value.node {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
             // Docstring attributes omit the trailing newline.
             ast::Lit_::LitStr(ref docs, _) => docs.to_string() + "\n",
@@ -342,12 +342,12 @@ impl CheddarVisitor {
         CheddarVisitor { buffer: String::new(), error: Ok(()) }
     }
 
-    fn parse_ty(&mut self, i: &ast::Item) {
+    fn parse_ty(&mut self, item: &ast::Item) {
         // TODO: Maybe use check_repr_c in the future!
-        let (_, docs) = parse_attr(&i.attrs, |_| true, retrieve_docstring);
+        let (_, docs) = parse_attr(&item.attrs, |_| true, retrieve_docstring);
 
-        let new_type = i.ident.name.as_str();
-        let old_type = match i.node {
+        let new_type = item.ident.name.as_str();
+        let old_type = match item.node {
             ast::Item_::ItemTy(ref ty, ref generics) => {
                 // rusty-cheddar ignores generics.
                 if generics.is_parameterized() { return; }
@@ -364,17 +364,17 @@ impl CheddarVisitor {
         self.buffer.push_str(&format!("typedef {} {};\n\n", rust_to_c(&old_type), new_type));
     }
 
-    fn parse_enum(&mut self, i: &ast::Item) {
-        let (repr_c, docs) = parse_attr(&i.attrs, check_repr_c, retrieve_docstring);
+    fn parse_enum(&mut self, item: &ast::Item) {
+        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, retrieve_docstring);
         // If it's not #[repr(C)] then it can't be called from C.
         if !repr_c { return; }
         self.buffer.push_str(&docs);
 
-        let name = i.ident.name.as_str();
+        let name = item.ident.name.as_str();
         self.buffer.push_str(&format!("typedef enum {} {{\n", name));
-        if let ast::Item_::ItemEnum(ref definition, ref generics) = i.node {
+        if let ast::Item_::ItemEnum(ref definition, ref generics) = item.node {
             if generics.is_parameterized() {
-                fail!(self.error, i.span, "cheddar can not handle parameterized #[repr(C)] enums");
+                fail!(self.error, item.span, "cheddar can not handle parameterized #[repr(C)] enums");
             }
 
             for var in &definition.variants {
@@ -397,18 +397,18 @@ impl CheddarVisitor {
         self.buffer.push_str(&format!("}} {};\n\n", name));
     }
 
-    fn parse_struct(&mut self, i: &ast::Item) {
-        let (repr_c, docs) = parse_attr(&i.attrs, check_repr_c, retrieve_docstring);
+    fn parse_struct(&mut self, item: &ast::Item) {
+        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, retrieve_docstring);
         // If it's not #[repr(C)] then it can't be called from C.
         if !repr_c { return; }
         self.buffer.push_str(&docs);
 
-        let name = i.ident.name.as_str();
+        let name = item.ident.name.as_str();
         self.buffer.push_str(&format!("typedef struct {} {{\n", name));
 
-        if let ast::Item_::ItemStruct(ref variants, ref generics) = i.node {
+        if let ast::Item_::ItemStruct(ref variants, ref generics) = item.node {
             if generics.is_parameterized() {
-                fail!(self.error, i.span, "cheddar can not handle parameterized #[repr(C)] structs");
+                fail!(self.error, item.span, "cheddar can not handle parameterized #[repr(C)] structs");
             }
 
             // TODO: maybe .fields() and .is_struct() can help here?
@@ -426,7 +426,7 @@ impl CheddarVisitor {
                     self.buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
             } else {
-                fail!(self.error, i.span, "cheddar can not handle unit or tuple #[repr(C)] structs");
+                fail!(self.error, item.span, "cheddar can not handle unit or tuple #[repr(C)] structs");
             }
         } else {
             fail!(self.error, "parse_struct called on wrong Item_");
@@ -435,15 +435,15 @@ impl CheddarVisitor {
         self.buffer.push_str(&format!("}} {};\n\n", name));
     }
 
-    fn parse_fn(&mut self, i: &ast::Item) {
-        let (no_mangle, docs) = parse_attr(&i.attrs, check_no_mangle, retrieve_docstring);
+    fn parse_fn(&mut self, item: &ast::Item) {
+        let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, retrieve_docstring);
         // If it's not #[no_mangle] then it can't be called from C.
         if !no_mangle { return; }
         self.buffer.push_str(&docs);
 
-        let name = i.ident.name.as_str();
+        let name = item.ident.name.as_str();
 
-        if let ast::Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = i.node {
+        if let ast::Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
             use syntax::abi::Abi;
             match abi {
                 // If it doesn't have a C ABI it can't be called from C.
@@ -451,13 +451,12 @@ impl CheddarVisitor {
                 _ => return,
             }
             if generics.is_parameterized() {
-                fail!(self.error, i.span, "cheddar can not handle parameterized extern functions");
+                fail!(self.error, item.span, "cheddar can not handle parameterized extern functions");
             }
 
             let fn_decl: &ast::FnDecl = &*fn_decl;
             let output_type = &fn_decl.output;
             let output_type = match output_type {
-                // TODO: Use the span, Sean.
                 &ast::FunctionRetTy::NoReturn(span) => {
                     // TODO: are there cases when this is ok?
                     fail!(self.error, span, "panics across a C boundary are naughty!");
@@ -514,29 +513,29 @@ fn rust_to_c(typ: &str) -> &str {
 
 impl<'v> Visitor<'v> for CheddarVisitor {
     // We use visit_item() because we need access to the attributes.
-    fn visit_item(&mut self, i: &'v ast::Item) {
+    fn visit_item(&mut self, item: &'v ast::Item) {
         // No point doing anything if we've had an error
         // TODO: Should we return or just let compilation continue?
         if let Err(_) = self.error { return; }
         // If it's not visible it can't be called from C.
-        if let ast::Visibility::Inherited = i.vis { return; }
+        if let ast::Visibility::Inherited = item.vis { return; }
 
         // Dispatch to correct method.
-        match i.node {
+        match item.node {
             // TODO: Maybe these methods should return a Result?
             //     - then we could leverage try! in the methods and only assign to self.error here.
             //     - does this next!
             // TODO: Check for ItemStatic and ItemConst as well.
             //     - How would this work?
             //     - Is it even possible?
-            ast::Item_::ItemTy(..) => self.parse_ty(i),
-            ast::Item_::ItemEnum(..) => self.parse_enum(i),
-            ast::Item_::ItemStruct(..) => self.parse_struct(i),
-            ast::Item_::ItemFn(..) => self.parse_fn(i),
+            ast::Item_::ItemTy(..) => self.parse_ty(item),
+            ast::Item_::ItemEnum(..) => self.parse_enum(item),
+            ast::Item_::ItemStruct(..) => self.parse_struct(item),
+            ast::Item_::ItemFn(..) => self.parse_fn(item),
             _ => {},
         };
         // Just keep on walkin'.
-        visit::walk_item(self, i);
+        visit::walk_item(self, item);
     }
 }
 
@@ -559,8 +558,5 @@ fn main() {
     };
     args.push(format!("--sysroot={}", sysroot.trim()));
 
-    // TODO: check this isn't already there.
-    //     - or maybe check whether this is here in early_callback().
-    args.push("--crate-type=dylib".to_owned());
     rustc_driver::run_compiler(&args, &mut CheddarCalls);
 }
