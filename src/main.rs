@@ -73,10 +73,9 @@
 //! }
 //! ```
 //!
-//! Then just call `cheddar` on the file:
+//! Then just call `cheddar capi.rs > capi.h` to create the header file:
 //!
-//! ```
-//! $ cheddar capi.rs
+//! ```c
 //! #ifndef cheddar_gen_cheddar_h
 //! #define cheddar_gen_cheddar_h
 //!
@@ -118,8 +117,6 @@
 //! #endif
 //!
 //! #endif
-//!
-//! $ cheddar capi.rs > capi.h
 //! ```
 //!
 //! ### Typedefs
