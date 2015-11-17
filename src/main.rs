@@ -320,7 +320,7 @@ impl CheddarVisitor {
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
                 let arg_type = pprust::ty_to_string(&*arg.ty);
-                self.buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
+                self.buffer.push_str(&format!("{} {}, ", rust_to_c(&arg_type), arg_name));
             }
 
             // Remove the trailing comma and space.
