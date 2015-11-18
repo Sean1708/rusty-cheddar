@@ -20,6 +20,37 @@ Rust equivalent](https://github.com/Diggsey/multirust-rs).
 
 ## Usage
 
+```none
+$ cat test.rs
+#[repr(C)]
+pub struct Person {
+    age: i32,
+    height: f64,
+}
+$ cheddar test.rs
+#ifndef cheddar_gen_cheddar_h
+#define cheddar_gen_cheddar_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef struct Person {
+	int32_t age;
+	double height;
+} Person;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+$ cheddar test.rs > test.h
+```
+
 Currently rusty-cheddar can only be run on a single rust file and does not yet support writing
 output to a file. There are plans to make rusty-cheddar `cargo` aware and possibly even a full
 `rustc` replacement, but there are ongoing issues with these. rusty-cheddar also targets C99 or
