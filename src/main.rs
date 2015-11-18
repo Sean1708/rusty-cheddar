@@ -470,15 +470,20 @@ impl CheddarVisitor {
 
             self.buffer.push_str(&format!("{} {}(", output_type, name));
 
+            // TODO: Is there a nicer way of doing this?
+            let has_args = fn_decl.inputs.len() > 0;
+
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
                 let arg_type = pprust::ty_to_string(&*arg.ty);
                 self.buffer.push_str(&format!("{} {}, ", rust_to_c(&arg_type), arg_name));
             }
 
-            // Remove the trailing comma and space.
-            self.buffer.pop();
-            self.buffer.pop();
+            if has_args {
+                // Remove the trailing comma and space.
+                self.buffer.pop();
+                self.buffer.pop();
+            }
 
             self.buffer.push_str(");\n\n");
         } else {
