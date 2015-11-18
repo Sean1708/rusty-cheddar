@@ -187,4 +187,32 @@ uint16_t MyAdd_add_u16(uint16_t l, uint16_t r);
 // Some more boilerplate omitted.
 ```
 
+### Type Conversions
+
+As of commit 976d215ad6c4cdc370dbda161f33fb8b4e02bcad the function which converts types handles all
+numeric types and any user defined types correctly. Types defined in other crates (notably `libc`
+and `std`) are not handled correctly and function pointers are not handled correctly.
+
+## Contributing
+
+Contributions to rusty-cheddar are more than welcome.
+
+### Bugs
+
+If you find a bug or have a feature request please open an issue. I can't guarantee that I'll fix it
+but I'll give it a damn good go.
+
+If you find the source code unclear in any way then I consider that a bug. I try to make my source
+code as clear as possible but I'm not very good at it, so any help in that regard is appreciated.
+
+### PRs
+
+I love pull requests they tend to make my job much easier, so if you want to fix a bug or implement a
+feature yourself then that would be great. If you're confused by anything or need some pointers on
+how to proceed then feel free to open an issue so that I can help, otherwise
+[this tutorial](https://github.com/nrc/stupid-stats) and
+[these docs](http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html) are a good
+place to start.
+
+
 [repo]: https://github.com/Sean1708/rusty-cheddar
