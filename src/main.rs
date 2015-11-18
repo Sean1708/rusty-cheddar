@@ -494,26 +494,36 @@ impl CheddarVisitor {
 }
 
 fn rust_to_c(typ: &str) -> String {
-    // TODO: Pointers (esp. function pointers).
-    // TODO: Is .to_owned() on a String a no-op?
-    match typ {
-        "()" => "void",
-        "f32" => "float",
-        "f64" => "double",
-        "i8" => "int8_t",
-        "i16" => "int16_t",
-        "i32" => "int32_t",
-        "i64" => "int64_t",
-        "isize" => "intptr_t",
-        "u8" => "uint8_t",
-        "u16" => "uint16_t",
-        "u32" => "uint32_t",
-        "u64" => "uint64_t",
-        "usize" => "uintptr_t",
-        // This is why we write out structs and enums as `typedef ...`.
-        // We `#include <stdbool.h>` so bool is handled.
-        t => t,
-    }.to_owned()
+    // TODO: Function pointers.
+    // TODO: Test pointers to pointers.
+    if typ.starts_with("*mut") {
+        // Remove the "*mut".
+        let typ = &typ[4..].trim();
+        format!("{}*", rust_to_c(typ))
+    } else if typ.starts_with("*const") {
+        // Remove the "*const".
+        let typ = &typ[6..].trim();
+        format!("{}*", rust_to_c(typ))
+    } else {
+        match typ {
+            "()" => "void",
+            "f32" => "float",
+            "f64" => "double",
+            "i8" => "int8_t",
+            "i16" => "int16_t",
+            "i32" => "int32_t",
+            "i64" => "int64_t",
+            "isize" => "intptr_t",
+            "u8" => "uint8_t",
+            "u16" => "uint16_t",
+            "u32" => "uint32_t",
+            "u64" => "uint64_t",
+            "usize" => "uintptr_t",
+            // This is why we write out structs and enums as `typedef ...`.
+            // We `#include <stdbool.h>` so bool is handled.
+            typ => typ,
+        }.to_owned()
+    }
 }
 
 
