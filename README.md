@@ -28,125 +28,32 @@ really really really have to use an older standard then please open an issue at 
 will begrudgingly figure out how to implement support for it (after arguing with you lots and lots).
 
 The usage is fairly simple, first you should write a rust file with a C callable API (rusty-cheddar
-does not yet support any error checking or warnings but this is planned):
+does not yet support any error checking or warnings but this is planned) and then just call
+`cheddar` on the file. `cheddar` prints the header to stdout (for now, I'm working on a way to print
+it to a suitable file) so you probably want to run it as `cheddar capi.rs > capi.h`, after checking
+that it's correct.
 
-```rust
-// File: ./capi.rs
-#![allow(non_snake_case)]
-
-/// Typedef docstrings!
-pub type Kg = f32;
-
-/// This is documentation!!!!
-///
-/// With two whole lines!!
-#[repr(C)]
-pub enum Eye {
-    Blue = 1,
-    /// Unfortunately variant docstrings are not indented properly yet.
-    Green,
-    Red,
-}
-
-/// Doccy doc for a struct-a-roony!!
-#[repr(C)]
-pub struct Person {
-    age: i8,
-    eyes: Eye,
-    weight: Kg,
-    height: f32,
-}
-
-/// Private functions are ignored.
-#[no_mangle]
-extern fn private_c(age: i8) {
-    println!("Creating a {} year old!", age);
-}
-
-/// As are non-C functions
-pub fn public_rust(weight_lbs: f32) {
-    println!("Who weighs {} lbs.", weight_lbs);
-}
-
-#[no_mangle]
-/// Function docs.
-pub extern fn Person_create(age: i8, eyes: Eye, weight_lbs: f32, height_ins: f32) -> Person {
-    private_c(age);
-    public_rust(weight_lbs);
-    Person {
-        age: age,
-        eyes: eyes,
-        weight: weight_lbs * 0.45,
-        height: height_ins * 0.0254,
-    }
-}
-
-#[no_mangle]
-pub extern fn Person_describe(person: Person) {
-    let eyes = match person.eyes {
-        Eye::Blue => "blue",
-        Eye::Green => "green",
-        Eye::Red => "red",
-    };
-    println!(
-        "The {}m {} year old weighed {}kg and had {} eyes.",
-        person.height, person.age, person.weight, eyes,
-    );
-}
-```
-
-Then just call `cheddar` on the file:
-
-```
-$ cheddar capi.rs
-#ifndef cheddar_gen_cheddar_h
-#define cheddar_gen_cheddar_h
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdint.h>
-#include <stdbool.h>
-
-/// Typedef docstrings!
-typedef float Kg;
-
-/// This is documentation!!!!
-///
-/// With two whole lines!!
-typedef enum Eye {
-	Blue = 1,
-/// Unfortunately variant docstrings are not indented properly yet.
-	Green,
-	Red,
-} Eye;
-
-/// Doccy doc for a struct-a-roony!!
-typedef struct Person {
-	int8_t age;
-	Eye eyes;
-	Kg weight;
-	float height;
-} Person;
-
-/// Function docs.
-Person Person_create(int8_t age, Eye eyes, float weight_lbs, float height_ins);
-
-void Person_describe(Person person);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-
-$ cheddar capi.rs > capi.h
-```
+In the examples below, boilerplate has been omitted from the header.
 
 ### Typedefs
 
 rusty-cheddar converts `pub type A = B` into `typedef B A;`. Types containing generics are ignored.
+
+Rust:
+
+```rust
+type UInt32 = u32;
+pub type UInt64 = u64;
+pub type MyOption<T> = Option<T>
+```
+
+Header:
+
+```C
+// Some boilerplate omitted.
+typedef uint64_t UInt64;
+// Some more boilerplate omitted.
+```
 
 ### Enums
 
@@ -154,10 +61,76 @@ rusty-cheddar will convert public enums which are marked `#[repr(C)]`. If the en
 contains tuple or struct variants then `cheddar` will fail. rusty-cheddar should correctly handle
 explicit discriminants.
 
+Rust:
+
+```rust
+#[repr(C)]
+pub enum Colours {
+    Red = -6,
+    Blue,
+    Green = 7,
+    Yellow,
+}
+
+// This would fail is it was #[repr(C)].
+pub enum Tastes<T> {
+    Savoury,
+    Sweet,
+}
+
+// This would fail if it was public.
+#[repr(C)]
+enum Units {
+    Kg(f64),
+    M(f64),
+    S(f64),
+    A(f64),
+    K(f64),
+    Mol(f64),
+    Cd(f64),
+}
+```
+
+Header:
+
+```C
+// Some boilerplate omitted.
+typedef enum Colours {
+        Red = -6,
+        Blue,
+        Green = 7,
+        Yellow,
+} Colours;
+// Some more boilerplate omitted.
+```
+
 ### Structs
 
-Structs are handled very similarly to enums, they must be marked `#[repr(C)]` and they must not
+Structs are handled very similarly to enums, they must be public, marked `#[repr(C)]`, and they must not
 contain generics (this currently only checked at the struct-level, generic fields are not checked).
+
+Rust:
+
+```rust
+#[repr(C)]
+pub struct Person {
+    age: i32,
+    height: f64,
+    weight: f64,
+}
+```
+
+Header:
+
+```C
+// Some boilerplate omitted.
+typedef struct Person {
+        int32_t age;
+        double height;
+        double weight;
+} Person;
+// Some more boilerplate omitted.
+```
 
 ### Functions
 
@@ -175,5 +148,43 @@ in error, or if one has been omitted, then please open an issue at the [repo].
 
 rusty-cheddar will fail on functions which are marked as diverging (`-> !`).
 
+Rust:
+
+```rust
+use std::ops::Add;
+
+#[no_mangle]
+pub extern fn hello() {
+    println!("Hello!");
+}
+
+fn add<O, R, L: Add<R, Output=O>>(l: L, r: R) -> O {
+    l + r
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern fn MyAdd_add_u8(l: u8, r: u8) -> u8 {
+    add(l, r)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern fn MyAdd_add_u16(l: u16, r: u16) -> u16 {
+    add(l, r)
+}
+```
+
+Header:
+
+```C
+// Some boilerplate omitted.
+void hello();
+
+uint8_t MyAdd_add_u8(uint8_t l, uint8_t r);
+
+uint16_t MyAdd_add_u16(uint16_t l, uint16_t r);
+// Some more boilerplate omitted.
+```
 
 [repo]: https://github.com/Sean1708/rusty-cheddar
