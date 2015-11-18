@@ -493,8 +493,9 @@ impl CheddarVisitor {
     }
 }
 
-fn rust_to_c(typ: &str) -> &str {
-    // TODO: pointers (esp. function pointers).
+fn rust_to_c(typ: &str) -> String {
+    // TODO: Pointers (esp. function pointers).
+    // TODO: Is .to_owned() on a String a no-op?
     match typ {
         "()" => "void",
         "f32" => "float",
@@ -512,7 +513,7 @@ fn rust_to_c(typ: &str) -> &str {
         // This is why we write out structs and enums as `typedef ...`.
         // We `#include <stdbool.h>` so bool is handled.
         t => t,
-    }
+    }.to_owned()
 }
 
 
