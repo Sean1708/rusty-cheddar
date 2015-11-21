@@ -47,70 +47,36 @@ impl lint::LintPass for CheddarPass {
 
 impl lint::EarlyLintPass for CheddarPass {
     // Must use check_item so we can get attributes.
-    fn check_item(&mut self, context: &EarlyContext, item: &Item) {
-        // If it's not visible it can't be called from C.
-        if let ast::Visibility::Inherited = item.vis { return; }
-
-        // Dispatch to correct method.
-        match item.node {
-            // TODO: Check for ItemStatic and ItemConst as well.
-            //     - How would this work?
-            //     - Is it even possible?
-            Item_::ItemTy(..) => self.parse_ty(context, item),
-            Item_::ItemEnum(..) => self.parse_enum(context, item),
-            Item_::ItemStruct(..) => self.parse_struct(context, item),
-            Item_::ItemFn(..) => self.parse_fn(context, item),
-            _ => {},
-        };
-    }
-}
-
-impl Drop for CheddarPass {
-    fn drop(&mut self) {
-        // TODO: user chosen header path
-        // TODO: decent automatically chosen header path
-        // TODO: refactor this to either use a macro for all the `if let`s or maybe use functional style
-        let dir = self.dir.clone().unwrap_or(path::PathBuf::from(""));
+    fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
         let file = self.file.clone().unwrap_or(path::PathBuf::from("cheddar.h"));
-        let header_path = dir.join(&file);
-
-        let mut header = match fs::File::create(&header_path) {
-            Err(e) => {
-                println!("Error: could not open {}: {}", header_path.display(), e);
-                return;
-            },
-            Ok(handle) => handle,
-        };
-
-        if let Err(e) =  write!(
-            header,
+        self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
             // TODO: this be horrible.
             file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
-        ) {
-            println!("Error: could not write include guard to header: {}", e);
-            return;
+        ));
+        self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
+        self.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
+
+        for item in &krate.module.items {
+            // If it's not visible it can't be called from C.
+            if let ast::Visibility::Inherited = item.vis { continue; }
+
+            // Dispatch to correct method.
+            match item.node {
+                // TODO: Check for ItemStatic and ItemConst as well.
+                //     - How would this work?
+                //     - Is it even possible?
+                Item_::ItemTy(..) => self.parse_ty(context, item),
+                Item_::ItemEnum(..) => self.parse_enum(context, item),
+                Item_::ItemStruct(..) => self.parse_struct(context, item),
+                Item_::ItemFn(..) => self.parse_fn(context, item),
+                _ => {},
+            };
         }
 
-        if let Err(e) = write!(header, "#ifdef __cplusplus\nextern \"C\" {{\n#endif\n\n") {
-            println!("Error: could not write C++ extern guard to header: {}", e);
-            return;
-        }
-
-        if let Err(e) = write!(header, "#include <stdint.h>\n#include <stdbool.h>\n\n") {
-            println!("Error: could not write includes to header: {}", e);
-            return;
-        }
-
-        if let Err(e) = write!(header, "{}", self.buffer) {
-            println!("Error: could not write buffer to header: {}", e);
-            return;
-        }
-
-        if let Err(e) = write!(header, "#ifdef __cplusplus\n}}\n#endif\n\n#endif") {
-            println!("Error: could not write epilogue to header: {}", e);
-            return;
-        }
+        self.buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
+        self.buffer.push_str("#endif\n");
+        println!("{}", self.buffer);
     }
 }
 
