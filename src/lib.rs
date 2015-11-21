@@ -46,7 +46,6 @@ impl lint::LintPass for CheddarPass {
 }
 
 impl lint::EarlyLintPass for CheddarPass {
-    // Must use check_item so we can get attributes.
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
         let file = self.file.clone().unwrap_or(path::PathBuf::from("cheddar.h"));
         self.buffer.push_str(&format!(
@@ -76,7 +75,12 @@ impl lint::EarlyLintPass for CheddarPass {
 
         self.buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
         self.buffer.push_str("#endif\n");
-        println!("{}", self.buffer);
+
+        let bytes_buf = self.buffer.clone().into_bytes();
+
+        if let Err(error) =  fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            context.sess.err(&format!("could not write to '{}': {}", file.display(), error))
+        };
     }
 }
 
