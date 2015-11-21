@@ -5,6 +5,7 @@ authors = ["Sean Marshallsay <srm.1708@gmail.com>"]
 
 description = "A compiler lint to automatically generate C-style header files."
 readme = "README.md"
+keywords = ["plugin", "c", "header", "ffi"]
 
 homepage = "https://github.com/Sean1708/rusty-cheddar"
 repository = "https://github.com/Sean1708/rusty-cheddar.git"
