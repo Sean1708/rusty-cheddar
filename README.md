@@ -5,13 +5,48 @@ A rustc compiler plugin to automatically generate C header files from Rust sourc
 ## Usage
 
 Compiler plugins have not yet been stabilised so you must use a nightly compiler. If you wish to
-build against stable Rust as well then I suggest [multirust](https://github.com/brson/multirust)
-or [multirust-rs](https://github.com/Diggsey/multirust-rs).
+build against stable Rust as well then I suggest [multirust](https://github.com/brson/multirust) or
+[multirust-rs](https://github.com/Diggsey/multirust-rs).
 
 rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 `stdbool.h`), if you really really really really really have to use an older standard then please
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
+
+Using rusty-cheddar is very simple, first add the dependency to your `Cargo.toml`
+
+```toml
+[dependencies]
+rusty-cheddar = { git = "https://github.com/Sean1708/rusty-cheddar", version = "*" }
+```
+
+then at the top of your `lib.rs`
+
+```rust
+#![feature(plugin)]
+#![plugin(cheddar)]
+```
+
+rusty-cheddar will then create a `cheddar.h` file in your working directory containing the generated
+header file. Note that rusty-cheddar emits very few warnings, it is up to the programmer to write a
+library which can be correctly called from C.
+
+You can optionally specify a path for the header file using plugin arguments. The last argument is
+the name of the header file _without any extensions_ and any other arguments are directories which
+do not have to exist.
+
+```rust
+#![plugin(cheddar(my_header))]
+```
+
+This will create `my_header.h` in the current working directory.
+
+```rust
+#![plugin(cheddar(target, include, my_header))]
+```
+
+This will first create the directories in `target/include` if they don't exist and will then create
+`my_header.h` in `target/include`.
 
 In the examples below, boilerplate has been omitted from the header.
 
@@ -190,7 +225,6 @@ code as clear as possible but I'm not very good at it, so any help in that regar
 I love pull requests they tend to make my job much easier, so if you want to fix a bug or implement a
 feature yourself then that would be great. If you're confused by anything or need some pointers on
 how to proceed then feel free to open an issue so that I can help, otherwise
-[this tutorial](https://github.com/nrc/stupid-stats) and
 [these docs](http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html) are a good
 place to start.
 
