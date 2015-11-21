@@ -1,68 +1,17 @@
 # rusty-cheddar
 
-A rustc compiler drop-in for automatically generating C header files from Rust
-source files.
-
-## Installation
-
-rusty-cheddar is not yet on [crates.io](https://crates.io) but installation is simple with `cargo
-install`:
-
-    cargo install --git https://github.com/Sean1708/rusty-cheddar
-
-or if you're a Homebrew user let me plug [cargo-brew](https://github.com/Sean1708/cargo-brew):
-
-    cargo brew --git https://github.com/Sean1708/rusty-cheddar
-
-Note that compiler drop-ins will only work on nightly releases of Rust. If you want to run multiple
-versions of Rust you might consider [multirust](https://github.com/brson/multirust) or it's [pure
-Rust equivalent](https://github.com/Diggsey/multirust-rs).
+A rustc compiler plugin to automatically generate C header files from Rust source files.
 
 ## Usage
 
-```none
-$ cat test.rs
-#[repr(C)]
-pub struct Person {
-    age: i32,
-    height: f64,
-}
-$ cheddar test.rs
-#ifndef cheddar_gen_cheddar_h
-#define cheddar_gen_cheddar_h
+Compiler plugins have not yet been stabilised so you must use a nightly compiler. If you wish to
+build against stable Rust as well then I suggest [multirust](https://github.com/brson/multirust)
+or [multirust-rs](https://github.com/Diggsey/multirust-rs).
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdint.h>
-#include <stdbool.h>
-
-typedef struct Person {
-	int32_t age;
-	double height;
-} Person;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-$ cheddar test.rs > test.h
-```
-
-Currently rusty-cheddar can only be run on a single rust file and does not yet support writing
-output to a file. There are plans to make rusty-cheddar `cargo` aware and possibly even a full
-`rustc` replacement, but there are ongoing issues with these. rusty-cheddar also targets C99 or
-later (for sane single line comments and use of `stdint.h` and `stdbool.h`), if you really really
-really really really have to use an older standard then please open an issue at the [repo] and I
-will begrudgingly figure out how to implement support for it (after arguing with you lots and lots).
-
-The usage is fairly simple, first you should write a rust file with a C callable API (rusty-cheddar
-does not yet support any error checking or warnings but this is planned) and then just call
-`cheddar` on the file. `cheddar` prints the header to stdout (for now, I'm working on a way to print
-it to a suitable file) so you probably want to run it as `cheddar capi.rs > capi.h`, after checking
-that it's correct.
+rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
+`stdbool.h`), if you really really really really really have to use an older standard then please
+open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
+(after arguing with you lots and lots).
 
 In the examples below, boilerplate has been omitted from the header.
 

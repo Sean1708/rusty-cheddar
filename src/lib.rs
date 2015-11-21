@@ -1,10 +1,3 @@
-// RULES:
-//     - Anything called once and only once shall be specified by full path.
-//     - Anything called between one and five times exclusive shall be specified by one level of
-//         indirection.
-//     - If a module is used five times or more, it shall be imported.
-//     - Anything called five times or more shall be specfied only by the item name.
-//     - If you import a final item then import it's parent, unless it is a trait.
 #![feature(rustc_private)]
 #![feature(box_syntax)]
 #![feature(plugin_registrar)]
@@ -25,7 +18,7 @@ use syntax::print::pprust;
 
 // Internal
 use std::fs;
-use std::path;
+use std::path::PathBuf;
 
 // Traits
 use std::io::Write;
@@ -33,8 +26,7 @@ use std::io::Write;
 
 pub struct CheddarPass {
     buffer: String,
-    dir: Option<path::PathBuf>,
-    file: Option<path::PathBuf>,
+    file: Option<PathBuf>,
 }
 
 declare_lint!(CHEDDAR, Allow, "What does this actually do? Do I need it?");
@@ -47,7 +39,7 @@ impl lint::LintPass for CheddarPass {
 
 impl lint::EarlyLintPass for CheddarPass {
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
-        let file = self.file.clone().unwrap_or(path::PathBuf::from("cheddar.h"));
+        let file = self.file.clone().unwrap_or(PathBuf::from("cheddar.h"));
         self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
             // TODO: this be horrible.
@@ -322,8 +314,63 @@ impl CheddarPass {
 }
 
 
+fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Option<PathBuf>, ()> {
+    let args = reg.args();
+    if args.is_empty() {
+        Ok(None)
+    } else {
+        // All plugin arguments should be `MetaWord`s.
+        // Last argument is the file name without the ".h" extension.
+        // E.g.
+        //     #![plugin(cheddar(target, debug, include, my_header))]
+        let mut temp_pathbuf = PathBuf::new();
+        let len = args.len();
+
+        // Push the given directories.
+        // Don't iterate over the last element since that needs to be converted into a file.
+        for i in 0..len-1 {
+            temp_pathbuf.push(match args[i].node {
+                ast::MetaItem_::MetaWord(ref string) => {
+                    let string_slice: &str = &string;
+                    String::from(string_slice)
+                },
+                _ => {
+                    reg.sess.span_err(args[i].span, "malformed plugin args");
+                    return Err(());
+                },
+            })
+        }
+
+        // Create all the directories before we push the file name.
+        if let Err(error) = fs::create_dir_all(&temp_pathbuf) {
+            reg.sess.err(&format!("could not create directories in '{}': {}", temp_pathbuf.display(), error));
+            return Err(());
+        }
+
+        // Push the header file name.
+        temp_pathbuf.push(match args[len-1].node {
+            ast::MetaItem_::MetaWord(ref string) => {
+                    // TODO: There must be a better way.
+                    let string_slice: &str = &string;
+                    String::from(string_slice)
+            },
+            _ => {
+                reg.sess.span_err(args[len-1].span, "malformed plugin args");
+                return Err(());
+            },
+        });
+
+        temp_pathbuf.set_extension("h");
+        Ok(Some(temp_pathbuf))
+    }
+}
+
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
-    let cheddar = CheddarPass { buffer: String::new(), dir: None, file: None };
+    let file = match file_name_from_plugin_args(reg) {
+        Err(_) => return,
+        Ok(file) => file,
+    };
+    let cheddar = CheddarPass { buffer: String::new(), file: file };
     reg.register_early_lint_pass(box cheddar);
 }
