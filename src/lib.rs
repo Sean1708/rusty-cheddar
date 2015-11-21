@@ -24,7 +24,11 @@ use syntax::ast::Item_;
 use syntax::print::pprust;
 
 // Internal
+use std::fs;
 use std::path;
+
+// Traits
+use std::io::Write;
 
 
 pub struct CheddarPass {
@@ -63,18 +67,50 @@ impl lint::EarlyLintPass for CheddarPass {
 
 impl Drop for CheddarPass {
     fn drop(&mut self) {
+        // TODO: user chosen header path
+        // TODO: decent automatically chosen header path
+        // TODO: refactor this to either use a macro for all the `if let`s or maybe use functional style
         let dir = self.dir.clone().unwrap_or(path::PathBuf::from(""));
-        let file = self.file.clone().unwrap_or(path::PathBuf::from("cheddar"));
-        println!(
+        let file = self.file.clone().unwrap_or(path::PathBuf::from("cheddar.h"));
+        let header_path = dir.join(&file);
+
+        let mut header = match fs::File::create(&header_path) {
+            Err(e) => {
+                println!("Error: could not open {}: {}", header_path.display(), e);
+                return;
+            },
+            Ok(handle) => handle,
+        };
+
+        if let Err(e) =  write!(
+            header,
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
             // TODO: this be horrible.
             file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
-        );
-        println!("#ifdef __cplusplus\nextern \"C\" {{\n#endif\n\n");
-        println!("#include <stdint.h>\n#include <stdbool.h>\n\n");
-        println!("{}", self.buffer);
-        println!("#ifdef __cplusplus\n}}\n#endif\n\n");
-        println!("#endif\n");
+        ) {
+            println!("Error: could not write include guard to header: {}", e);
+            return;
+        }
+
+        if let Err(e) = write!(header, "#ifdef __cplusplus\nextern \"C\" {{\n#endif\n\n") {
+            println!("Error: could not write C++ extern guard to header: {}", e);
+            return;
+        }
+
+        if let Err(e) = write!(header, "#include <stdint.h>\n#include <stdbool.h>\n\n") {
+            println!("Error: could not write includes to header: {}", e);
+            return;
+        }
+
+        if let Err(e) = write!(header, "{}", self.buffer) {
+            println!("Error: could not write buffer to header: {}", e);
+            return;
+        }
+
+        if let Err(e) = write!(header, "#ifdef __cplusplus\n}}\n#endif\n\n#endif") {
+            println!("Error: could not write epilogue to header: {}", e);
+            return;
+        }
     }
 }
 
