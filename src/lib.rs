@@ -79,14 +79,15 @@ impl lint::EarlyLintPass for CheddarPass {
 // TODO: Maybe it would be wise to use syntax::attr here.
 fn parse_attr<C, R>(attrs: &[Attribute], check: C, retrieve: R) -> (bool, String)
     where C: Fn(&Attribute) -> bool,
-          R: Fn(&Attribute) -> String,
+          R: Fn(&Attribute) -> Option<String>,
 {
     let mut check_passed = false;
     let mut retrieved_str = String::new();
     for attr in attrs {
         // Don't want to accidently set it to false after it's been set to true.
         if !check_passed { check_passed = check(attr); }
-        retrieved_str.push_str(&retrieve(attr));
+        // If this attribute has any strings to retrieve, retrieve them.
+        if let Some(string) = retrieve(attr) { retrieved_str.push_str(&string); }
     }
 
     (check_passed, retrieved_str)
@@ -113,17 +114,14 @@ fn check_no_mangle(attr: &Attribute) -> bool {
     }
 }
 
-// TODO: How do we do this without allocating so many Strings?
-//     - With Some() of course!
-fn retrieve_docstring(attr: &Attribute) -> String {
+fn retrieve_docstring(attr: &Attribute) -> Option<String> {
     match attr.node.value.node {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
             // Docstring attributes omit the trailing newline.
-            ast::Lit_::LitStr(ref docs, _) => docs.to_string() + "\n",
-            // TODO: Is this an error?
-            _ => String::new(),
+            ast::Lit_::LitStr(ref docs, _) => Some(docs.to_string() + "\n"),
+            _ => unreachable!("docs must be literal strings"),
         },
-        _ => String::new(),
+        _ => None,
     }
 }
 
