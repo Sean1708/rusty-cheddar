@@ -26,7 +26,7 @@ use std::io::Write;
 
 pub struct CheddarPass {
     buffer: String,
-    file: Option<PathBuf>,
+    file: PathBuf,
 }
 
 declare_lint!(CHEDDAR, Allow, "What does this actually do? Do I need it?");
@@ -39,10 +39,9 @@ impl lint::LintPass for CheddarPass {
 
 impl lint::EarlyLintPass for CheddarPass {
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
-        let file = self.file.clone().unwrap_or(PathBuf::from("cheddar.h"));
         self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
+            self.file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
         ));
         self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
         self.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
@@ -69,8 +68,8 @@ impl lint::EarlyLintPass for CheddarPass {
 
         let bytes_buf = self.buffer.clone().into_bytes();
 
-        if let Err(error) =  fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            context.sess.err(&format!("could not write to '{}': {}", file.display(), error))
+        if let Err(error) =  fs::File::create(&self.file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            context.sess.err(&format!("could not write to '{}': {}", self.file.display(), error))
         };
     }
 }
@@ -360,9 +359,26 @@ fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Optio
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
     let file = match file_name_from_plugin_args(reg) {
+        // Error messages are done in `file_name_from_plugin_args`.
         Err(_) => return,
         Ok(file) => file,
-    };
+    }
+        // If no file was specified in the arguments try using the crate name.
+        .or(reg.sess.opts.crate_name.clone()
+            // Crate name is a String so convert it.
+            .map(|name| PathBuf::from(name)
+                 .with_extension("h")))
+        // If there is no crate name try using the source file name.
+        .or(reg.sess.local_crate_source_file.clone()
+            // Don't want the full path.
+            .and_then(|file| file.file_name()
+                      // `.file_name()` returns an Option<OsStr>.
+                      .map(|file| PathBuf::from(file)))
+            .map(|file| file.with_extension("h")))
+        // If all else fails...
+        .unwrap_or(PathBuf::from("cheddar.h"));
+
+    println!("{:?}", file);
     let cheddar = CheddarPass { buffer: String::new(), file: file };
     reg.register_early_lint_pass(box cheddar);
 }
