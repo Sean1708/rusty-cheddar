@@ -226,17 +226,16 @@ impl CheddarPass {
                 return;
             }
 
-            // TODO: maybe .fields() and .is_struct() can help here?
-            if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
-                for var in variant_vec {
-                    let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
+            if variants.is_struct() {
+                for field in variants.fields() {
+                    let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
                     self.buffer.push_str(&docs);
 
-                    let name = match var.node.ident() {
+                    let name = match field.node.ident() {
                         Some(name) => name,
-                        None => context.sess.span_fatal(var.span, "a tuple struct snuck through"),
+                        None => context.sess.span_fatal(field.span, "a tuple struct snuck through"),
                     };
-                    let ty = pprust::ty_to_string(&*var.node.ty);
+                    let ty = pprust::ty_to_string(&*field.node.ty);
                     let ty = rust_to_c(&ty);
                     self.buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
@@ -272,7 +271,6 @@ impl CheddarPass {
             let output_type = &fn_decl.output;
             let output_type = match output_type {
                 &ast::FunctionRetTy::NoReturn(span) => {
-                    // TODO: are there cases when this is ok?
                     context.sess.span_err(span, "panics across a C boundary are naughty!");
                     return;
                 },
