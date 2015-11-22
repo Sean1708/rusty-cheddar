@@ -378,7 +378,6 @@ pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
         // If all else fails...
         .unwrap_or(PathBuf::from("cheddar.h"));
 
-    println!("{:?}", file);
     let cheddar = CheddarPass { buffer: String::new(), file: file };
     reg.register_early_lint_pass(box cheddar);
 }
