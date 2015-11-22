@@ -42,7 +42,6 @@ impl lint::EarlyLintPass for CheddarPass {
         let file = self.file.clone().unwrap_or(PathBuf::from("cheddar.h"));
         self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            // TODO: this be horrible.
             file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
         ));
         self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
@@ -114,11 +113,11 @@ fn check_no_mangle(attr: &Attribute) -> bool {
     }
 }
 
-fn retrieve_docstring(attr: &Attribute) -> Option<String> {
+fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
     match attr.node.value.node {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
             // Docstring attributes omit the trailing newline.
-            ast::Lit_::LitStr(ref docs, _) => Some(docs.to_string() + "\n"),
+            ast::Lit_::LitStr(ref docs, _) => Some(format!("{}{}\n", prepend, docs)),
             _ => unreachable!("docs must be literal strings"),
         },
         _ => None,
@@ -161,7 +160,7 @@ fn rust_to_c(typ: &str) -> String {
 
 impl CheddarPass {
     fn parse_ty(&mut self, context: &EarlyContext, item: &Item) {
-        let (_, docs) = parse_attr(&item.attrs, |_| true, retrieve_docstring);
+        let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
 
         let new_type = item.ident.name.as_str();
         let old_type = match item.node {
@@ -181,7 +180,7 @@ impl CheddarPass {
     }
 
     fn parse_enum(&mut self, context: &EarlyContext, item: &Item) {
-        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, retrieve_docstring);
+        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
         if !repr_c { return; }
         self.buffer.push_str(&docs);
@@ -200,9 +199,7 @@ impl CheddarPass {
                     return;
                 }
 
-                let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
-                // TODO: Some way to indent the docs.
-                //     - maybe have a prepend argument to retrieve_docstring then wrap it in a closure
+                let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
                 self.buffer.push_str(&docs);
 
                 self.buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
@@ -215,7 +212,7 @@ impl CheddarPass {
     }
 
     fn parse_struct(&mut self, context: &EarlyContext, item: &Item) {
-        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, retrieve_docstring);
+        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
         if !repr_c { return; }
         self.buffer.push_str(&docs);
@@ -232,7 +229,7 @@ impl CheddarPass {
             // TODO: maybe .fields() and .is_struct() can help here?
             if let ast::VariantData::Struct(ref variant_vec, _) = *variants {
                 for var in variant_vec {
-                    let (_, docs) = parse_attr(&var.node.attrs, |_| true, retrieve_docstring);
+                    let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
                     self.buffer.push_str(&docs);
 
                     let name = match var.node.ident() {
@@ -254,7 +251,7 @@ impl CheddarPass {
     }
 
     fn parse_fn(&mut self, context: &EarlyContext, item: &Item) {
-        let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, retrieve_docstring);
+        let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
         // If it's not #[no_mangle] then it can't be called from C.
         if !no_mangle { return; }
 
@@ -289,7 +286,6 @@ impl CheddarPass {
             self.buffer.push_str(&docs);
             self.buffer.push_str(&format!("{} {}(", output_type, name));
 
-            // TODO: Is there a nicer way of doing this?
             let has_args = fn_decl.inputs.len() > 0;
 
             for arg in &fn_decl.inputs {
