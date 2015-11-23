@@ -2,6 +2,9 @@
 #![feature(box_syntax)]
 #![feature(plugin_registrar)]
 
+#![feature(plugin)]
+#![plugin(clippy)]
+
 #[macro_use] extern crate rustc;
 extern crate syntax;
 
@@ -268,13 +271,13 @@ impl CheddarPass {
 
             let fn_decl: &ast::FnDecl = &*fn_decl;
             let output_type = &fn_decl.output;
-            let output_type = match output_type {
-                &ast::FunctionRetTy::NoReturn(span) => {
+            let output_type = match *output_type {
+                ast::FunctionRetTy::NoReturn(span) => {
                     context.sess.span_err(span, "panics across a C boundary are naughty!");
                     return;
                 },
-                &ast::FunctionRetTy::DefaultReturn(_) => "void".to_owned(),
-                &ast::FunctionRetTy::Return(ref ty) => {
+                ast::FunctionRetTy::DefaultReturn(_) => "void".to_owned(),
+                ast::FunctionRetTy::Return(ref ty) => {
                     let ty = pprust::ty_to_string(&*ty);
                     rust_to_c(&ty).to_owned()
                 },
@@ -283,7 +286,7 @@ impl CheddarPass {
             self.buffer.push_str(&docs);
             self.buffer.push_str(&format!("{} {}(", output_type, name));
 
-            let has_args = fn_decl.inputs.len() > 0;
+            let has_args = !fn_decl.inputs.is_empty();
 
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
@@ -305,6 +308,7 @@ impl CheddarPass {
 }
 
 
+#[allow(needless_range_loop)]
 fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Option<PathBuf>, ()> {
     let args = reg.args();
     if args.is_empty() {
@@ -372,7 +376,7 @@ pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
             // Don't want the full path.
             .and_then(|file| file.file_name()
                       // `.file_name()` returns an Option<OsStr>.
-                      .map(|file| PathBuf::from(file)))
+                      .map(PathBuf::from))
             .map(|file| file.with_extension("h")))
         // If all else fails...
         .unwrap_or(PathBuf::from("cheddar.h"));
