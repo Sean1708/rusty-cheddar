@@ -326,7 +326,7 @@ fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Optio
                     String::from(string_slice)
                 },
                 _ => {
-                    reg.sess.span_err(args[i].span, "malformed plugin args");
+                    reg.sess.span_err(args[i].span, "cheddar plugin args must be `MetaWord`s");
                     return Err(());
                 },
             })
@@ -341,12 +341,11 @@ fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Optio
         // Push the header file name.
         temp_pathbuf.push(match args[len-1].node {
             ast::MetaItem_::MetaWord(ref string) => {
-                    // TODO: There must be a better way.
                     let string_slice: &str = &string;
                     String::from(string_slice)
             },
             _ => {
-                reg.sess.span_err(args[len-1].span, "malformed plugin args");
+                reg.sess.span_err(args[len-1].span, "cheddar plugin args must be `MetaWord`s");
                 return Err(());
             },
         });
