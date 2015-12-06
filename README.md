@@ -228,5 +228,22 @@ how to proceed then feel free to open an issue so that I can help, otherwise
 [these docs](http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html) are a good
 place to start.
 
+#### Tests
+
+I have written a script for comparing two header files, using [CppHeaderParser]. Unfortunately due to
+[this issue](https://bitbucket.org/senex/cppheaderparser/issues/26/named-structs-which-are-typedefed-to-the)
+we can't compare structs, so for the time being you'll have to install
+[my fork](https://bitbucket.org/Sean1708/cppheaderparser/overview):
+
+```sh
+# you'll have to download mercurial and a python (either 2 or 3 should work) first
+cd '/path/to/where/you/want/to/store/the/source'
+hg clone https://Sean1708@bitbucket.org/Sean1708/cppheaderparser
+cd 'cppheaderparser'
+pip install ply
+pip install .
+```
+
 
 [repo]: https://github.com/Sean1708/rusty-cheddar
+[CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
