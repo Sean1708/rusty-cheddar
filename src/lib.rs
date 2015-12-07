@@ -1,6 +1,7 @@
 #![feature(rustc_private)]
-#![feature(box_syntax)]
 #![feature(plugin_registrar)]
+#![feature(box_syntax)]
+#![feature(stmt_expr_attributes)]
 
 #![feature(plugin)]
 #![plugin(clippy)]
@@ -348,7 +349,6 @@ impl CheddarPass {
 }
 
 
-#[allow(needless_range_loop)]
 fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> Result<Option<PathBuf>, ()> {
     let args = reg.args();
     if args.is_empty() {
@@ -363,6 +363,7 @@ fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> Result<Option
 
         // Push the given directories.
         // Don't iterate over the last element since that needs to be converted into a file.
+        #[allow(needless_range_loop)]
         for i in 0..len-1 {
             temp_pathbuf.push(match args[i].node {
                 ast::MetaItem_::MetaWord(ref string) => {
