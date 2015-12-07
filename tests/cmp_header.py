@@ -24,24 +24,24 @@ check(expected.defines == actual.defines, "incorrect include-guard, or too many 
 # TYPEDEFS
 
 typedefs_not_found = copy.deepcopy(expected.typedefs)
-for typedef in actual.typedefs:
+for (new_type, old_type) in actual.typedefs.items():
     check(
-        typedef in expected.typedefs,
-        "typedef {!r} was not expected", typedef,
+        new_type in expected.typedefs,
+        "`typedef {} {}` was not expected", old_type, new_type,
     )
 
     check(
-        actual.typedefs[typedef] == expected.typedefs[typedef],
+        actual.typedefs[new_type] == expected.typedefs[new_type],
         "incorrect typedef:\nexpected: {!r}\nfound: {!r}",
-        expected.typedefs[typedef], actual.typedefs[typedef],
+        expected.typedefs[new_type], actual.typedefs[new_type],
     )
 
-    typedefs_not_found.pop(typedef)
+    typedefs_not_found.pop(new_type)
 
 if len(typedefs_not_found) > 0:
     print("the following typedefs were expected but were not found:")
-    for typedef in typedefs_not_found:
-        print("typedef {} {};".format(typedefs_not_found[typedef], typedef))
+    for (new_type, old_type) in typedefs_not_found.items():
+        print("typedef {} {};".format(old_type, new_type))
     sys.exit(1)
 
 

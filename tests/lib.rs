@@ -1,4 +1,5 @@
-use std::ffi::OsStr;
+#![feature(path_relative_from)]
+
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -37,26 +38,24 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $header:expr, $rust:expr) => {
         #[test]
         fn $name() {
-            // Assumes tests are run from the package's Cargo.toml directory.
             let package_dir = std::env::current_dir()
-                .expect("internal testing error: could not find path for package directory");
+                .expect("internal testing error: unable to find current directory");
             let test_dir = package_dir.join("tests");
             let dir = test_dir.join(stringify!($name));
             let plugin_dir = package_dir
                 .join("target")
                 .join("debug");
             let cmp_script = test_dir.join("cmp_header.py");
-            let source = concat!(stringify!($name), ".rs");
+            let source = dir.join(concat!(stringify!($name), ".rs"));
+            let expected_header = dir.join("expected.h");
+            let actual_header = dir.join("actual.h");
 
             // Create and move into a fresh directory.
             std::fs::create_dir_all(&dir)
                 .expect("internal testing error: could not create directory");
-                // .expect(concat!("internal testing error: ", stringify!($name), ": could not create directory"));
-            std::env::set_current_dir(&dir)
-                .expect("internal testing error: could not change directory");
 
             // Write the expected header and source files.
-            File::create("expected.h")
+            File::create(&expected_header)
                 .expect("internal testing error: could not create expected header file")
                 .write_all(concat!(
                     // Due to the way CppHeaderParser works we only need to add the #define.
@@ -65,36 +64,44 @@ macro_rules! cheddar_cmp_test {
                 ).as_bytes())
                 .expect("internal testing error: could not write to expected header file");
 
+            let dir_rel_to_cur = dir.relative_from(&package_dir)
+                .expect("internal testing error: unable determine relative path to test dir")
+                .iter();
+
+            let mut cheddar_args = String::new();
+            for path in dir_rel_to_cur {
+                cheddar_args.push_str(path.to_str()
+                    .expect("internal testing error: can not handle non-utf8 file paths")
+                );
+                cheddar_args.push_str(", ");
+            }
+
             File::create(&source)
                 .expect("internal testing error: could not create rust source file")
-                .write_all(concat!(
-                    "#![feature(plugin)]\n#![plugin(cheddar(actual))]\n",
-                    $rust,
+                .write_all(format!(
+                    "#![feature(plugin)]\n#![plugin(cheddar({}actual))]\n{}",
+                    cheddar_args, $rust,
                 ).as_bytes())
                 .expect("internal testing error: could not write to rust source file");
 
             // Compile the header.
             let output = Command::new("rustc")
-                .args(&[
-                    OsStr::new("--crate-type=dylib"),
-                    OsStr::new("-L"),
-                    plugin_dir.as_os_str(),
-                    OsStr::new("-Z"),
-                    OsStr::new("no-trans"),
-                    OsStr::new(&source),
-                ])
+                .args(&["--crate-type", "dylib"])
+                .arg("-L").arg(plugin_dir.as_os_str())
+                .args(&["-Z", "no-trans"])
+                .arg(&source)
                 .output()
                 .expect("internal testing error: could not run `rustc`");
 
             if !output.status.success() { panic!(
-                "iternal testing error: compilation failed: {}",
+                "internal testing error: compilation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ); }
 
             // Compare the headers.
             let output = Command::new(&cmp_script)
-                .arg("expected.h")
-                .arg("actual.h")
+                .arg(&expected_header)
+                .arg(&actual_header)
                 .output()
                 .expect("internal testing error: could not run `cmp_header.py`");
 
@@ -110,6 +117,25 @@ macro_rules! cheddar_cmp_test {
             }
         }
     };
+}
+
+
+
+cheddar_cmp_test! { test_compilable_typedefs,
+    "
+    typedef int64_t Int64;
+    typedef double Real;
+    typedef const bool* BoolArray;
+    typedef intptr_t Int;
+    typedef float* FloatArray;
+    ",
+    "
+    pub type Int64 = i64;
+    pub type Real = f64;
+    pub type BoolArray = *const bool;
+    pub type Int = isize;
+    pub type FloatArray = *mut f32;
+    "
 }
 
 cheddar_cmp_test! { test_compilable_enums,
@@ -141,7 +167,7 @@ cheddar_cmp_test! { test_compilable_enums,
         Violet,
     }
 
-    // Won't appear in the output header file.
+    // Shouldn't appear in the output header file.
     #[allow(dead_code)]
     #[repr(C)]
     enum Planets {
@@ -154,7 +180,7 @@ cheddar_cmp_test! { test_compilable_enums,
         Neptune,
     }
 
-    // Won't appear in the output header file.
+    // Shouldn't appear in the output header file.
     pub enum Days {
         Sunday,
         Monday,
