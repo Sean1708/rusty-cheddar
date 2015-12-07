@@ -45,7 +45,7 @@ impl lint::EarlyLintPass for CheddarPass {
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
         self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            self.file.file_stem().map_or("default", |p| p.to_str().unwrap_or("default")),
+            self.file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
         ));
         self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
         self.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
