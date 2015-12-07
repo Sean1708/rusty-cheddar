@@ -194,3 +194,44 @@ cheddar_cmp_test! { test_compilable_enums,
     }
     "
 }
+
+cheddar_cmp_test! { test_various_types,
+    "
+    typedef void MyVoid;
+    typedef float Float32;
+    typedef double Float64;
+    typedef int8_t Int8;
+    typedef int16_t Int16;
+    typedef int32_t Int32;
+    typedef int64_t Int64;
+    typedef intptr_t Int;
+    typedef uint8_t UInt8;
+    typedef uint16_t UInt16;
+    typedef uint32_t UInt32;
+    typedef uint64_t UInt64;
+    typedef uintptr_t UInt;
+    typedef bool Bool;
+    typedef double* FloatArray;
+    typedef const bool* LogicArray;
+    typedef int32_t**** FourPointers;
+    ",
+    "
+    pub type MyVoid = ();
+    pub type Float32 = f32;
+    pub type Float64 = f64;
+    pub type Int8 = i8;
+    pub type Int16 = i16;
+    pub type Int32 = i32;
+    pub type Int64 = i64;
+    pub type Int = isize;
+    pub type UInt8 = u8;
+    pub type UInt16 = u16;
+    pub type UInt32 = u32;
+    pub type UInt64 = u64;
+    pub type UInt = usize;
+    pub type Bool = bool;
+    pub type FloatArray = *mut f64;
+    pub type LogicArray = *const bool;
+    pub type FourPointers = *mut *mut *mut *mut i32;
+    "
+}
