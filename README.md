@@ -9,7 +9,7 @@ A rustc compiler plugin to automatically generate C header files from Rust sourc
 ## Usage
 
 Compiler plugins have not yet been stabilised so you must use a nightly compiler. If you wish to
-build against stable Rust as well then I suggest [multirust](https://github.com/brson/multirust) or
+build against stable Rust as well then I suggest [multirust] or
 [multirust-rs](https://github.com/Diggsey/multirust-rs).
 
 rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
@@ -293,5 +293,6 @@ that the tests are a massive pile of wanky hacks, you must be in the same direct
 rusty-cheddar's `Cargo.toml` to successfully run them.
 
 
+[multirust]: https://github.com/brson/multirust
 [repo]: https://github.com/Sean1708/rusty-cheddar
 [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
