@@ -6,6 +6,7 @@
 #![plugin(clippy)]
 
 #[macro_use] extern crate rustc;
+extern crate rustc_plugin;
 extern crate syntax;
 
 // External
@@ -44,7 +45,7 @@ impl lint::EarlyLintPass for CheddarPass {
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
         self.buffer.push_str(&format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            self.file.file_stem().map(|p| p.to_str().unwrap_or("default")).unwrap_or("default"),
+            self.file.file_stem().map_or("default", |p| p.to_str().unwrap_or("default")),
         ));
         self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
         self.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
@@ -309,7 +310,7 @@ impl CheddarPass {
 
 
 #[allow(needless_range_loop)]
-fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Option<PathBuf>, ()> {
+fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> Result<Option<PathBuf>, ()> {
     let args = reg.args();
     if args.is_empty() {
         Ok(None)
@@ -360,7 +361,7 @@ fn file_name_from_plugin_args(reg: &mut rustc::plugin::Registry) -> Result<Optio
 }
 
 #[plugin_registrar]
-pub fn plugin_registrar(reg: &mut rustc::plugin::Registry) {
+pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
     let file = match file_name_from_plugin_args(reg) {
         // Error messages are done in `file_name_from_plugin_args`.
         Err(_) => return,
