@@ -59,7 +59,7 @@ In the examples below, boilerplate has been omitted from the header.
 ### Invocation Form the Command Line
 
 Alternatively you can invoke rusty-cheddar from the command line. First you must grab the [repo] and
-build it using:
+build it using (remember to use nightly Rust for this step):
 
 ```sh
 $ cargo build --release
@@ -74,7 +74,8 @@ where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` and `$SOURCE` is th
 wish to compile, you may also need to add the `--crate-type=...` flag.
 
 Another common workflow is to use rusty-cheddar to compile the header file without compiling the
-rest of the crate. For projects using `cargo` you can do:
+rest of the crate, this has the advantage of allowing you to build your crate with stable Rust then
+generate the header file with rusty-cheddar. For projects using `cargo` you can do:
 
 ```sh
 $ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
@@ -84,6 +85,14 @@ Otherwise:
 
 ```sh
 $ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
+```
+
+If you wish to build on stable, use [multirust]:
+
+```sh
+$ multirust override stable  # if you have a different default
+$ cargo build --release
+$ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
 ```
 
 ### Typedefs
