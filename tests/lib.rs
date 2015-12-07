@@ -277,6 +277,7 @@ cheddar_cmp_test! { test_pure_rust_types,
     typedef double* FloatArray;
     typedef const bool* LogicArray;
     typedef int32_t**** FourPointers;
+    typedef const float** TwoPointers;
     ",
     "
     pub type MyVoid = ();
@@ -296,6 +297,7 @@ cheddar_cmp_test! { test_pure_rust_types,
     pub type FloatArray = *mut f64;
     pub type LogicArray = *const bool;
     pub type FourPointers = *mut *mut *mut *mut i32;
+    pub type TwoPointers = *const *const f32;
     "
 }
 

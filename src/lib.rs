@@ -129,18 +129,23 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 
 fn rust_to_c(typ: &str) -> String {
     // TODO: Function pointers.
-    // TODO: const {}*
-    //     - Is there an issue doing `const const type**`?
     if typ.starts_with("*mut") {
         // Remove the "*mut".
         let typ = &typ[4..].trim();
         format!("{}*", rust_to_c(typ))
     } else if typ.starts_with("*const") {
-        // Remove the "*const".
+        // Remove the `*const`.
         let typ = &typ[6..].trim();
-        format!("const {}*", rust_to_c(typ))
+        let new_type = rust_to_c(typ);
+        // Avoid multiple `const`s in type.
+        if new_type.starts_with("const ") {
+            format!("{}*", new_type)
+        } else {
+            format!("const {}*", new_type)
+        }
     } else {
         match typ {
+            // Pure Rust types that need transforming.
             "()" => "void",
             "f32" => "float",
             "f64" => "double",
