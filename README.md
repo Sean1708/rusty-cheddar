@@ -17,6 +17,8 @@ rusty-cheddar targets C99 or later (for sane single line comments and use of `st
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
+### Invocation In Source File
+
 Using rusty-cheddar is very simple, first add the dependency to your `Cargo.toml`
 
 ```toml
@@ -53,6 +55,36 @@ This will first create the directories in `target/include` if they don't exist a
 `my_header.h` in `target/include`.
 
 In the examples below, boilerplate has been omitted from the header.
+
+### Invocation Form the Command Line
+
+Alternatively you can invoke rusty-cheddar from the command line. First you must grab the [repo] and
+build it using:
+
+```sh
+$ cargo build --release
+```
+Then compile your file with:
+
+```sh
+$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar $SOURCE
+```
+
+where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` and `$SOURCE` is the source file you
+wish to compile, you may also need to add the `--crate-type=...` flag.
+
+Another common workflow is to use rusty-cheddar to compile the header file without compiling the
+rest of the crate. For projects using `cargo` you can do:
+
+```sh
+$ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
+```
+
+Otherwise:
+
+```sh
+$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
+```
 
 ### Typedefs
 
