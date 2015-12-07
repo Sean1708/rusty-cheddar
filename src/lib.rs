@@ -127,62 +127,78 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
     }
 }
 
-fn rust_to_c(typ: &str) -> String {
-    // TODO: Function pointers.
-    // TODO: type paths (e.g. libc::FILE).
-    if typ.starts_with("*mut") {
-        // Remove the "*mut".
-        let typ = &typ[4..].trim();
-        format!("{}*", rust_to_c(typ))
-    } else if typ.starts_with("*const") {
-        // Remove the `*const`.
-        let typ = &typ[6..].trim();
-        let new_type = rust_to_c(typ);
-        // Avoid multiple `const`s in type.
-        if new_type.starts_with("const ") {
-            format!("{}*", new_type)
-        } else {
-            format!("const {}*", new_type)
-        }
-    } else if typ.starts_with("libc::") {
-        // Strip off the libc::
-        let typ = &typ[6..];
-        match typ {
-            "c_void" => "void",
-            "c_float" => "float",
-            "c_double" => "double",
-            "c_schar" => "signed char",
-            "c_uchar" => "unsigned char",
-            "c_short" => "short",
-            "c_ushort" => "unsigned short",
-            "c_int" => "int",
-            "c_uint" => "unsigned int",
-            "c_long" => "long",
-            "c_ulong" => "unsigned long",
-            "c_longlong" => "long long",
-            "c_ulonglong" => "unsigned long long",
-            // All other types should map over to C.
-            typ => typ,
-        }.to_owned()
-    } else {
-        match typ {
-            "()" => "void",
-            "f32" => "float",
-            "f64" => "double",
-            "i8" => "int8_t",
-            "i16" => "int16_t",
-            "i32" => "int32_t",
-            "i64" => "int64_t",
-            "isize" => "intptr_t",
-            "u8" => "uint8_t",
-            "u16" => "uint16_t",
-            "u32" => "uint32_t",
-            "u64" => "uint64_t",
-            "usize" => "uintptr_t",
-            // This is why we write out structs and enums as `typedef ...`.
-            // We `#include <stdbool.h>` so bool is handled.
-            typ => typ,
-        }.to_owned()
+// TODO: refactor:
+//     - fn_ptr_to_c(&ast::BareFn)
+//     - anything else in rust_to_c
+//     - probably pull the FnDecl parsing logic out of parse_fn
+fn rust_to_c(ty: &ast::Ty) -> String {
+    println!("{:#?}", ty.node);
+    match ty.node {
+        ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty),
+        // function pointers
+        // ast::Ty_::TyBareFn(fn_decl)
+        // ast::Ty_::TyPath(None, path) =>
+        _ => {
+            let ty = pprust::ty_to_string(ty);
+            if ty.starts_with("libc::") {
+                // Strip off the libc::
+                let ty = &ty[6..];
+                match ty {
+                    "c_void" => "void",
+                    "c_float" => "float",
+                    "c_double" => "double",
+                    "c_schar" => "signed char",
+                    "c_uchar" => "unsigned char",
+                    "c_short" => "short",
+                    "c_ushort" => "unsigned short",
+                    "c_int" => "int",
+                    "c_uint" => "unsigned int",
+                    "c_long" => "long",
+                    "c_ulong" => "unsigned long",
+                    "c_longlong" => "long long",
+                    "c_ulonglong" => "unsigned long long",
+                    // All other types should map over to C.
+                    ty => ty,
+                }.to_owned()
+            } else {
+                let ty: &str = &ty;
+                match ty {
+                    "()" => "void",
+                    "f32" => "float",
+                    "f64" => "double",
+                    "i8" => "int8_t",
+                    "i16" => "int16_t",
+                    "i32" => "int32_t",
+                    "i64" => "int64_t",
+                    "isize" => "intptr_t",
+                    "u8" => "uint8_t",
+                    "u16" => "uint16_t",
+                    "u32" => "uint32_t",
+                    "u64" => "uint64_t",
+                    "usize" => "uintptr_t",
+                    // This is why we write out structs and enums as `typedef ...`.
+                    // We `#include <stdbool.h>` so bool is handled.
+                    ty => ty,
+                }.to_owned()
+            }
+        },
+    }
+}
+
+fn ptr_to_c(ty: &ast::MutTy) -> String {
+    match ty.mutbl {
+        // *const T
+        ast::Mutability::MutImmutable => {
+            let new_type = rust_to_c(&ty.ty);
+            // Prevent multiple const specifiers.
+            if new_type.starts_with("const ") {
+                format!("{}*", new_type)
+            } else{
+                format!("const {}*", new_type)
+            }
+        },
+        // *mut T
+        ast::Mutability::MutMutable => format!("{}*", rust_to_c(&ty.ty)),
     }
 }
 
@@ -196,7 +212,7 @@ impl CheddarPass {
                 // rusty-cheddar ignores generics.
                 if generics.is_parameterized() { return; }
 
-                pprust::ty_to_string(&*ty)
+                rust_to_c(&*ty)
             },
             _ => {
                 context.sess.span_fatal(item.span, "`parse_ty` called on incorrect `Item_`");
@@ -204,7 +220,7 @@ impl CheddarPass {
         };
 
         self.buffer.push_str(&docs);
-        self.buffer.push_str(&format!("typedef {} {};\n\n", rust_to_c(&old_type), new_type));
+        self.buffer.push_str(&format!("typedef {} {};\n\n", old_type, new_type));
     }
 
     fn parse_enum(&mut self, context: &EarlyContext, item: &Item) {
@@ -263,8 +279,7 @@ impl CheddarPass {
                         Some(name) => name,
                         None => context.sess.span_fatal(field.span, "a tuple struct snuck through"),
                     };
-                    let ty = pprust::ty_to_string(&*field.node.ty);
-                    let ty = rust_to_c(&ty);
+                    let ty = rust_to_c(&*field.node.ty);
                     self.buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
             } else {
@@ -304,8 +319,7 @@ impl CheddarPass {
                 },
                 ast::FunctionRetTy::DefaultReturn(_) => "void".to_owned(),
                 ast::FunctionRetTy::Return(ref ty) => {
-                    let ty = pprust::ty_to_string(&*ty);
-                    rust_to_c(&ty).to_owned()
+                    rust_to_c(&*ty)
                 },
             };
 
@@ -316,8 +330,8 @@ impl CheddarPass {
 
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
-                let arg_type = pprust::ty_to_string(&*arg.ty);
-                self.buffer.push_str(&format!("{} {}, ", rust_to_c(&arg_type), arg_name));
+                let arg_type = rust_to_c(&*arg.ty);
+                self.buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
             }
 
             if has_args {
