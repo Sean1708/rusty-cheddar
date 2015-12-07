@@ -132,6 +132,9 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 //     - fn_ptr_to_c(&ast::BareFn)
 //     - anything else in rust_to_c
 //     - probably pull the FnDecl parsing logic out of parse_fn
+//     - return Result<String, (Option<Span>, String)>
+//         - since rusty-cheddar physically can't handle anything other than pointers, function
+//           pointers, and paths
 fn rust_to_c(ty: &ast::Ty) -> String {
     match ty.node {
         ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty),
@@ -160,7 +163,7 @@ fn rust_to_c(ty: &ast::Ty) -> String {
                     "c_ulonglong" => "unsigned long long",
                     // All other types should map over to C.
                     ty => ty,
-                }.to_owned()
+                }
             } else {
                 let ty: &str = &ty;
                 match ty {
@@ -180,8 +183,8 @@ fn rust_to_c(ty: &ast::Ty) -> String {
                     // This is why we write out structs and enums as `typedef ...`.
                     // We `#include <stdbool.h>` so bool is handled.
                     ty => ty,
-                }.to_owned()
-            }
+                }
+            }.to_owned()
         },
     }
 }
