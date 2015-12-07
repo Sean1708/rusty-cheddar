@@ -129,6 +129,7 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 
 fn rust_to_c(typ: &str) -> String {
     // TODO: Function pointers.
+    // TODO: type paths (e.g. libc::FILE).
     if typ.starts_with("*mut") {
         // Remove the "*mut".
         let typ = &typ[4..].trim();
@@ -143,9 +144,28 @@ fn rust_to_c(typ: &str) -> String {
         } else {
             format!("const {}*", new_type)
         }
+    } else if typ.starts_with("libc::") {
+        // Strip off the libc::
+        let typ = &typ[6..];
+        match typ {
+            "c_void" => "void",
+            "c_float" => "float",
+            "c_double" => "double",
+            "c_schar" => "signed char",
+            "c_uchar" => "unsigned char",
+            "c_short" => "short",
+            "c_ushort" => "unsigned short",
+            "c_int" => "int",
+            "c_uint" => "unsigned int",
+            "c_long" => "long",
+            "c_ulong" => "unsigned long",
+            "c_longlong" => "long long",
+            "c_ulonglong" => "unsigned long long",
+            // All other types should map over to C.
+            typ => typ,
+        }.to_owned()
     } else {
         match typ {
-            // Pure Rust types that need transforming.
             "()" => "void",
             "f32" => "float",
             "f64" => "double",

@@ -301,6 +301,44 @@ cheddar_cmp_test! { test_pure_rust_types,
     "
 }
 
+cheddar_cmp_test! { test_libc_types,
+    "
+    typedef void CVoid;
+    typedef float CFloat;
+    typedef double CDouble;
+    typedef signed char CSChar;
+    typedef unsigned char CUChar;
+    typedef short CShort;
+    typedef unsigned short CUShort;
+    typedef int CInt;
+    typedef unsigned int CUInt;
+    typedef long CLong;
+    typedef unsigned long CULong;
+    typedef long long CLongLong;
+    typedef unsigned long long CULongLong;
+    typedef FILE CFile;
+    ",
+    "
+    // This probably isn't the best way to test considering most people will use the crates.io version.
+    #![feature(libc)]
+    extern crate libc;
+    pub type CVoid = libc::c_void;
+    pub type CFloat = libc::c_float;
+    pub type CDouble = libc::c_double;
+    pub type CSChar = libc::c_schar;
+    pub type CUChar = libc::c_uchar;
+    pub type CShort = libc::c_short;
+    pub type CUShort = libc::c_ushort;
+    pub type CInt = libc::c_int;
+    pub type CUInt = libc::c_uint;
+    pub type CLong = libc::c_long;
+    pub type CULong = libc::c_ulong;
+    pub type CLongLong = libc::c_longlong;
+    pub type CULongLong = libc::c_ulonglong;
+    pub type CFile = libc::FILE;
+    "
+}
+
 cheddar_cmp_test! { test_general_interplay,
     "
     typedef float Kg;

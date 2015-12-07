@@ -208,6 +208,18 @@ As of commit 976d215ad6c4cdc370dbda161f33fb8b4e02bcad the function which convert
 numeric types and any user defined types correctly. Types defined in other crates (notably `libc`
 and `std`) are not handled correctly and function pointers are not handled correctly.
 
+rusty-cheddar currently does not handle type paths (e.g. `mymod::MyType`), instead they must be `use`ed
+first:
+
+```rust
+// pub type MyCType = mymod::MyType;  // This will put `typedef mymod::MyType MyCType;` into the header.
+use mymod::MyType;
+pub type MyCType = MyType;
+```
+
+The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
+(e.g. `libc::c_void`) so that they can be converted properly.
+
 ## Contributing
 
 Contributions to rusty-cheddar are more than welcome.
