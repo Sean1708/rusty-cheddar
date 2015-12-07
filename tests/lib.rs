@@ -195,6 +195,39 @@ cheddar_cmp_test! { test_compilable_enums,
     "
 }
 
+cheddar_cmp_test! { test_compilable_structs,
+    "
+    typedef struct Student {
+        int32_t id;
+        int32_t roll;
+        double score;
+    } Student;
+    ",
+    "
+    #[repr(C)]
+    pub struct Student {
+        id: i32,
+        roll: i32,
+        score: f64,
+    }
+
+    // Shouldn't appear in the output header file.
+    #[allow(dead_code)]
+    #[repr(C)]
+    struct Complex {
+        real: f64,
+        imag: f64,
+    }
+
+    // Shouldn't appear in output header file.
+    pub struct Employee {
+        id: i32,
+        age: i16,
+        salary: f64,
+    }
+    "
+}
+
 cheddar_cmp_test! { test_various_types,
     "
     typedef void MyVoid;
