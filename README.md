@@ -246,19 +246,10 @@ place to start.
 
 #### Tests
 
-I have written a script for comparing two header files, using [CppHeaderParser]. Unfortunately due to
-[this issue](https://bitbucket.org/senex/cppheaderparser/issues/26/named-structs-which-are-typedefed-to-the)
-we can't compare structs, so for the time being you'll have to install
-[my fork](https://bitbucket.org/Sean1708/cppheaderparser/overview):
-
-```sh
-# you'll have to download mercurial and a python (either 2 or 3 should work) first
-cd '/path/to/where/you/want/to/store/the/source'
-hg clone https://Sean1708@bitbucket.org/Sean1708/cppheaderparser
-cd 'cppheaderparser'
-pip install ply
-pip install .
-```
+The tests require you to have a recent version (> `v2.7.2`) of [CppHeaderParser] installed for the
+version of Python which is installed as `python` (usually Python 2). Furthermore due to the fact
+that the tests are a massive pile of wanky hacks, you must be in the same directory as
+rusty-cheddar's `Cargo.toml` to successfully run them.
 
 
 [repo]: https://github.com/Sean1708/rusty-cheddar
