@@ -132,7 +132,6 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 //     - anything else in rust_to_c
 //     - probably pull the FnDecl parsing logic out of parse_fn
 fn rust_to_c(ty: &ast::Ty) -> String {
-    println!("{:#?}", ty.node);
     match ty.node {
         ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty),
         // function pointers
