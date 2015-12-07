@@ -228,7 +228,37 @@ cheddar_cmp_test! { test_compilable_structs,
     "
 }
 
-cheddar_cmp_test! { test_various_types,
+cheddar_cmp_test! { test_compilable_functions,
+    "
+    int64_t add_i64(int64_t lhs, int64_t rhs);
+    ",
+    r#"
+    #[no_mangle]
+    pub extern fn add_i64(lhs: i64, rhs: i64) -> i64 {
+        lhs + rhs
+    }
+
+    // Shouldn't appear in the output header file.
+    #[allow(dead_code)]
+    #[no_mangle]
+    extern fn add_i32(lhs: i32, rhs: i32) -> i32 {
+        lhs + rhs
+    }
+
+    // Shouldn't appear in output header file.
+    #[no_mangle]
+    pub fn add_i16(lhs: i16, rhs: i16) -> i16 {
+        lhs + rhs
+    }
+
+    // Shouldn't appear in output header file.
+    pub fn add_i8(lhs: i8, rhs: i8) -> i8 {
+        lhs + rhs
+    }
+    "#
+}
+
+cheddar_cmp_test! { test_pure_rust_types,
     "
     typedef void MyVoid;
     typedef float Float32;
@@ -267,4 +297,75 @@ cheddar_cmp_test! { test_various_types,
     pub type LogicArray = *const bool;
     pub type FourPointers = *mut *mut *mut *mut i32;
     "
+}
+
+cheddar_cmp_test! { test_general_interplay,
+    "
+    typedef float Kg;
+    typedef float Lbs;
+    typedef float M;
+    typedef float Ins;
+
+    typedef enum Eye {
+        Blue = -1,
+        Green,
+        Red,
+    } Eye;
+
+    typedef struct Person {
+        int8_t age;
+        Eye eyes;
+        Kg weight;
+        M height;
+    } Person;
+
+    Person Person_create(int8_t age, Eye eyes, float weight_lbs, float height_ins);
+    void Person_describe(Person person);
+    ",
+    r#"
+    pub type Kg = f32;
+    pub type Lbs = f32;
+    pub type M = f32;
+    pub type Ins = f32;
+
+    #[repr(C)]
+    pub enum Eye {
+        Blue = -1,
+        Green,
+        Red,
+    }
+
+    #[repr(C)]
+    pub struct Person {
+        age: i8,
+        eyes: Eye,
+        weight: Kg,
+        height: M,
+    }
+
+    #[allow(non_snake_case)]
+    #[no_mangle]
+    pub extern fn Person_create(age: i8, eyes: Eye, weight_lbs: f32, height_ins: f32) -> Person {
+        Person {
+            age: age,
+            eyes: eyes,
+            weight: weight_lbs * 0.45,
+            height: height_ins * 0.0254,
+        }
+    }
+
+    #[allow(non_snake_case)]
+    #[no_mangle]
+    pub extern fn Person_describe(person: Person) {
+        let eyes = match person.eyes {
+            Eye::Blue => "blue",
+            Eye::Green => "green",
+            Eye::Red => "red",
+        };
+        println!(
+            "The {}m {} year old weighed {}kg and had {} eyes.",
+            person.height, person.age, person.weight, eyes,
+        );
+    }
+    "#
 }
