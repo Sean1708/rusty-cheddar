@@ -1,5 +1,7 @@
 # rusty-cheddar
 
+[![Build Status](https://travis-ci.org/Sean1708/rusty-cheddar.svg)](https://travis-ci.org/Sean1708/rusty-cheddar)
+
 A rustc compiler plugin to automatically generate C header files from Rust source files.
 
 ## Usage
