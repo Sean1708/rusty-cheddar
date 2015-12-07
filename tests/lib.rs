@@ -306,6 +306,7 @@ cheddar_cmp_test! { test_libc_types,
     typedef void CVoid;
     typedef float CFloat;
     typedef double CDouble;
+    typedef char CChar;
     typedef signed char CSChar;
     typedef unsigned char CUChar;
     typedef short CShort;
@@ -325,6 +326,7 @@ cheddar_cmp_test! { test_libc_types,
     pub type CVoid = libc::c_void;
     pub type CFloat = libc::c_float;
     pub type CDouble = libc::c_double;
+    pub type CChar = libc::c_char;
     pub type CSChar = libc::c_schar;
     pub type CUChar = libc::c_uchar;
     pub type CShort = libc::c_short;

@@ -147,6 +147,7 @@ fn rust_to_c(ty: &ast::Ty) -> String {
                     "c_void" => "void",
                     "c_float" => "float",
                     "c_double" => "double",
+                    "c_char" => "char",
                     "c_schar" => "signed char",
                     "c_uchar" => "unsigned char",
                     "c_short" => "short",
