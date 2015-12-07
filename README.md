@@ -17,7 +17,7 @@ Using rusty-cheddar is very simple, first add the dependency to your `Cargo.toml
 
 ```toml
 [dependencies]
-rusty-cheddar = { git = "https://github.com/Sean1708/rusty-cheddar", version = "*" }
+rusty-cheddar = "0.1"
 ```
 
 then at the top of your `lib.rs`
