@@ -17,4 +17,4 @@ name = "cheddar"
 plugin = true
 
 [dependencies]
-clippy = "^0"
+clippy = "0"
