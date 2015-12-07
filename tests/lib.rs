@@ -124,17 +124,13 @@ macro_rules! cheddar_cmp_test {
 cheddar_cmp_test! { test_compilable_typedefs,
     "
     typedef int64_t Int64;
-    typedef double Real;
-    typedef const bool* BoolArray;
-    typedef intptr_t Int;
-    typedef float* FloatArray;
     ",
     "
     pub type Int64 = i64;
-    pub type Real = f64;
-    pub type BoolArray = *const bool;
-    pub type Int = isize;
-    pub type FloatArray = *mut f32;
+    // Shouldn't appear in output header file.
+    type Float32 = f32;
+    // Shouldn't appear in output header file.
+    pub type AResult<T> = Result<T, ()>;
     "
 }
 
