@@ -19,6 +19,7 @@ use syntax::ast;
 use syntax::ast::Attribute;
 use syntax::ast::Item;
 use syntax::ast::Item_;
+use syntax::codemap;
 use syntax::print::pprust;
 
 // Internal
@@ -42,7 +43,7 @@ pub struct CheddarPass {
     file: PathBuf,
 }
 
-type Result = std::result::Result<Option<String>, (syntax::codemap::Span, String)>;
+type Result = std::result::Result<Option<String>, (codemap::Span, String)>;
 
 declare_lint!(CHEDDAR, Allow, "What does this actually do? Do I need it?");
 
@@ -81,6 +82,7 @@ impl lint::EarlyLintPass for CheddarPass {
             match res {
                 Err((span, msg)) => context.sess.span_err(span, &msg),
                 Ok(Some(buf)) => buffer.push_str(&buf),
+                // TODO: put span notes in these or would that just get annoying?
                 Ok(None) => {},  // Item should not be written to header.
             };
         }
@@ -148,12 +150,19 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 // TODO: refactor:
 //     - path_to_c(&ast::Path)
 //     - probably pull the FnDecl parsing logic out of parse_fn
-fn rust_to_c(ty: &ast::Ty) -> Result {
+// TODO: C function pointers _must_ have a name associated with them but this Option business feels
+//       like a shit way to handle that
+//     - maybe have a named_rust_to_c which allows fn_pointers and rust_to_c doesn't?
+fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
     match ty.node {
         // standard pointers
-        ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty),
+        ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty, name),
         // function pointers
-        // ast::Ty_::TyBareFn(ref bare_fn) => fn_ptr_to_c(bare_fn),
+        ast::Ty_::TyBareFn(ref bare_fn) => if let Some(name) = name {
+            fn_ptr_to_c(bare_fn, ty.span, name)
+        } else {
+            Err((ty.span, "C function pointers must have a name associated with them".to_owned()))
+        },
         // ast::Ty_::TyPath(None, ref path) => path_to_c(path),
         // _ => Err((ty.span, format!("cheddar can not handle the type `{}`", pprust::ty_to_string(ty)))),
         _ => {
@@ -200,25 +209,88 @@ fn rust_to_c(ty: &ast::Ty) -> Result {
                     ty => ty,
                 }
             };
-            Ok(Some(new_type.to_owned()))
+
+            Ok(Some(if let Some(name) = name {
+                format!("{} {}", new_type, name)
+            } else {
+                new_type.to_owned()
+            }))
         },
     }
 }
 
-fn ptr_to_c(ty: &ast::MutTy) -> Result {
-    let new_type = try_some!(rust_to_c(&ty.ty));
+fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
+    let new_type = try_some!(rust_to_c(&ty.ty, None));
     Ok(Some(match ty.mutbl {
         // *const T
         ast::Mutability::MutImmutable => {
             if new_type.starts_with("const ") {
-                format!("{}*", new_type)
+                if let Some(name) = name {
+                    format!("{}* {}", new_type, name)
+                } else {
+                    format!("{}*", new_type)
+                }
             } else {
-                format!("const {}*", new_type)
+                if let Some(name) = name {
+                    format!("const {}* {}", new_type, name)
+                } else {
+                    format!("const {}*", new_type)
+                }
             }
         },
         // *mut T
-        ast::Mutability::MutMutable => format!("{}*", new_type),
+        ast::Mutability::MutMutable => if let Some(name) = name {
+            format!("{}* {}", new_type, name)
+        } else {
+            format!("{}*", new_type)
+        },
     }))
+}
+
+fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Result {
+    match fn_ty.abi {
+        // If it doesn't have a C ABI it can't be called from C.
+        Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
+        _ => return Ok(None),
+    }
+
+    if !fn_ty.lifetimes.is_empty() {
+        return Err((fn_span, "rusty-cheddar can not handle lifetimes".to_owned()));
+    }
+
+    // C function pointers have the form
+    //     R (*name)(T1 ident1, T2 ident2, ...)
+
+    let fn_decl: &ast::FnDecl = &*fn_ty.decl;
+
+    let output_type = &fn_decl.output;
+    let output_type = match *output_type {
+        ast::FunctionRetTy::NoReturn(span) => {
+            return Err((span, "panics across a C boundary are naughty!".to_owned()));
+        },
+        ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
+        ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, None)),
+    };
+
+    let mut buffer = format!("{} (*{})(", output_type, name);
+
+    let has_args = !fn_decl.inputs.is_empty();
+
+    for arg in &fn_decl.inputs {
+        let arg_name = pprust::pat_to_string(&*arg.pat);
+        let arg_type = try_some!(rust_to_c(&*arg.ty, Some(&arg_name)));
+        buffer.push_str(&format!("{}, ", arg_type));
+    }
+
+    if has_args {
+        // Remove the trailing comma and space.
+        buffer.pop();
+        buffer.pop();
+    }
+
+    buffer.push_str(")");
+
+    Ok(Some(buffer))
 }
 
 
@@ -229,20 +301,20 @@ impl CheddarPass {
         let mut buffer = String::new();
         buffer.push_str(&docs);
 
-        let new_type = item.ident.name.as_str();
-        let old_type = match item.node {
+        let name = item.ident.name.as_str();
+        let new_type = match item.node {
             Item_::ItemTy(ref ty, ref generics) => {
                 // Can not yet convert generics.
                 if generics.is_parameterized() { return Ok(None); }
 
-                try_some!(rust_to_c(&*ty))
+                try_some!(rust_to_c(&*ty, Some(&name)))
             },
             _ => {
                 context.sess.span_fatal(item.span, "`parse_ty` called on incorrect `Item_`");
             },
         };
 
-        buffer.push_str(&format!("typedef {} {};\n\n", old_type, new_type));
+        buffer.push_str(&format!("typedef {};\n\n", new_type));
 
         Ok(Some(buffer))
     }
@@ -303,11 +375,11 @@ impl CheddarPass {
                     buffer.push_str(&docs);
 
                     let name = match field.node.ident() {
-                        Some(name) => name,
+                        Some(name) => name.name.as_str(),
                         None => context.sess.span_fatal(field.span, "a tuple struct snuck through"),
                     };
-                    let ty = try_some!(rust_to_c(&*field.node.ty));
-                    buffer.push_str(&format!("\t{} {};\n", ty, name));
+                    let ty = try_some!(rust_to_c(&*field.node.ty, Some(&name)));
+                    buffer.push_str(&format!("\t{};\n", ty));
                 }
             } else {
                 return Err((item.span, "cheddar can not handle unit or tuple `#[repr(C)]` structs".to_owned()));
@@ -346,7 +418,7 @@ impl CheddarPass {
                     return Err((span, "panics across a C boundary are naughty!".to_owned()));
                 },
                 ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
-                ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty)),
+                ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, None)),
             };
 
             buffer.push_str(&docs);
@@ -356,8 +428,8 @@ impl CheddarPass {
 
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
-                let arg_type = try_some!(rust_to_c(&*arg.ty));
-                buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
+                let arg_type = try_some!(rust_to_c(&*arg.ty, Some(&arg_name)));
+                buffer.push_str(&format!("{}, ", arg_type));
             }
 
             if has_args {
