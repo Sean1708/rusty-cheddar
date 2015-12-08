@@ -258,6 +258,21 @@ cheddar_cmp_test! { test_compilable_functions,
     "#
 }
 
+cheddar_cmp_test! { test_compilable_function_pointers,
+    "
+    typedef const int32_t** (*TwoIntPtrFnPtr)(double* argument);
+
+    double cmp(double (*cmp_fn)(double lhs, double rhs), double lhs, double rhs);
+    ",
+    "
+    pub type TwoIntPtrFnPtr = extern fn(argument: *mut f64) -> *const *mut i32;
+    #[no_mangle]
+    pub extern fn cmp(cmp_fn: extern fn(lhs: f64, rhs: f64) -> f64, lhs: f64, rhs: f64) -> f64 {
+        cmp_fn(lhs, rhs)
+    }
+    "
+}
+
 cheddar_cmp_test! { test_pure_rust_types,
     "
     typedef void MyVoid;
