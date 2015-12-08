@@ -39,6 +39,17 @@ macro_rules! try_some {
 }
 
 
+// TODO: error handling by having an enum with levels and returning Vec?
+// enum Error {
+//     Fatal(Option<Span>, String),
+//     Error(Option<Span>, String),
+//     Warn(Option<Span>, String),
+//     Note(Option<Span>, String),
+// }
+// then have
+// type Result = std::result::Result<Option(String), Vec<Error>>;
+
+
 pub struct CheddarPass {
     file: PathBuf,
 }
@@ -221,29 +232,24 @@ fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
 
 fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
     let new_type = try_some!(rust_to_c(&ty.ty, None));
-    Ok(Some(match ty.mutbl {
+    let const_spec = match ty.mutbl {
         // *const T
         ast::Mutability::MutImmutable => {
+            // Avoid multiple `const` specifiers (you can't have `const const int**` in C).
             if new_type.starts_with("const ") {
-                if let Some(name) = name {
-                    format!("{}* {}", new_type, name)
-                } else {
-                    format!("{}*", new_type)
-                }
+                ""
             } else {
-                if let Some(name) = name {
-                    format!("const {}* {}", new_type, name)
-                } else {
-                    format!("const {}*", new_type)
-                }
+                "const "
             }
         },
         // *mut T
-        ast::Mutability::MutMutable => if let Some(name) = name {
-            format!("{}* {}", new_type, name)
-        } else {
-            format!("{}*", new_type)
-        },
+        ast::Mutability::MutMutable => "",
+    };
+
+    Ok(Some(if let Some(name) = name {
+        format!("{}{}* {}", const_spec, new_type, name)
+    } else {
+        format!("{}{}*", const_spec, new_type)
     }))
 }
 
@@ -292,6 +298,14 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
 
     Ok(Some(buffer))
 }
+
+// fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
+//     if path.segments.is_empty() {
+//         Err((path.span, "what the fuck have you done to this type?! this may be a bug".to_owned()))
+//     } else if path.segments.len() > 1 {
+//         if &path.segments[0].ident.name.as_str() == "libc" {
+//             let ty =
+//
 
 
 impl CheddarPass {
