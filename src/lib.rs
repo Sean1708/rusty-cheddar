@@ -39,7 +39,6 @@ macro_rules! try_some {
 
 
 pub struct CheddarPass {
-    buffer: String,
     file: PathBuf,
 }
 
@@ -55,12 +54,12 @@ impl lint::LintPass for CheddarPass {
 
 impl lint::EarlyLintPass for CheddarPass {
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
-        self.buffer.push_str(&format!(
+        let mut buffer = format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
             self.file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
-        ));
-        self.buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
-        self.buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
+        );
+        buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
+        buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
 
         for item in &krate.module.items {
             // If it's not visible it can't be called from C.
@@ -83,15 +82,15 @@ impl lint::EarlyLintPass for CheddarPass {
             // Display any non-fatal errors, fatal errors are handled at cause.
             match res {
                 Err((span, msg)) => context.sess.span_err(span, &msg),
-                Ok(Some(buf)) => self.buffer.push_str(&buf),
+                Ok(Some(buf)) => buffer.push_str(&buf),
                 Ok(None) => {},  // Item should not be written to header.
             };
         }
 
-        self.buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
-        self.buffer.push_str("#endif\n");
+        buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
+        buffer.push_str("#endif\n");
 
-        let bytes_buf = self.buffer.clone().into_bytes();
+        let bytes_buf = buffer.into_bytes();
 
         if let Err(error) = fs::File::create(&self.file).and_then(|mut f| f.write_all(&bytes_buf)) {
             context.sess.err(&format!("could not write to '{}': {}", self.file.display(), error))
@@ -456,6 +455,5 @@ pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
         // If all else fails...
         .unwrap_or(PathBuf::from("cheddar.h"));
 
-    let cheddar = CheddarPass { buffer: String::new(), file: file };
-    reg.register_early_lint_pass(box cheddar);
+    reg.register_early_lint_pass(box CheddarPass { file: file });
 }
