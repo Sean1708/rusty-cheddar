@@ -71,15 +71,15 @@ $ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugi
 
 ### Invocation In Source File
 
-You can also get rusty-cheddar to run automatically each time you compile, first add the follow to
-your `Cargo.toml`:
+You can also get rusty-cheddar to run automatically each time you compile, but this means that your
+crate must be built with nightly Rust. First add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 rusty-cheddar = "0.1"
 ```
 
-then at the top of your `lib.rs`:
+Then at the top of your `lib.rs`:
 
 ```rust
 #![feature(plugin)]
