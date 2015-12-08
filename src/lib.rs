@@ -166,66 +166,28 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 //     - maybe have a named_rust_to_c which allows fn_pointers and rust_to_c doesn't?
 fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
     match ty.node {
-        // standard pointers
+        // Standard pointers.
         ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty, name),
-        // function pointers
+        // Function pointers.
         ast::Ty_::TyBareFn(ref bare_fn) => if let Some(name) = name {
             fn_ptr_to_c(bare_fn, ty.span, name)
         } else {
             Err((ty.span, "C function pointers must have a name associated with them".to_owned()))
         },
-        // ast::Ty_::TyPath(None, ref path) => path_to_c(path),
-        // _ => Err((ty.span, format!("cheddar can not handle the type `{}`", pprust::ty_to_string(ty)))),
+        // Plain old types.
+        ast::Ty_::TyPath(None, ref path) => ty_to_c(path, name),
+        // Possibly void, likely not.
         _ => {
-            let ty = pprust::ty_to_string(ty);
-            let new_type = if ty.starts_with("libc::") {
-                // Strip off the libc::
-                let ty = &ty[6..];
-                match ty {
-                    "c_void" => "void",
-                    "c_float" => "float",
-                    "c_double" => "double",
-                    "c_char" => "char",
-                    "c_schar" => "signed char",
-                    "c_uchar" => "unsigned char",
-                    "c_short" => "short",
-                    "c_ushort" => "unsigned short",
-                    "c_int" => "int",
-                    "c_uint" => "unsigned int",
-                    "c_long" => "long",
-                    "c_ulong" => "unsigned long",
-                    "c_longlong" => "long long",
-                    "c_ulonglong" => "unsigned long long",
-                    // All other types should map over to C.
-                    ty => ty,
-                }
+            let new_type = pprust::ty_to_string(ty);
+            if new_type == "()" {
+                Ok(Some(if let Some(name) = name {
+                    format!("void {}", name)
+                } else {
+                    "void".to_owned()
+                }))
             } else {
-                let ty: &str = &ty;
-                match ty {
-                    "()" => "void",
-                    "f32" => "float",
-                    "f64" => "double",
-                    "i8" => "int8_t",
-                    "i16" => "int16_t",
-                    "i32" => "int32_t",
-                    "i64" => "int64_t",
-                    "isize" => "intptr_t",
-                    "u8" => "uint8_t",
-                    "u16" => "uint16_t",
-                    "u32" => "uint32_t",
-                    "u64" => "uint64_t",
-                    "usize" => "uintptr_t",
-                    // This is why we write out structs and enums as `typedef ...`.
-                    // We `#include <stdbool.h>` so bool is handled.
-                    ty => ty,
-                }
-            };
-
-            Ok(Some(if let Some(name) = name {
-                format!("{} {}", new_type, name)
-            } else {
-                new_type.to_owned()
-            }))
+                Err((ty.span, format!("cheddar can not handle the type `{}`", new_type)))
+            }
         },
     }
 }
@@ -299,14 +261,82 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
     Ok(Some(buffer))
 }
 
-// fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
-//     if path.segments.is_empty() {
-//         Err((path.span, "what the fuck have you done to this type?! this may be a bug".to_owned()))
-//     } else if path.segments.len() > 1 {
-//         if &path.segments[0].ident.name.as_str() == "libc" {
-//             let ty =
-//
+fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
+    let new_type;
 
+    // I don't think this is possible.
+    if path.segments.is_empty() {
+        return Err((
+            path.span,
+            "what the fuck have you done to this type?! this may be a bug".to_owned()
+        ));
+    // Types in modules, `my_mod::MyType`.
+    } else if path.segments.len() > 1 {
+        let module: &str = &path.segments[0].identifier.name.as_str();
+        let ty: &str = &path.segments.last()
+            .expect("already checked that there were at least two elements")
+            .identifier.name.as_str();
+
+        if module != "libc" {
+            return Err((path.span, format!(
+                "cheddar can not handle types in modules (except `libc`), try `use {}::{}`",
+                module, ty,
+            )));
+        } else {
+            new_type = libc_ty_to_c(ty).to_owned();
+        }
+    } else {
+        new_type = rust_ty_to_c(&path.segments[0].identifier.name.as_str()).to_owned();
+    }
+
+    Ok(Some(if let Some(name) = name {
+        format!("{} {}", new_type, name)
+    } else {
+        new_type
+    }))
+}
+
+fn libc_ty_to_c(ty: &str) -> &str {
+    match ty {
+        "c_void" => "void",
+        "c_float" => "float",
+        "c_double" => "double",
+        "c_char" => "char",
+        "c_schar" => "signed char",
+        "c_uchar" => "unsigned char",
+        "c_short" => "short",
+        "c_ushort" => "unsigned short",
+        "c_int" => "int",
+        "c_uint" => "unsigned int",
+        "c_long" => "long",
+        "c_ulong" => "unsigned long",
+        "c_longlong" => "long long",
+        "c_ulonglong" => "unsigned long long",
+        // All other types should map over to C.
+        ty => ty,
+    }
+}
+
+fn rust_ty_to_c(ty: &str) -> &str {
+    match ty {
+        "()" => "void",
+        "f32" => "float",
+        "f64" => "double",
+        "i8" => "int8_t",
+        "i16" => "int16_t",
+        "i32" => "int32_t",
+        "i64" => "int64_t",
+        "isize" => "intptr_t",
+        "u8" => "uint8_t",
+        "u16" => "uint16_t",
+        "u32" => "uint32_t",
+        "u64" => "uint64_t",
+        "usize" => "uintptr_t",
+        // This is why we write out structs and enums as `typedef ...`.
+        // We `#include <stdbool.h>` so bool is handled.
+        ty => ty,
+    }
+}
 
 impl CheddarPass {
     fn parse_ty(&mut self, context: &EarlyContext, item: &Item) -> Result {
