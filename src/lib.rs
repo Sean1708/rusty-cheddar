@@ -155,7 +155,7 @@ fn rust_to_c(ty: &ast::Ty) -> Result {
         // function pointers
         // ast::Ty_::TyBareFn(ref bare_fn) => fn_ptr_to_c(bare_fn),
         // ast::Ty_::TyPath(None, ref path) => path_to_c(path),
-        // _ => Err((Some(ty.span), format!("cheddar can not handle the type `{}`", pprust::ty_to_string(ty)))),
+        // _ => Err((ty.span, format!("cheddar can not handle the type `{}`", pprust::ty_to_string(ty)))),
         _ => {
             let ty = pprust::ty_to_string(ty);
             let new_type = if ty.starts_with("libc::") {
@@ -207,18 +207,18 @@ fn rust_to_c(ty: &ast::Ty) -> Result {
 
 fn ptr_to_c(ty: &ast::MutTy) -> Result {
     let new_type = try_some!(rust_to_c(&ty.ty));
-    match ty.mutbl {
+    Ok(Some(match ty.mutbl {
         // *const T
         ast::Mutability::MutImmutable => {
             if new_type.starts_with("const ") {
-                Ok(Some(format!("{}*", new_type)))
+                format!("{}*", new_type)
             } else {
-                Ok(Some(format!("const {}*", new_type)))
+                format!("const {}*", new_type)
             }
         },
         // *mut T
-        ast::Mutability::MutMutable => Ok(Some(format!("{}*", new_type))),
-    }
+        ast::Mutability::MutMutable => format!("{}*", new_type),
+    }))
 }
 
 
