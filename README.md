@@ -8,25 +8,78 @@ A rustc compiler plugin to automatically generate C header files from Rust sourc
 
 ## Usage
 
-Compiler plugins have not yet been stabilised so you must use a nightly compiler. If you wish to
-build against stable Rust as well then I suggest [multirust] or
-[multirust-rs](https://github.com/Diggsey/multirust-rs).
+Compiler plugins have not yet been stabilised so you must use a nightly compiler to build
+rusty-cheddar, however there are ways to use rusty-cheddar with a crate designed for stable Rust
+which are described below. If you wish to build against stable Rust as well then you must use
+[multirust] or [multirust-rs](https://github.com/Diggsey/multirust-rs).
 
 rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 `stdbool.h`), if you really really really really really have to use an older standard then please
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
+### Invocation Form the Command Line
+
+You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
+using (remember to use nightly Rust to build rusty-cheddar):
+
+```sh
+$ cargo build --release
+```
+Then compile your file with:
+
+```sh
+$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar $SOURCE
+```
+
+where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` (it should be enough for the dylib to
+be in your `$PATH` but I've not checked this yet) and `$SOURCE` is the source file you wish to
+compile, you may also need to add the `--crate-type=...` flag.
+
+Another common workflow is to use rusty-cheddar to compile the header file without compiling the
+rest of the crate. For projects using `cargo` you can do:
+
+```sh
+$ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
+```
+
+Otherwise:
+
+```sh
+$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
+```
+
+#### Using rusty-cheddar With Crates Built for Stable Rust
+
+Using the above technique and [multirust] you can build your crate on stable while still being able
+to invoke rusty-cheddar. First you must grab the source from the [repo] and build it with _nightly_
+Rust:
+
+```sh
+$ cd $CHEDDAR
+$ multirust run nightly cargo build --release
+```
+
+Then build your project on stable Rust and use nightly Rust to invoke rusty-cheddar:
+
+```sh
+$ cd $YOUR_PROJECT
+$ multirust override stable  # if you have a different default
+$ cargo build --release
+$ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
+```
+
 ### Invocation In Source File
 
-Using rusty-cheddar is very simple, first add the dependency to your `Cargo.toml`
+You can also get rusty-cheddar to run automatically each time you compile, first add the follow to
+your `Cargo.toml`:
 
 ```toml
 [dependencies]
 rusty-cheddar = "0.1"
 ```
 
-then at the top of your `lib.rs`
+then at the top of your `lib.rs`:
 
 ```rust
 #![feature(plugin)]
@@ -55,45 +108,6 @@ This will first create the directories in `target/include` if they don't exist a
 `my_header.h` in `target/include`.
 
 In the examples below, boilerplate has been omitted from the header.
-
-### Invocation Form the Command Line
-
-Alternatively you can invoke rusty-cheddar from the command line. First you must grab the [repo] and
-build it using (remember to use nightly Rust for this step):
-
-```sh
-$ cargo build --release
-```
-Then compile your file with:
-
-```sh
-$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar $SOURCE
-```
-
-where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` and `$SOURCE` is the source file you
-wish to compile, you may also need to add the `--crate-type=...` flag.
-
-Another common workflow is to use rusty-cheddar to compile the header file without compiling the
-rest of the crate, this has the advantage of allowing you to build your crate with stable Rust then
-generate the header file with rusty-cheddar. For projects using `cargo` you can do:
-
-```sh
-$ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-```
-
-Otherwise:
-
-```sh
-$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
-```
-
-If you wish to build on stable, use [multirust]:
-
-```sh
-$ multirust override stable  # if you have a different default
-$ cargo build --release
-$ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-```
 
 ### Typedefs
 
