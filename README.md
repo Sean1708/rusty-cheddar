@@ -21,7 +21,7 @@ open an issue at the [repo] and I will begrudgingly figure out how to implement 
 ### Invocation Form the Command Line
 
 You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
-using (remember to use nightly Rust to build rusty-cheddar):
+(remember to use nightly Rust to build rusty-cheddar):
 
 ```sh
 $ cargo build --release
