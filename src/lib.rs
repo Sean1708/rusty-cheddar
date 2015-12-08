@@ -29,12 +29,21 @@ use std::path::PathBuf;
 use std::io::Write;
 
 
+/// Unwraps Result<Option<..>> if it is Ok(Some(..)) else returns.
+macro_rules! try_some {
+    ($expr:expr) => {{ match $expr {
+        Ok(Some(val)) => val,
+        expr => return expr,
+    }}};
+}
+
+
 pub struct CheddarPass {
     buffer: String,
     file: PathBuf,
 }
 
-type Result<T> = std::result::Result<T, (syntax::codemap::Span, String)>;
+type Result = std::result::Result<Option<String>, (syntax::codemap::Span, String)>;
 
 declare_lint!(CHEDDAR, Allow, "What does this actually do? Do I need it?");
 
@@ -57,9 +66,9 @@ impl lint::EarlyLintPass for CheddarPass {
             // If it's not visible it can't be called from C.
             if let ast::Visibility::Inherited = item.vis { continue; }
 
+            // TODO: create a local buffer in each method then return that if the function
+                // succeeds, None if the function aborts and Err if the function fails.
             // Dispatch to correct method.
-            // TODO: should these methods return Results?
-            //     - Yes now that rust_to_c returns a Result
             let res = match item.node {
                 // TODO: Check for ItemStatic and ItemConst as well.
                 //     - How would this work?
@@ -68,13 +77,14 @@ impl lint::EarlyLintPass for CheddarPass {
                 Item_::ItemEnum(..) => self.parse_enum(context, item),
                 Item_::ItemStruct(..) => self.parse_struct(context, item),
                 Item_::ItemFn(..) => self.parse_fn(context, item),
-                _ => Ok(()),
+                _ => Ok(None),
             };
 
             // Display any non-fatal errors, fatal errors are handled at cause.
             match res {
                 Err((span, msg)) => context.sess.span_err(span, &msg),
-                Ok(..) => {},
+                Ok(Some(buf)) => self.buffer.push_str(&buf),
+                Ok(None) => {},  // Item should not be written to header.
             };
         }
 
@@ -145,7 +155,7 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 //         - since rusty-cheddar physically can't handle anything other than pointers, function
 //           pointers, and paths
 //     - -> Result<Some(String)> where None indicates a non-erroneous abort.
-fn rust_to_c(ty: &ast::Ty) -> Result<String> {
+fn rust_to_c(ty: &ast::Ty) -> Result {
     match ty.node {
         // standard pointers
         ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty),
@@ -197,60 +207,63 @@ fn rust_to_c(ty: &ast::Ty) -> Result<String> {
                     ty => ty,
                 }
             };
-            Ok(new_type.to_owned())
+            Ok(Some(new_type.to_owned()))
         },
     }
 }
 
-fn ptr_to_c(ty: &ast::MutTy) -> Result<String> {
+fn ptr_to_c(ty: &ast::MutTy) -> Result {
+    let new_type = try_some!(rust_to_c(&ty.ty));
     match ty.mutbl {
         // *const T
         ast::Mutability::MutImmutable => {
-            let new_type = try!(rust_to_c(&ty.ty));
-            // Prevent multiple const specifiers.
             if new_type.starts_with("const ") {
-                Ok(format!("{}*", new_type))
-            } else{
-                Ok(format!("const {}*", new_type))
+                Ok(Some(format!("{}*", new_type)))
+            } else {
+                Ok(Some(format!("const {}*", new_type)))
             }
         },
         // *mut T
-        ast::Mutability::MutMutable => Ok(format!("{}*", try!(rust_to_c(&ty.ty)))),
+        ast::Mutability::MutMutable => Ok(Some(format!("{}*", new_type))),
     }
 }
 
+
 impl CheddarPass {
-    fn parse_ty(&mut self, context: &EarlyContext, item: &Item) -> Result<()> {
+    fn parse_ty(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
+
+        let mut buffer = String::new();
+        buffer.push_str(&docs);
 
         let new_type = item.ident.name.as_str();
         let old_type = match item.node {
             Item_::ItemTy(ref ty, ref generics) => {
-                // rusty-cheddar ignores generics.
-                if generics.is_parameterized() { return Ok(()); }
+                // Can not yet convert generics.
+                if generics.is_parameterized() { return Ok(None); }
 
-                try!(rust_to_c(&*ty))
+                try_some!(rust_to_c(&*ty))
             },
             _ => {
                 context.sess.span_fatal(item.span, "`parse_ty` called on incorrect `Item_`");
             },
         };
 
-        self.buffer.push_str(&docs);
-        self.buffer.push_str(&format!("typedef {} {};\n\n", old_type, new_type));
+        buffer.push_str(&format!("typedef {} {};\n\n", old_type, new_type));
 
-        Ok(())
+        Ok(Some(buffer))
     }
 
-    fn parse_enum(&mut self, context: &EarlyContext, item: &Item) -> Result<()> {
+    fn parse_enum(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
-        // This is usually by design so not an error.
-        if !repr_c { return Ok(()); }
-        self.buffer.push_str(&docs);
+        if !repr_c { return Ok(None); }
+
+        let mut buffer = String::new();
+        buffer.push_str(&docs);
 
         let name = item.ident.name.as_str();
-        self.buffer.push_str(&format!("typedef enum {} {{\n", name));
+        buffer.push_str(&format!("typedef enum {} {{\n", name));
         if let Item_::ItemEnum(ref definition, ref generics) = item.node {
             if generics.is_parameterized() {
                 return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` enums".to_owned()));
@@ -262,28 +275,29 @@ impl CheddarPass {
                 }
 
                 let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
-                self.buffer.push_str(&docs);
+                buffer.push_str(&docs);
 
-                self.buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
+                buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
             }
         } else {
             context.sess.span_fatal(item.span, "`parse_enum` called in wrong `Item_`");
         }
 
-        self.buffer.push_str(&format!("}} {};\n\n", name));
+        buffer.push_str(&format!("}} {};\n\n", name));
 
-        Ok(())
+        Ok(Some(buffer))
     }
 
-    fn parse_struct(&mut self, context: &EarlyContext, item: &Item) -> Result<()> {
+    fn parse_struct(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
-        // This is not an error though because it's almost always by design.
-        if !repr_c { return Ok(()); }
-        self.buffer.push_str(&docs);
+        if !repr_c { return Ok(None); }
+
+        let mut buffer = String::new();
+        buffer.push_str(&docs);
 
         let name = item.ident.name.as_str();
-        self.buffer.push_str(&format!("typedef struct {} {{\n", name));
+        buffer.push_str(&format!("typedef struct {} {{\n", name));
 
         if let Item_::ItemStruct(ref variants, ref generics) = item.node {
             if generics.is_parameterized() {
@@ -293,14 +307,14 @@ impl CheddarPass {
             if variants.is_struct() {
                 for field in variants.fields() {
                     let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
-                    self.buffer.push_str(&docs);
+                    buffer.push_str(&docs);
 
                     let name = match field.node.ident() {
                         Some(name) => name,
                         None => context.sess.span_fatal(field.span, "a tuple struct snuck through"),
                     };
-                    let ty = try!(rust_to_c(&*field.node.ty));
-                    self.buffer.push_str(&format!("\t{} {};\n", ty, name));
+                    let ty = try_some!(rust_to_c(&*field.node.ty));
+                    buffer.push_str(&format!("\t{} {};\n", ty, name));
                 }
             } else {
                 return Err((item.span, "cheddar can not handle unit or tuple `#[repr(C)]` structs".to_owned()));
@@ -309,23 +323,24 @@ impl CheddarPass {
             context.sess.span_fatal(item.span, "`parse_struct` called on wrong `Item_`");
         }
 
-        self.buffer.push_str(&format!("}} {};\n\n", name));
+        buffer.push_str(&format!("}} {};\n\n", name));
 
-        Ok(())
+        Ok(Some(buffer))
     }
 
-    fn parse_fn(&mut self, context: &EarlyContext, item: &Item) -> Result<()> {
+    fn parse_fn(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
         // If it's not #[no_mangle] then it can't be called from C.
-        if !no_mangle { return Ok(()); }
+        if !no_mangle { return Ok(None); }
 
+        let mut buffer = String::new();
         let name = item.ident.name.as_str();
 
         if let Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
             match abi {
                 // If it doesn't have a C ABI it can't be called from C.
                 Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
-                _ => return Ok(()),
+                _ => return Ok(None),
             }
             if generics.is_parameterized() {
                 return Err((item.span, "cheddar can not handle parameterized extern functions".to_owned()));
@@ -338,32 +353,32 @@ impl CheddarPass {
                     return Err((span, "panics across a C boundary are naughty!".to_owned()));
                 },
                 ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
-                ast::FunctionRetTy::Return(ref ty) => try!(rust_to_c(&*ty)),
+                ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty)),
             };
 
-            self.buffer.push_str(&docs);
-            self.buffer.push_str(&format!("{} {}(", output_type, name));
+            buffer.push_str(&docs);
+            buffer.push_str(&format!("{} {}(", output_type, name));
 
             let has_args = !fn_decl.inputs.is_empty();
 
             for arg in &fn_decl.inputs {
                 let arg_name = pprust::pat_to_string(&*arg.pat);
-                let arg_type = try!(rust_to_c(&*arg.ty));
-                self.buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
+                let arg_type = try_some!(rust_to_c(&*arg.ty));
+                buffer.push_str(&format!("{} {}, ", arg_type, arg_name));
             }
 
             if has_args {
                 // Remove the trailing comma and space.
-                self.buffer.pop();
-                self.buffer.pop();
+                buffer.pop();
+                buffer.pop();
             }
 
-            self.buffer.push_str(");\n\n");
+            buffer.push_str(");\n\n");
         } else {
             context.sess.span_fatal(item.span, "`parse_fn` called on wrong `Item_`");
         }
 
-        Ok(())
+        Ok(Some(buffer))
     }
 }
 
