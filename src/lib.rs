@@ -79,7 +79,18 @@ impl lint::EarlyLintPass for CheddarPass {
 
         for item in &krate.module.items {
             // If it's not visible it can't be called from C.
-            if let ast::Visibility::Inherited = item.vis { continue; }
+            if let ast::Visibility::Inherited = item.vis {
+                // But it might be an opaque struct.
+                if let Item_::ItemStruct(..) = item.node {
+                    match self.parse_private_struct(context, item) {
+                        Err((span, msg)) => context.sess.span_err(span, &msg),
+                        Ok(Some(buf)) => buffer.push_str(&buf),
+                        Ok(None) => {},
+                    }
+                }
+
+                continue;
+            }
 
             // Dispatch to correct method.
             let res = match item.node {
@@ -487,6 +498,20 @@ impl CheddarPass {
         buffer.push_str(&format!("}} {};\n\n", name));
 
         Ok(Some(buffer))
+    }
+
+    /// Convert a private Rust struct into an opaque C struct.
+    ///
+    /// The rust struct must be marked `#[repr(C)]` and _must not_ be public orhterwise the
+    /// function will abort.
+    fn parse_private_struct(&mut self, _context: &EarlyContext, item: &Item) -> Result {
+        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
+        // If it's not #[repr(C)] then it can't be called from C.
+        if !repr_c { return Ok(None); }
+
+        let name = item.ident.name.as_str();
+
+        Ok(Some(format!("{0}typedef struct {1} {1};\n\n", docs, name)))
     }
 
     /// Convert a Rust function declaration into a C function declaration.
