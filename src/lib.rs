@@ -65,6 +65,10 @@ impl lint::LintPass for CheddarPass {
 }
 
 impl lint::EarlyLintPass for CheddarPass {
+    /// The main entry point.
+    ///
+    /// Iterates through all items in the top-level module of the crate and converts the valid ones
+    /// into their C equivalent.
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
         let mut buffer = format!(
             "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
@@ -110,6 +114,10 @@ impl lint::EarlyLintPass for CheddarPass {
 }
 
 // TODO: Maybe it would be wise to use syntax::attr here.
+/// Loop through a list of attributes.
+///
+/// Check that at least one attribute matches some criteria (usually #[repr(C)] or #[no_mangle])
+/// and optionally retrieve a String from it (usually a docstring).
 fn parse_attr<C, R>(attrs: &[Attribute], check: C, retrieve: R) -> (bool, String)
     where C: Fn(&Attribute) -> bool,
           R: Fn(&Attribute) -> Option<String>,
@@ -126,6 +134,7 @@ fn parse_attr<C, R>(attrs: &[Attribute], check: C, retrieve: R) -> (bool, String
     (check_passed, retrieved_str)
 }
 
+/// Check the attribute is #[repr(C)].
 fn check_repr_c(attr: &Attribute) -> bool {
     match attr.node.value.node {
         ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word.first() {
@@ -140,6 +149,7 @@ fn check_repr_c(attr: &Attribute) -> bool {
     }
 }
 
+/// Check the attribute is #[no_mangle].
 fn check_no_mangle(attr: &Attribute) -> bool {
     match attr.node.value.node {
         ast::MetaItem_::MetaWord(ref name) if *name == "no_mangle" => true,
@@ -147,6 +157,7 @@ fn check_no_mangle(attr: &Attribute) -> bool {
     }
 }
 
+/// If the attribute is  a docstring, indent it the required amount and return it.
 fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
     match attr.node.value.node {
         ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
@@ -159,11 +170,13 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
 }
 
 // TODO: refactor:
-//     - path_to_c(&ast::Path)
 //     - probably pull the FnDecl parsing logic out of parse_fn
 // TODO: C function pointers _must_ have a name associated with them but this Option business feels
 //       like a shit way to handle that
 //     - maybe have a named_rust_to_c which allows fn_pointers and rust_to_c doesn't?
+/// Return a Rust (type, name) pair into a C (type, name) pair.
+///
+/// If name is `None` then there is no name associated with that type.
 fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
     match ty.node {
         // Standard pointers.
@@ -192,6 +205,7 @@ fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
     }
 }
 
+/// Takes a Rust pointer (*mut or *const) and converts it into the correct C form.
 fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
     let new_type = try_some!(rust_to_c(&ty.ty, None));
     let const_spec = match ty.mutbl {
@@ -215,6 +229,21 @@ fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
     }))
 }
 
+/// Takes a Rust function pointer and makes it C-like.
+///
+/// Rust function pointers are of the form
+///
+/// ```no_run
+/// fn(arg1: Ty1, ...) -> RetTy
+/// ```
+///
+/// C function pointers are of the form
+///
+/// ```C
+/// RetTy (*name)(Ty1 arg1, ...)
+/// ```
+///
+/// C function pointers _must_ have a name associated with them.
 fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Result {
     match fn_ty.abi {
         // If it doesn't have a C ABI it can't be called from C.
@@ -223,11 +252,8 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
     }
 
     if !fn_ty.lifetimes.is_empty() {
-        return Err((fn_span, "rusty-cheddar can not handle lifetimes".to_owned()));
+        return Err((fn_span, "cheddar can not handle lifetimes".to_owned()));
     }
-
-    // C function pointers have the form
-    //     R (*name)(T1 ident1, T2 ident2, ...)
 
     let fn_decl: &ast::FnDecl = &*fn_ty.decl;
 
@@ -261,6 +287,10 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
     Ok(Some(buffer))
 }
 
+/// Attempts to convert a Rust path type (my_mod::MyType) to a C type.
+///
+/// Types hidden behind modules are almost certainly custom types (which wouldn't work) except
+/// types in `libc` which we special case.
 fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
     let new_type;
 
@@ -279,7 +309,7 @@ fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
 
         if module != "libc" {
             return Err((path.span, format!(
-                "cheddar can not handle types in modules (except `libc`), try `use {}::{}`",
+                "cheddar can not handle types in modules (except `libc`), try `use {}::{}` if you really know what you're doing",
                 module, ty,
             )));
         } else {
@@ -296,6 +326,9 @@ fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
     }))
 }
 
+/// Convert a Rust type from `libc` into a C type.
+///
+/// Most map straight over but some have to be converted.
 fn libc_ty_to_c(ty: &str) -> &str {
     match ty {
         "c_void" => "void",
@@ -317,6 +350,10 @@ fn libc_ty_to_c(ty: &str) -> &str {
     }
 }
 
+/// Convert any Rust type into C.
+///
+/// This includes user-defined types. We currently trust the user not to use types which we don't
+/// know the structure of (like String).
 fn rust_ty_to_c(ty: &str) -> &str {
     match ty {
         "()" => "void",
@@ -339,6 +376,9 @@ fn rust_ty_to_c(ty: &str) -> &str {
 }
 
 impl CheddarPass {
+    /// Convert `pub type A = B;` into `typedef B A;`.
+    ///
+    /// Aborts if A is generic.
     fn parse_ty(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
 
@@ -363,6 +403,12 @@ impl CheddarPass {
         Ok(Some(buffer))
     }
 
+    /// Convert a Rust enum into a C enum.
+    ///
+    /// The Rust enum must be marked with `#[repr(C)]` and must be public otherwise the function
+    /// will abort.
+    ///
+    /// Cheddar will error if the enum if generic or if it contains non-unit variants.
     fn parse_enum(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
@@ -397,6 +443,12 @@ impl CheddarPass {
         Ok(Some(buffer))
     }
 
+    /// Convert a Rust struct into a C struct.
+    ///
+    /// The rust struct must be marked `#[repr(C)]` and must be public otherwise the function will
+    /// abort.
+    ///
+    /// Cheddar will error if the struct is generic or if the struct is a unit or tuple struct.
     fn parse_struct(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
         // If it's not #[repr(C)] then it can't be called from C.
@@ -437,6 +489,12 @@ impl CheddarPass {
         Ok(Some(buffer))
     }
 
+    /// Convert a Rust function declaration into a C function declaration.
+    ///
+    /// The function declaration must be marked `#[no_mangle]` and have a C ABI otherwise the
+    /// function will abort.
+    ///
+    /// If the declaration is generic or diverges then cheddar will error.
     fn parse_fn(&mut self, context: &EarlyContext, item: &Item) -> Result {
         let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
         // If it's not #[no_mangle] then it can't be called from C.
@@ -492,6 +550,11 @@ impl CheddarPass {
 }
 
 
+// TODO: remove this, instead check for a Cargo.toml to determine whether we're in a cargo project
+/// Parse plugin arguments into a file path and create any directories required.
+///
+/// The last argument is the name of the header file. All other arguments are directories. The
+/// resulting path is relative to the current working directory.
 fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<Option<PathBuf>, ()> {
     let args = reg.args();
     if args.is_empty() {
@@ -543,6 +606,8 @@ fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::
     }
 }
 
+// TODO: allow user to specify which module to check in plugin args
+//     #![plugin(cheddar(module = c_interface, output(path, to, header, file)))]
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
     let file = match file_name_from_plugin_args(reg) {
