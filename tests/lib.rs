@@ -211,25 +211,19 @@ cheddar_cmp_test! { test_compilable_structs,
         score: f64,
     }
 
-    // Shouldn't appear in output header file.
-    pub struct Employee {
-        id: i32,
-        age: i16,
-        salary: f64,
-    }
-    "
-}
-
-cheddar_cmp_test! { test_private_structs,
-    "
-    typedef struct Complex Complex;
-    ",
-    "
+    // Shouldn't appear in the output header file.
     #[allow(dead_code)]
     #[repr(C)]
     struct Complex {
         real: f64,
         imag: f64,
+    }
+
+    // Shouldn't appear in output header file.
+    pub struct Employee {
+        id: i32,
+        age: i16,
+        salary: f64,
     }
     "
 }
