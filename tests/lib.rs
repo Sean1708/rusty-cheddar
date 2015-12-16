@@ -36,6 +36,14 @@ use std::process::Command;
 /// ```
 macro_rules! cheddar_cmp_test {
     ($name:ident, $header:expr, $rust:expr) => {
+        cheddar_cmp_test! { $name,
+            "#![plugin(cheddar(dir = \"{}\", file = \"actual.h\"))]",
+            $header,
+            $rust
+        }
+    };
+
+    ($name:ident, $pre:expr, $header:expr, $rust:expr) => {
         #[test]
         fn $name() {
             let package_dir = std::env::current_dir()
@@ -71,7 +79,7 @@ macro_rules! cheddar_cmp_test {
             File::create(&source)
                 .expect("internal testing error: could not create rust source file")
                 .write_all(format!(
-                    "#![feature(plugin)]\n#![plugin(cheddar(dir = \"{}\", file = \"actual.h\"))]\n{}",
+                    concat!("#![feature(plugin)]\n", $pre, "\n{}"),
                     dir_rel_to_cur, $rust,
                 ).as_bytes())
                 .expect("internal testing error: could not write to rust source file");
@@ -350,6 +358,19 @@ cheddar_cmp_test! { test_libc_types,
     pub type CLongLong = libc::c_longlong;
     pub type CULongLong = libc::c_ulonglong;
     pub type CFile = libc::FILE;
+    "
+}
+
+cheddar_cmp_test! { test_module,
+    "#![plugin(cheddar(dir = \"{}\", file = \"actual.h\", module = \"api\"))]",
+    "
+    typedef float Float;
+    ",
+    "
+    pub use api::*;
+    mod api {
+        pub type Float = f32;
+    }
     "
 }
 

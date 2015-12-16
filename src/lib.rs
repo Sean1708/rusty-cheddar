@@ -92,6 +92,25 @@
 //! will first create the directories in `target/include` if they don't exist and will then create
 //! `my_header.h` in `target/include`.
 //!
+//! ## API In a Module
+//!
+//! You can also place your API in a to help keep your source code neat. **Note that this module
+//! must currently be only one level deep, i.e. `api::*` is fine but `api::c_api::*` is not.**
+//!
+//! To do this you must specify the name of the module in the plugin args, then you must `pub use`
+//! the module with a glob to bring all the items into the top level module.
+//!
+//! ```no_run
+//! #![feature(plugin)]
+//! #![plugin(cheddar(module = "c_api"))]
+//!
+//! pub use c_api::*;
+//!
+//! mod c_api {
+//!     // api goes here ...
+//! }
+//! ```
+//!
 //! In the examples below, boilerplate has been omitted from the header.
 //!
 //! ## Typedefs
@@ -342,6 +361,7 @@ macro_rules! try_some {
 
 pub struct CheddarPass {
     file: PathBuf,
+    module: Option<String>,
 }
 
 type Result = std::result::Result<Option<String>, (codemap::Span, String)>;
@@ -357,49 +377,53 @@ impl lint::LintPass for CheddarPass {
 impl lint::EarlyLintPass for CheddarPass {
     /// The main entry point.
     ///
-    /// Iterates through all items in the top-level module of the crate and converts the valid ones
-    /// into their C equivalent.
+    /// Determines which module to parse, ensures it is `pub use`ed then hands off to
+    /// `CheddarPass::parse_mod`.
     fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
-        let mut buffer = format!(
-            "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            self.file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
-        );
-        buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
-        buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
+        if let Some(ref module) = self.module.clone() {
+            let mut mod_item = None;
+            let mut pub_used = false;
 
-        for item in &krate.module.items {
-            // If it's not visible it can't be called from C.
-            if let ast::Visibility::Inherited = item.vis { continue; }
+            // Find the module.
+            for item in &krate.module.items {
+                match item.node {
+                    Item_::ItemMod(ref inner_mod) => {
+                        let name: &str = &item.ident.name.as_str();
+                        if name == module {
+                            mod_item = Some(inner_mod);
+                        }
+                    },
+                    Item_::ItemUse(ref path) => {
+                        if let ast::Visibility::Public = item.vis {
+                            if let ast::ViewPath_::ViewPathGlob(ref path) = path.node {
+                                if let Some(path) = path.segments.first() {
+                                    let path: &str = &path.identifier.name.as_str();
+                                    if path == module {
+                                        pub_used = true;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    _ => {},
+                }
+            }
 
-            // Dispatch to correct method.
-            let res = match item.node {
-                // TODO: Check for ItemStatic and ItemConst as well.
-                //     - How would this work?
-                //     - Is it even possible?
-                Item_::ItemTy(..) => self.parse_ty(context, item),
-                Item_::ItemEnum(..) => self.parse_enum(context, item),
-                Item_::ItemStruct(..) => self.parse_struct(context, item),
-                Item_::ItemFn(..) => self.parse_fn(context, item),
-                _ => Ok(None),
-            };
-
-            // Display any non-fatal errors, fatal errors are handled at cause.
-            match res {
-                Err((span, msg)) => context.sess.span_err(span, &msg),
-                Ok(Some(buf)) => buffer.push_str(&buf),
-                // TODO: put span notes in these or would that just get annoying?
-                Ok(None) => {},  // Item should not be written to header.
-            };
+            if let Some(mod_item) = mod_item {
+                if pub_used {
+                    self.parse_mod(context, &mod_item);
+                } else {
+                    context.sess.err(&format!(
+                        "C api must exist in top level module, try `pub use {}::*`",
+                        module,
+                    ));
+                }
+            } else {
+                context.sess.err(&format!("could not find module '{}'", module));
+            }
+        } else {
+            self.parse_mod(context, &krate.module);
         }
-
-        buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
-        buffer.push_str("#endif\n");
-
-        let bytes_buf = buffer.into_bytes();
-
-        if let Err(error) = fs::File::create(&self.file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            context.sess.err(&format!("could not write to '{}': {}", self.file.display(), error))
-        };
     }
 }
 
@@ -666,6 +690,53 @@ fn rust_ty_to_c(ty: &str) -> &str {
 }
 
 impl CheddarPass {
+    /// The manager of rusty-cheddar.
+    ///
+    /// Iterates through all items in the module and dispatches to correct methods, then pulls all
+    /// the results together into a header.
+    fn parse_mod(&mut self, context: &EarlyContext, module: &ast::Mod) {
+        let mut buffer = format!(
+            "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
+            self.file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
+        );
+        buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
+        buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
+
+        for item in &module.items {
+            // If it's not visible it can't be called from C.
+            if let ast::Visibility::Inherited = item.vis { continue; }
+
+            // Dispatch to correct method.
+            let res = match item.node {
+                // TODO: Check for ItemStatic and ItemConst as well.
+                //     - How would this work?
+                //     - Is it even possible?
+                Item_::ItemTy(..) => self.parse_ty(context, item),
+                Item_::ItemEnum(..) => self.parse_enum(context, item),
+                Item_::ItemStruct(..) => self.parse_struct(context, item),
+                Item_::ItemFn(..) => self.parse_fn(context, item),
+                _ => Ok(None),
+            };
+
+            // Display any non-fatal errors, fatal errors are handled at cause.
+            match res {
+                Err((span, msg)) => context.sess.span_err(span, &msg),
+                Ok(Some(buf)) => buffer.push_str(&buf),
+                // TODO: put span notes in these or would that just get annoying?
+                Ok(None) => {},  // Item should not be written to header.
+            };
+        }
+
+        buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
+        buffer.push_str("#endif\n");
+
+        let bytes_buf = buffer.into_bytes();
+
+        if let Err(error) = fs::File::create(&self.file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            context.sess.err(&format!("could not write to '{}': {}", self.file.display(), error))
+        };
+    }
+
     /// Convert `pub type A = B;` into `typedef B A;`.
     ///
     /// Aborts if A is generic.
@@ -841,9 +912,10 @@ impl CheddarPass {
 
 
 /// Parse plugin arguments into a file path and create any directories required.
-fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<PathBuf, ()> {
+fn parse_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<(PathBuf, Option<String>), ()> {
     let mut dir = PathBuf::new();
     let mut file: Option<&str> = None;
+    let mut module: Option<String> = None;
 
     for arg in reg.args() {
         if let ast::MetaItem_::MetaNameValue(ref name, ref value) = arg.node {
@@ -863,6 +935,14 @@ fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::
                     file = Some(file_str);
                 } else {
                     reg.sess.span_err(value.span, "`file` argument value must be a string literal");
+                    return Err(());
+                }
+            } else if name == "module" {
+                if let ast::Lit_::LitStr(ref file_str, _) = value.node {
+                    let file_str: &str = file_str;
+                    module = Some(file_str.to_owned());
+                } else {
+                    reg.sess.span_err(value.span, "`module` argument value must be a string literal");
                     return Err(());
                 }
             } else {
@@ -900,16 +980,16 @@ fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::
 
     dir.push(&file);
 
-    Ok(dir)
+    Ok((dir, module))
 }
 
 #[plugin_registrar]
 pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
-    let file = if let Ok(val) = file_name_from_plugin_args(reg) {
+    let (file, module) = if let Ok(val) = parse_plugin_args(reg) {
         val
     } else {
         return;
     };
 
-    reg.register_early_lint_pass(box CheddarPass { file: file });
+    reg.register_early_lint_pass(box CheddarPass { file: file, module: module });
 }
