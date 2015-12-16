@@ -66,21 +66,13 @@ macro_rules! cheddar_cmp_test {
 
             let dir_rel_to_cur = dir.relative_from(&package_dir)
                 .expect("internal testing error: unable determine relative path to test dir")
-                .iter();
-
-            let mut cheddar_args = String::new();
-            for path in dir_rel_to_cur {
-                cheddar_args.push_str(path.to_str()
-                    .expect("internal testing error: can not handle non-utf8 file paths")
-                );
-                cheddar_args.push_str(", ");
-            }
+                .display();
 
             File::create(&source)
                 .expect("internal testing error: could not create rust source file")
                 .write_all(format!(
-                    "#![feature(plugin)]\n#![plugin(cheddar({}actual))]\n{}",
-                    cheddar_args, $rust,
+                    "#![feature(plugin)]\n#![plugin(cheddar(dir = \"{}\", file = \"actual.h\"))]\n{}",
+                    dir_rel_to_cur, $rust,
                 ).as_bytes())
                 .expect("internal testing error: could not write to rust source file");
 

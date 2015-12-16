@@ -82,21 +82,14 @@
 //! header file. Note that rusty-cheddar emits very few warnings, it is up to the programmer to write a
 //! library which can be correctly called from C.
 //!
-//! You can optionally specify a path for the header file using plugin arguments. The last argument is
-//! the name of the header file _without any extensions_ and any other arguments are directories which
-//! do not have to exist.
+//! You can optionally specify a path for the header file using plugin arguments. Use `dir =
+//! "/path/to/out/dir"` to specify an output directory and `file = "name.h"`. So
 //!
 //! ```no_run
-//! #![plugin(cheddar(my_header))]
+//! #![plugin(dir = "target/include", file = "my_header.h")]
 //! ```
 //!
-//! This will create `my_header.h` in the current working directory.
-//!
-//! ```no_run
-//! #![plugin(cheddar(target, include, my_header))]
-//! ```
-//!
-//! This will first create the directories in `target/include` if they don't exist and will then create
+//! will first create the directories in `target/include` if they don't exist and will then create
 //! `my_header.h` in `target/include`.
 //!
 //! In the examples below, boilerplate has been omitted from the header.
@@ -847,70 +840,49 @@ impl CheddarPass {
 }
 
 
-// TODO: remove this, instead check for a Cargo.toml to determine whether we're in a cargo project
 /// Parse plugin arguments into a file path and create any directories required.
-///
-/// The last argument is the name of the header file. All other arguments are directories. The
-/// resulting path is relative to the current working directory.
-fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<Option<PathBuf>, ()> {
-    let args = reg.args();
-    if args.is_empty() {
-        Ok(None)
-    } else {
-        // All plugin arguments should be `MetaWord`s.
-        // Last argument is the file name without the ".h" extension.
-        // E.g.
-        //     #![plugin(cheddar(target, debug, include, my_header))]
-        let mut temp_pathbuf = PathBuf::new();
-        let len = args.len();
+fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<PathBuf, ()> {
+    let mut dir = PathBuf::new();
+    let mut file: Option<&str> = None;
 
-        // Push the given directories.
-        // Don't iterate over the last element since that needs to be converted into a file.
-        for i in 0..len-1 {
-            temp_pathbuf.push(match args[i].node {
-                ast::MetaItem_::MetaWord(ref string) => {
-                    let string_slice: &str = &string;
-                    String::from(string_slice)
-                },
-                _ => {
-                    reg.sess.span_err(args[i].span, "cheddar plugin args must be `MetaWord`s");
+    for arg in reg.args() {
+        if let ast::MetaItem_::MetaNameValue(ref name, ref value) = arg.node {
+            let name: &str = name;
+
+            if name == "dir" {
+                if let ast::Lit_::LitStr(ref dir_str, _) = value.node {
+                    let dir_str: &str = dir_str;
+                    dir.push(&dir_str);
+                } else {
+                    reg.sess.span_err(value.span, "`dir` argument value must be a string literal");
                     return Err(());
-                },
-            })
-        }
-
-        // Create all the directories before we push the file name.
-        if let Err(error) = fs::create_dir_all(&temp_pathbuf) {
-            reg.sess.err(&format!("could not create directories in '{}': {}", temp_pathbuf.display(), error));
+                }
+            } else if name == "file" {
+                if let ast::Lit_::LitStr(ref file_str, _) = value.node {
+                    let file_str: &str = file_str;
+                    file = Some(file_str);
+                } else {
+                    reg.sess.span_err(value.span, "`file` argument value must be a string literal");
+                    return Err(());
+                }
+            } else {
+                reg.sess.span_err(arg.span, &format!("unrecognised cheddar argument `{}`", &name));
+                return Err(());
+            }
+        } else {
+            reg.sess.span_err(arg.span, "cheddar plugin arguments must be of the form `name = value`");
             return Err(());
         }
-
-        // Push the header file name.
-        temp_pathbuf.push(match args[len-1].node {
-            ast::MetaItem_::MetaWord(ref string) => {
-                    let string_slice: &str = &string;
-                    String::from(string_slice)
-            },
-            _ => {
-                reg.sess.span_err(args[len-1].span, "cheddar plugin args must be `MetaWord`s");
-                return Err(());
-            },
-        });
-
-        temp_pathbuf.set_extension("h");
-        Ok(Some(temp_pathbuf))
     }
-}
 
-// TODO: allow user to specify which module to check in plugin args
-//     #![plugin(cheddar(module = c_interface, output(path, to, header, file)))]
-#[plugin_registrar]
-pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
-    let file = match file_name_from_plugin_args(reg) {
-        // Error messages are done in `file_name_from_plugin_args`.
-        Err(_) => return,
-        Ok(file) => file,
+    // Create all the directories before we push the file name.
+    if let Err(error) = fs::create_dir_all(&dir) {
+        reg.sess.err(&format!("could not create directories in '{}': {}", dir.display(), error));
+        return Err(());
     }
+
+    let file = file
+        .map(PathBuf::from)
         // If no file was specified in the arguments try using the crate name.
         .or(reg.sess.opts.crate_name.clone()
             // Crate name is a String so convert it.
@@ -925,6 +897,19 @@ pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
             .map(|file| file.with_extension("h")))
         // If all else fails...
         .unwrap_or(PathBuf::from("cheddar.h"));
+
+    dir.push(&file);
+
+    Ok(dir)
+}
+
+#[plugin_registrar]
+pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
+    let file = if let Ok(val) = file_name_from_plugin_args(reg) {
+        val
+    } else {
+        return;
+    };
 
     reg.register_early_lint_pass(box CheddarPass { file: file });
 }
