@@ -18,7 +18,7 @@ rusty-cheddar targets C99 or later (for sane single line comments and use of `st
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
-### Invocation Form the Command Line
+### Invocation From the Command Line
 
 You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
 (remember to use nightly Rust to build rusty-cheddar):
@@ -262,10 +262,6 @@ uint16_t MyAdd_add_u16(uint16_t l, uint16_t r);
 ```
 
 ### Type Conversions
-
-As of commit 976d215ad6c4cdc370dbda161f33fb8b4e02bcad the function which converts types handles all
-numeric types and any user defined types correctly. Types defined in other crates (notably `libc`
-and `std`) are not handled correctly and function pointers are not handled correctly.
 
 rusty-cheddar currently does not handle type paths (e.g. `mymod::MyType`), instead they must be `use`ed
 first:
