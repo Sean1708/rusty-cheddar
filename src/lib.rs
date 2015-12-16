@@ -92,6 +92,25 @@
 //! will first create the directories in `target/include` if they don't exist and will then create
 //! `my_header.h` in `target/include`.
 //!
+//! ## API In a Module
+//!
+//! You can also place your API in a to help keep your source code neat. **Note that this module
+//! must currently be only one level deep, i.e. `api::*` is fine but `api::c_api::*` is not.**
+//!
+//! To do this you must specify the name of the module in the plugin args, then you must `pub use`
+//! the module with a glob to bring all the items into the top level module.
+//!
+//! ```no_run
+//! #![feature(plugin)]
+//! #![plugin(cheddar(module = "c_api"))]
+//!
+//! pub use c_api::*;
+//!
+//! mod c_api {
+//!     // api goes here ...
+//! }
+//! ```
+//!
 //! In the examples below, boilerplate has been omitted from the header.
 //!
 //! ## Typedefs

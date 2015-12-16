@@ -90,22 +90,34 @@ rusty-cheddar will then create a `cheddar.h` file in your working directory cont
 header file. Note that rusty-cheddar emits very few warnings, it is up to the programmer to write a
 library which can be correctly called from C.
 
-You can optionally specify a path for the header file using plugin arguments. The last argument is
-the name of the header file _without any extensions_ and any other arguments are directories which
-do not have to exist.
+You can optionally specify a path for the header file using plugin arguments. Use `dir =
+"/path/to/out/dir"` to specify an output directory and `file = "name.h"`. So
 
 ```rust
-#![plugin(cheddar(my_header))]
+#![plugin(dir = "target/include", file = "my_header.h")]
 ```
 
-This will create `my_header.h` in the current working directory.
-
-```rust
-#![plugin(cheddar(target, include, my_header))]
-```
-
-This will first create the directories in `target/include` if they don't exist and will then create
+will first create the directories in `target/include` if they don't exist and will then create
 `my_header.h` in `target/include`.
+
+### API In a Module
+
+You can also place your API in a to help keep your source code neat. **Note that this module
+must currently be only one level deep, i.e. `api::*` is fine but `api::c_api::*` is not.**
+
+To do this you must specify the name of the module in the plugin args, then you must `pub use`
+the module with a glob to bring all the items into the top level module.
+
+```rust
+#![feature(plugin)]
+#![plugin(cheddar(module = "c_api"))]
+
+pub use c_api::*;
+
+mod c_api {
+    // api goes here ...
+}
+```
 
 In the examples below, boilerplate has been omitted from the header.
 
