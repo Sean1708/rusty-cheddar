@@ -15,6 +15,3 @@ license = "MIT"
 [lib]
 name = "cheddar"
 plugin = true
-
-[dependencies]
-clippy = "0"

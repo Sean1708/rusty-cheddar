@@ -3,9 +3,6 @@
 #![feature(box_syntax)]
 #![feature(stmt_expr_attributes)]
 
-#![feature(plugin)]
-#![plugin(clippy)]
-
 #[macro_use] extern crate rustc;
 extern crate rustc_plugin;
 extern crate syntax;
@@ -569,7 +566,6 @@ fn file_name_from_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::
 
         // Push the given directories.
         // Don't iterate over the last element since that needs to be converted into a file.
-        #[allow(needless_range_loop)]
         for i in 0..len-1 {
             temp_pathbuf.push(match args[i].node {
                 ast::MetaItem_::MetaWord(ref string) => {
