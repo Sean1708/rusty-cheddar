@@ -18,7 +18,7 @@ rusty-cheddar targets C99 or later (for sane single line comments and use of `st
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
-### Invocation Form the Command Line
+### Invocation From the Command Line
 
 You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
 (remember to use nightly Rust to build rusty-cheddar):
