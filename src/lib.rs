@@ -210,6 +210,36 @@
 //! // Some more boilerplate omitted.
 //! ```
 //!
+//! ### Opaque Structs
+//!
+//! One common C idiom is to hide the implementation of a struct using an opaque struct, which can
+//! only be used behind a pointer. This is especially useful in Rust-C interfaces as it allows you
+//! to use _any arbitrary Rust struct_ in C.
+//!
+//! To define an opaque struct you must define a public newtype which is marked as `#[repr(C)]`.
+//!
+//! Rust:
+//!
+//! ```no_run
+//! struct Foo<T> {
+//!     bar: i32,
+//!     baz: Option<T>,
+//! }
+//!
+//! #[repr(C)]
+//! pub struct MyCrate_Foo(Foo<PathBuf>);
+//! ```
+//!
+//! Header:
+//!
+//! ```C
+//! // Some boilerplate omitted.
+//! typedef struct MyCrate_Foo MyCrate_Foo;
+//! // Some boilerplate omitted.
+//! ```
+//!
+//! Note that the newtype _must not_ be generic but the type that it wraps can be arbitrary.
+//!
 //! ## Functions
 //!
 //! For rusty-cheddar to pick up on a function declaration it must be public, marked `#[no_mangle]` and
