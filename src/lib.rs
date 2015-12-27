@@ -849,14 +849,17 @@ impl CheddarPass {
         buffer.push_str(&docs);
 
         let name = item.ident.name.as_str();
-        buffer.push_str(&format!("typedef struct {} {{\n", name));
+        buffer.push_str(&format!("typedef struct {}", name));
 
         if let Item_::ItemStruct(ref variants, ref generics) = item.node {
             if generics.is_parameterized() {
                 return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` structs".to_owned()));
             }
 
+            // TODO: refactor this into mutliple methods.
             if variants.is_struct() {
+                buffer.push_str(" {\n");
+
                 for field in variants.fields() {
                     let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
                     buffer.push_str(&docs);
@@ -868,14 +871,21 @@ impl CheddarPass {
                     let ty = try_some!(rust_to_c(&*field.node.ty, Some(&name)));
                     buffer.push_str(&format!("\t{};\n", ty));
                 }
+
+                buffer.push_str("}");
+            } else if variants.is_tuple() && variants.fields().len() == 1 {
+                // #[repr(C)] pub struct Foo(Bar);  =>  typedef struct Foo Foo;
             } else {
-                return Err((item.span, "cheddar can not handle unit or tuple `#[repr(C)]` structs".to_owned()));
+                return Err((
+                    item.span,
+                    "cheddar can not handle unit or tuple `#[repr(C)]` structs with >1 members".to_owned()
+                ));
             }
         } else {
             context.sess.span_fatal(item.span, "`parse_struct` called on wrong `Item_`");
         }
 
-        buffer.push_str(&format!("}} {};\n\n", name));
+        buffer.push_str(&format!(" {};\n\n", name));
 
         Ok(Some(buffer))
     }
