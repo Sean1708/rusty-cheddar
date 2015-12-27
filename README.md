@@ -18,6 +18,15 @@ rusty-cheddar targets C99 or later (for sane single line comments and use of `st
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
+### Differences From v0.1
+
+- plugin arguments
+    - instead of `#[plugin(cheddar(path, to, file))]`
+    - you should now use `#[plugin(cheddar(dir = "path/to", file = "file.h"))]`
+- you can now put your C API in a module
+- function pointers are implemented
+- opaque structs are implemented
+
 ### Invocation From the Command Line
 
 You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
@@ -218,6 +227,36 @@ typedef struct Person {
 // Some more boilerplate omitted.
 ```
 
+#### Opaque Structs
+
+One common C idiom is to hide the implementation of a struct using an opaque struct, which can
+only be used behind a pointer. This is especially useful in Rust-C interfaces as it allows you
+to use _any arbitrary Rust struct_ in C.
+
+To define an opaque struct you must define a public newtype which is marked as `#[repr(C)]`.
+
+Rust:
+
+```rust
+struct Foo<T> {
+    bar: i32,
+    baz: Option<T>,
+}
+
+#[repr(C)]
+pub struct MyCrate_Foo(Foo<PathBuf>);
+```
+
+Header:
+
+```C
+// Some boilerplate omitted.
+typedef struct MyCrate_Foo MyCrate_Foo;
+// Some boilerplate omitted.
+```
+
+Note that the newtype _must not_ be generic but the type that it wraps can be arbitrary.
+
 ### Functions
 
 For rusty-cheddar to pick up on a function declaration it must be public, marked `#[no_mangle]` and
@@ -287,6 +326,11 @@ pub type MyCType = MyType;
 The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
 (e.g. `libc::c_void`) so that they can be converted properly.
 
+
+[multirust]: https://github.com/brson/multirust
+[repo]: https://github.com/Sean1708/rusty-cheddar
+[CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
+
 ## Contributing
 
 Contributions to rusty-cheddar are more than welcome.
@@ -313,8 +357,3 @@ The tests require you to have a recent version (> `v2.7.2`) of [CppHeaderParser]
 version of Python which is installed as `python` (usually Python 2). Furthermore due to the fact
 that the tests are a massive pile of wanky hacks, you must be in the same directory as
 rusty-cheddar's `Cargo.toml` to successfully run them.
-
-
-[multirust]: https://github.com/brson/multirust
-[repo]: https://github.com/Sean1708/rusty-cheddar
-[CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
