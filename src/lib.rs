@@ -10,6 +10,15 @@
 //! open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 //! (after arguing with you lots and lots).
 //!
+//! ## Differences From v0.1
+//!
+//! - plugin arguments
+//!     - instead of `#[plugin(cheddar(path, to, file))]`
+//!     - you should now use `#[plugin(cheddar(dir = "path/to", file = "file.h"))]`
+//! - you can now put your C API in a module
+//! - function pointers are implemented
+//! - opaque structs are implemented
+//!
 //! ## Invocation From the Command Line
 //!
 //! You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
@@ -278,33 +287,6 @@
 //!
 //! The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
 //! (e.g. `libc::c_void`) so that they can be converted properly.
-//!
-//! # Contributing
-//!
-//! Contributions to rusty-cheddar are more than welcome.
-//!
-//! ## Bugs
-//!
-//! If you find a bug or have a feature request please open an issue. I can't guarantee that I'll fix it
-//! but I'll give it a damn good go.
-//!
-//! If you find the source code unclear in any way then I consider that a bug. I try to make my source
-//! code as clear as possible but I'm not very good at it, so any help in that regard is appreciated.
-//!
-//! ## PRs
-//!
-//! I love pull requests they tend to make my job much easier, so if you want to fix a bug or implement a
-//! feature yourself then that would be great. If you're confused by anything or need some pointers on
-//! how to proceed then feel free to open an issue so that I can help, otherwise
-//! [these docs](http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html) are a good
-//! place to start.
-//!
-//! ### Tests
-//!
-//! The tests require you to have a recent version (> `v2.7.2`) of [CppHeaderParser] installed for the
-//! version of Python which is installed as `python` (usually Python 2). Furthermore due to the fact
-//! that the tests are a massive pile of wanky hacks, you must be in the same directory as
-//! rusty-cheddar's `Cargo.toml` to successfully run them.
 //!
 //!
 //! [multirust]: https://github.com/brson/multirust
