@@ -228,6 +228,16 @@ cheddar_cmp_test! { test_compilable_structs,
     "
 }
 
+cheddar_cmp_test! { test_opaque_structs,
+    "
+    typedef struct Foo Foo;
+    ",
+    "
+    #[repr(C)]
+    pub struct Foo(Vec<Option<i32>>);
+    "
+}
+
 cheddar_cmp_test! { test_compilable_functions,
     "
     int64_t add_i64(int64_t lhs, int64_t rhs);
