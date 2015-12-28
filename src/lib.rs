@@ -95,7 +95,7 @@
 //! ## API In a Module
 //!
 //! You can also place your API in a to help keep your source code neat. **Note that this module
-//! must currently be only one level deep, i.e. `api::*` is fine but `api::c_api::*` is not.**
+//! must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is not.**
 //!
 //! To do this you must specify the name of the module in the plugin args, then you must `pub use`
 //! the module with a glob to bring all the items into the top level module.
