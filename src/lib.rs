@@ -10,15 +10,6 @@
 //! open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 //! (after arguing with you lots and lots).
 //!
-//! ## Differences From v0.1
-//!
-//! - plugin arguments
-//!     - instead of `#[plugin(cheddar(path, to, file))]`
-//!     - you should now use `#[plugin(cheddar(dir = "path/to", file = "file.h"))]`
-//! - you can now put your C API in a module
-//! - function pointers are implemented
-//! - opaque structs are implemented
-//!
 //! ## Invocation From the Command Line
 //!
 //! You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
