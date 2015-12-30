@@ -7,8 +7,8 @@ import CppHeaderParser
 import copy
 import sys
 
-expected = CppHeaderParser.CppHeader(sys.argv[1])
-actual = CppHeaderParser.CppHeader(sys.argv[2])
+expected = CppHeaderParser.CppHeader(sys.argv[1], argType="string")
+actual = CppHeaderParser.CppHeader(sys.argv[2], argType="string")
 
 def check(expr, msg, *args):
     if not expr:
