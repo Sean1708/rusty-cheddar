@@ -14,4 +14,6 @@ license = "MIT"
 
 [lib]
 name = "cheddar"
-plugin = true
+
+[dependencies]
+syntex_syntax = "0.24.0"

@@ -1,10 +1,5 @@
 //! # Usage
 //!
-//! Compiler plugins have not yet been stabilised so you must use a nightly compiler to build
-//! rusty-cheddar, however there are ways to use rusty-cheddar with a crate designed for stable Rust
-//! which are described below. If you wish to build against stable Rust as well then you must use
-//! [multirust] or [multirust-rs](https://github.com/Diggsey/multirust-rs).
-//!
 //! rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 //! `stdbool.h`), if you really really really really really have to use an older standard then please
 //! open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
@@ -313,30 +308,22 @@
 //! [multirust]: https://github.com/brson/multirust
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
 //! [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
-#![feature(rustc_private)]
-#![feature(plugin_registrar)]
-#![feature(box_syntax)]
-#![feature(stmt_expr_attributes)]
 
-#[macro_use] extern crate rustc;
-extern crate rustc_plugin;
-extern crate syntax;
+extern crate syntex_syntax as syntax;
 
 // External
-use rustc::lint;
-use rustc::lint::EarlyContext;
-use rustc::lint::LintArray;
 use syntax::abi::Abi;
 use syntax::ast;
 use syntax::ast::Attribute;
 use syntax::ast::Item;
 use syntax::ast::Item_;
 use syntax::codemap;
+use syntax::parse;
 use syntax::print::pprust;
 
 // Internal
 use std::fs;
-use std::path::PathBuf;
+use std::path;
 
 // Traits
 use std::io::Write;
@@ -350,10 +337,24 @@ macro_rules! try_some {
     }}};
 }
 
+/// Print a fatal error message then panic.
+macro_rules! fatal {
+    () => { panic!("abort due to fatal error"); };
+
+    ($sess:expr, $msg:expr) => {
+        let _ = $sess.span_diagnostic.fatal($msg);
+        fatal!();
+    };
+
+    ($sess:expr, $span:expr, $msg:expr) => {
+        let _ = $sess.span_diagnostic.span_fatal($span, $msg);
+        fatal!();
+    }
+}
+
 
 // TODO: error handling by having an enum with levels and returning Vec?
 // enum Error {
-//     Fatal(Option<Span>, String),
 //     Error(Option<Span>, String),
 //     Warn(Option<Span>, String),
 //     Note(Option<Span>, String),
@@ -362,28 +363,96 @@ macro_rules! try_some {
 // type Result = std::result::Result<Option(String), Vec<Error>>;
 
 
-pub struct CheddarPass {
-    file: PathBuf,
+type Result = std::result::Result<Option<String>, (codemap::Span, String)>;
+
+
+/// Stores configuration for the Cheddar compiler.
+pub struct Cheddar {
+    /// The root source file of the crate.
+    input: path::PathBuf,
+    /// The directory in which to place the header file.
+    ///
+    /// Default is the environment variable `OUT_DIR` when available, otherwise it is the current
+    /// directory.
+    outdir: path::PathBuf,
+    /// The file name of the header file.
+    ///
+    /// Default is `cheddar.h`.
+    outfile: path::PathBuf,
+    // TODO: store this as a syntax::ast::Path
+    /// The module which contains the C API.
     module: Option<String>,
 }
 
-type Result = std::result::Result<Option<String>, (codemap::Span, String)>;
+impl Cheddar {
+    /// Create a new Cheddar compiler.
+    pub fn new() -> Cheddar {
+        // TODO: explicitly check the Cargo.toml and fall back to "src/lib.rs"
+        let input = path::PathBuf::from("src/lib.rs");
+        let outdir = std::env::var_os("OUT_DIR")
+            .map(path::PathBuf::from)
+            .unwrap_or(path::PathBuf::new());
 
-declare_lint!(CHEDDAR, Allow, "What does this actually do? Do I need it?");
-
-impl lint::LintPass for CheddarPass {
-    fn get_lints(&self) -> LintArray {
-        lint_array!(CHEDDAR)
+        Cheddar {
+            input: input,
+            outdir: outdir,
+            outfile: path::PathBuf::from("cheddar.h"),
+            module: None,
+        }
     }
-}
 
-impl lint::EarlyLintPass for CheddarPass {
+    /// Set the path to the root source file of the crate.
+    ///
+    /// This should only be used when not using a `cargo` build system.
+    pub fn input(&mut self, path: &str) -> &mut Cheddar {
+        self.input = path::PathBuf::from(path);
+        self
+    }
+
+    /// Set the output directory.
+    ///
+    /// Default is [`OUT_DIR`] when available, otherwise it is the current directory.
+    ///
+    /// [`OUT_DIR`]: http://doc.crates.io/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+    pub fn directory(&mut self, path: &str) -> &mut Cheddar {
+        self.outdir = path::PathBuf::from(path);
+        self
+    }
+
+    /// Set the name for the created header file.
+    ///
+    /// Default is `cheddar.h`.
+    pub fn file(&mut self, path: &str) -> &mut Cheddar {
+        self.outfile = path::PathBuf::from(path);
+        self
+    }
+
+    /// Set the module which contains the header file.
+    ///
+    /// The module should be described using Rust's path syntax, i.e. in the same way that you
+    /// would `use` the module (`"path::to::api"`). Cheddar can not yet handle multiple path
+    /// segments.
+    pub fn module(&mut self, module: &str) -> &mut Cheddar {
+        self.module = Some(module.to_owned());
+        self
+    }
+
+    /// Compile the header file.
+    pub fn compile(&self) {
+        let sess = syntax::parse::ParseSess::new();
+        let krate = syntax::parse::parse_crate_from_file(&self.input, vec![], &sess);
+        self.parse_crate(&sess, &krate);
+    }
+
+// TODO:------------------------------------------------------------------------
+// TODO: put all parse_* in a parse module
+// TODO: put all type conversions into a types module
     /// The main entry point.
     ///
     /// Determines which module to parse, ensures it is `pub use`ed then hands off to
-    /// `CheddarPass::parse_mod`.
-    fn check_crate(&mut self, context: &EarlyContext, krate: &ast::Crate) {
-        if let Some(ref module) = self.module.clone() {
+    /// `Cheddar::parse_mod`.
+    fn parse_crate(&self, sess: &parse::ParseSess, krate: &ast::Crate) {
+        if let Some(ref module) = self.module {
             let mut mod_item = None;
             let mut pub_used = false;
 
@@ -414,21 +483,253 @@ impl lint::EarlyLintPass for CheddarPass {
 
             if let Some(mod_item) = mod_item {
                 if pub_used {
-                    self.parse_mod(context, &mod_item);
+                    self.parse_mod(sess, &mod_item);
                 } else {
-                    context.sess.err(&format!(
+                    sess.span_diagnostic.err(&format!(
                         "C api must exist in top level module, try `pub use {}::*`",
                         module,
                     ));
                 }
             } else {
-                context.sess.err(&format!("could not find module '{}'", module));
+                sess.span_diagnostic.err(&format!("could not find module '{}'", module));
             }
         } else {
-            self.parse_mod(context, &krate.module);
+            self.parse_mod(sess, &krate.module);
         }
     }
+
+    /// The manager of rusty-cheddar.
+    ///
+    /// Iterates through all items in the module and dispatches to correct methods, then pulls all
+    /// the results together into a header.
+    fn parse_mod(&self, sess: &parse::ParseSess, module: &ast::Mod) {
+        let file = self.outdir.join(&self.outfile);
+        let mut buffer = format!(
+            "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
+            file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
+        );
+        buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
+        buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
+
+        for item in &module.items {
+            // If it's not visible it can't be called from C.
+            if let ast::Visibility::Inherited = item.vis { continue; }
+
+            // Dispatch to correct method.
+            let res = match item.node {
+                // TODO: Check for ItemStatic and ItemConst as well.
+                //     - How would this work?
+                //     - Is it even possible?
+                Item_::ItemTy(..) => parse_ty(sess, item),
+                Item_::ItemEnum(..) => parse_enum(sess, item),
+                Item_::ItemStruct(..) => parse_struct(sess, item),
+                Item_::ItemFn(..) => parse_fn(sess, item),
+                _ => Ok(None),
+            };
+
+            // Display any non-fatal errors, fatal errors are handled at cause.
+            match res {
+                Err((span, msg)) => sess.span_diagnostic.span_err(span, &msg),
+                Ok(Some(buf)) => buffer.push_str(&buf),
+                // TODO: put span notes in these or would that just get annoying?
+                Ok(None) => {},  // Item should not be written to header.
+            };
+        }
+
+        buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
+        buffer.push_str("#endif\n");
+
+        let bytes_buf = buffer.into_bytes();
+
+        if let Err(error) = fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error))
+        };
+    }
 }
+
+/// Convert `pub type A = B;` into `typedef B A;`.
+///
+/// Aborts if A is generic.
+fn parse_ty(sess: &parse::ParseSess, item: &Item) -> Result {
+    let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
+
+    let mut buffer = String::new();
+    buffer.push_str(&docs);
+
+    let name = item.ident.name.as_str();
+    let new_type = match item.node {
+        Item_::ItemTy(ref ty, ref generics) => {
+            // Can not yet convert generics.
+            if generics.is_parameterized() { return Ok(None); }
+
+            try_some!(rust_to_c(&*ty, Some(&name)))
+        },
+        _ => {
+            fatal!(sess, item.span, "`parse_ty` called on incorrect `Item_`");
+        },
+    };
+
+    buffer.push_str(&format!("typedef {};\n\n", new_type));
+
+    Ok(Some(buffer))
+}
+
+/// Convert a Rust enum into a C enum.
+///
+/// The Rust enum must be marked with `#[repr(C)]` and must be public otherwise the function
+/// will abort.
+///
+/// Cheddar will error if the enum if generic or if it contains non-unit variants.
+fn parse_enum(sess: &parse::ParseSess, item: &Item) -> Result {
+    let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
+    // If it's not #[repr(C)] then it can't be called from C.
+    if !repr_c { return Ok(None); }
+
+    let mut buffer = String::new();
+    buffer.push_str(&docs);
+
+    let name = item.ident.name.as_str();
+    buffer.push_str(&format!("typedef enum {} {{\n", name));
+    if let Item_::ItemEnum(ref definition, ref generics) = item.node {
+        if generics.is_parameterized() {
+            return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` enums".to_owned()));
+        }
+
+        for var in &definition.variants {
+            if !var.node.data.is_unit() {
+                return Err((var.span, "cheddar can not handle `#[repr(C)]` enums with non-unit variants".to_owned()));
+            }
+
+            let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
+            buffer.push_str(&docs);
+
+            buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
+        }
+    } else {
+        fatal!(sess, item.span, "`parse_enum` called in wrong `Item_`");
+    }
+
+    buffer.push_str(&format!("}} {};\n\n", name));
+
+    Ok(Some(buffer))
+}
+
+/// Convert a Rust struct into a C struct.
+///
+/// The rust struct must be marked `#[repr(C)]` and must be public otherwise the function will
+/// abort.
+///
+/// Cheddar will error if the struct is generic or if the struct is a unit or tuple struct.
+fn parse_struct(sess: &parse::ParseSess, item: &Item) -> Result {
+    let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
+    // If it's not #[repr(C)] then it can't be called from C.
+    if !repr_c { return Ok(None); }
+
+    let mut buffer = String::new();
+    buffer.push_str(&docs);
+
+    let name = item.ident.name.as_str();
+    buffer.push_str(&format!("typedef struct {}", name));
+
+    if let Item_::ItemStruct(ref variants, ref generics) = item.node {
+        if generics.is_parameterized() {
+            return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` structs".to_owned()));
+        }
+
+        // TODO: refactor this into mutliple methods.
+        if variants.is_struct() {
+            buffer.push_str(" {\n");
+
+            for field in variants.fields() {
+                let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
+                buffer.push_str(&docs);
+
+                let name = match field.node.ident() {
+                    Some(name) => name.name.as_str(),
+                    None => unreachable!("a tuple struct snuck through"),
+                };
+                let ty = try_some!(rust_to_c(&*field.node.ty, Some(&name)));
+                buffer.push_str(&format!("\t{};\n", ty));
+            }
+
+            buffer.push_str("}");
+        } else if variants.is_tuple() && variants.fields().len() == 1 {
+            // #[repr(C)] pub struct Foo(Bar);  =>  typedef struct Foo Foo;
+        } else {
+            return Err((
+                item.span,
+                "cheddar can not handle unit or tuple `#[repr(C)]` structs with >1 members".to_owned()
+            ));
+        }
+    } else {
+        fatal!(sess, item.span, "`parse_struct` called on wrong `Item_`");
+    }
+
+    buffer.push_str(&format!(" {};\n\n", name));
+
+    Ok(Some(buffer))
+}
+
+/// Convert a Rust function declaration into a C function declaration.
+///
+/// The function declaration must be marked `#[no_mangle]` and have a C ABI otherwise the
+/// function will abort.
+///
+/// If the declaration is generic or diverges then cheddar will error.
+fn parse_fn(sess: &parse::ParseSess, item: &Item) -> Result {
+    let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
+    // If it's not #[no_mangle] then it can't be called from C.
+    if !no_mangle { return Ok(None); }
+
+    let mut buffer = String::new();
+    let name = item.ident.name.as_str();
+
+    if let Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
+        match abi {
+            // If it doesn't have a C ABI it can't be called from C.
+            Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
+            _ => return Ok(None),
+        }
+
+        if generics.is_parameterized() {
+            return Err((item.span, "cheddar can not handle parameterized extern functions".to_owned()));
+        }
+
+        let fn_decl: &ast::FnDecl = &*fn_decl;
+        let output_type = &fn_decl.output;
+        let output_type = match *output_type {
+            ast::FunctionRetTy::NoReturn(span) => {
+                return Err((span, "panics across a C boundary are naughty!".to_owned()));
+            },
+            ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
+            ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, None)),
+        };
+
+        buffer.push_str(&docs);
+        buffer.push_str(&format!("{} {}(", output_type, name));
+
+        let has_args = !fn_decl.inputs.is_empty();
+
+        for arg in &fn_decl.inputs {
+            let arg_name = pprust::pat_to_string(&*arg.pat);
+            let arg_type = try_some!(rust_to_c(&*arg.ty, Some(&arg_name)));
+            buffer.push_str(&format!("{}, ", arg_type));
+        }
+
+        if has_args {
+            // Remove the trailing comma and space.
+            buffer.pop();
+            buffer.pop();
+        }
+
+        buffer.push_str(");\n\n");
+    } else {
+        fatal!(sess, item.span, "`parse_fn` called on wrong `Item_`");
+    }
+
+    Ok(Some(buffer))
+}
+
 
 // TODO: Maybe it would be wise to use syntax::attr here.
 /// Loop through a list of attributes.
@@ -486,8 +787,7 @@ fn retrieve_docstring(attr: &Attribute, prepend: &str) -> Option<String> {
     }
 }
 
-// TODO: refactor:
-//     - probably pull the FnDecl parsing logic out of parse_fn
+
 // TODO: C function pointers _must_ have a name associated with them but this Option business feels
 //       like a shit way to handle that
 //     - maybe have a named_rust_to_c which allows fn_pointers and rust_to_c doesn't?
@@ -690,319 +990,4 @@ fn rust_ty_to_c(ty: &str) -> &str {
         // We `#include <stdbool.h>` so bool is handled.
         ty => ty,
     }
-}
-
-impl CheddarPass {
-    /// The manager of rusty-cheddar.
-    ///
-    /// Iterates through all items in the module and dispatches to correct methods, then pulls all
-    /// the results together into a header.
-    fn parse_mod(&mut self, context: &EarlyContext, module: &ast::Mod) {
-        let mut buffer = format!(
-            "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-            self.file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
-        );
-        buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
-        buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
-
-        for item in &module.items {
-            // If it's not visible it can't be called from C.
-            if let ast::Visibility::Inherited = item.vis { continue; }
-
-            // Dispatch to correct method.
-            let res = match item.node {
-                // TODO: Check for ItemStatic and ItemConst as well.
-                //     - How would this work?
-                //     - Is it even possible?
-                Item_::ItemTy(..) => self.parse_ty(context, item),
-                Item_::ItemEnum(..) => self.parse_enum(context, item),
-                Item_::ItemStruct(..) => self.parse_struct(context, item),
-                Item_::ItemFn(..) => self.parse_fn(context, item),
-                _ => Ok(None),
-            };
-
-            // Display any non-fatal errors, fatal errors are handled at cause.
-            match res {
-                Err((span, msg)) => context.sess.span_err(span, &msg),
-                Ok(Some(buf)) => buffer.push_str(&buf),
-                // TODO: put span notes in these or would that just get annoying?
-                Ok(None) => {},  // Item should not be written to header.
-            };
-        }
-
-        buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
-        buffer.push_str("#endif\n");
-
-        let bytes_buf = buffer.into_bytes();
-
-        if let Err(error) = fs::File::create(&self.file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            context.sess.err(&format!("could not write to '{}': {}", self.file.display(), error))
-        };
-    }
-
-    /// Convert `pub type A = B;` into `typedef B A;`.
-    ///
-    /// Aborts if A is generic.
-    fn parse_ty(&mut self, context: &EarlyContext, item: &Item) -> Result {
-        let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
-
-        let mut buffer = String::new();
-        buffer.push_str(&docs);
-
-        let name = item.ident.name.as_str();
-        let new_type = match item.node {
-            Item_::ItemTy(ref ty, ref generics) => {
-                // Can not yet convert generics.
-                if generics.is_parameterized() { return Ok(None); }
-
-                try_some!(rust_to_c(&*ty, Some(&name)))
-            },
-            _ => {
-                context.sess.span_fatal(item.span, "`parse_ty` called on incorrect `Item_`");
-            },
-        };
-
-        buffer.push_str(&format!("typedef {};\n\n", new_type));
-
-        Ok(Some(buffer))
-    }
-
-    /// Convert a Rust enum into a C enum.
-    ///
-    /// The Rust enum must be marked with `#[repr(C)]` and must be public otherwise the function
-    /// will abort.
-    ///
-    /// Cheddar will error if the enum if generic or if it contains non-unit variants.
-    fn parse_enum(&mut self, context: &EarlyContext, item: &Item) -> Result {
-        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
-        // If it's not #[repr(C)] then it can't be called from C.
-        if !repr_c { return Ok(None); }
-
-        let mut buffer = String::new();
-        buffer.push_str(&docs);
-
-        let name = item.ident.name.as_str();
-        buffer.push_str(&format!("typedef enum {} {{\n", name));
-        if let Item_::ItemEnum(ref definition, ref generics) = item.node {
-            if generics.is_parameterized() {
-                return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` enums".to_owned()));
-            }
-
-            for var in &definition.variants {
-                if !var.node.data.is_unit() {
-                    return Err((var.span, "cheddar can not handle `#[repr(C)]` enums with non-unit variants".to_owned()));
-                }
-
-                let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
-                buffer.push_str(&docs);
-
-                buffer.push_str(&format!("\t{},\n", pprust::variant_to_string(var)));
-            }
-        } else {
-            context.sess.span_fatal(item.span, "`parse_enum` called in wrong `Item_`");
-        }
-
-        buffer.push_str(&format!("}} {};\n\n", name));
-
-        Ok(Some(buffer))
-    }
-
-    /// Convert a Rust struct into a C struct.
-    ///
-    /// The rust struct must be marked `#[repr(C)]` and must be public otherwise the function will
-    /// abort.
-    ///
-    /// Cheddar will error if the struct is generic or if the struct is a unit or tuple struct.
-    fn parse_struct(&mut self, context: &EarlyContext, item: &Item) -> Result {
-        let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
-        // If it's not #[repr(C)] then it can't be called from C.
-        if !repr_c { return Ok(None); }
-
-        let mut buffer = String::new();
-        buffer.push_str(&docs);
-
-        let name = item.ident.name.as_str();
-        buffer.push_str(&format!("typedef struct {}", name));
-
-        if let Item_::ItemStruct(ref variants, ref generics) = item.node {
-            if generics.is_parameterized() {
-                return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` structs".to_owned()));
-            }
-
-            // TODO: refactor this into mutliple methods.
-            if variants.is_struct() {
-                buffer.push_str(" {\n");
-
-                for field in variants.fields() {
-                    let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
-                    buffer.push_str(&docs);
-
-                    let name = match field.node.ident() {
-                        Some(name) => name.name.as_str(),
-                        None => context.sess.span_fatal(field.span, "a tuple struct snuck through"),
-                    };
-                    let ty = try_some!(rust_to_c(&*field.node.ty, Some(&name)));
-                    buffer.push_str(&format!("\t{};\n", ty));
-                }
-
-                buffer.push_str("}");
-            } else if variants.is_tuple() && variants.fields().len() == 1 {
-                // #[repr(C)] pub struct Foo(Bar);  =>  typedef struct Foo Foo;
-            } else {
-                return Err((
-                    item.span,
-                    "cheddar can not handle unit or tuple `#[repr(C)]` structs with >1 members".to_owned()
-                ));
-            }
-        } else {
-            context.sess.span_fatal(item.span, "`parse_struct` called on wrong `Item_`");
-        }
-
-        buffer.push_str(&format!(" {};\n\n", name));
-
-        Ok(Some(buffer))
-    }
-
-    /// Convert a Rust function declaration into a C function declaration.
-    ///
-    /// The function declaration must be marked `#[no_mangle]` and have a C ABI otherwise the
-    /// function will abort.
-    ///
-    /// If the declaration is generic or diverges then cheddar will error.
-    fn parse_fn(&mut self, context: &EarlyContext, item: &Item) -> Result {
-        let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
-        // If it's not #[no_mangle] then it can't be called from C.
-        if !no_mangle { return Ok(None); }
-
-        let mut buffer = String::new();
-        let name = item.ident.name.as_str();
-
-        if let Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
-            match abi {
-                // If it doesn't have a C ABI it can't be called from C.
-                Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
-                _ => return Ok(None),
-            }
-            if generics.is_parameterized() {
-                return Err((item.span, "cheddar can not handle parameterized extern functions".to_owned()));
-            }
-
-            let fn_decl: &ast::FnDecl = &*fn_decl;
-            let output_type = &fn_decl.output;
-            let output_type = match *output_type {
-                ast::FunctionRetTy::NoReturn(span) => {
-                    return Err((span, "panics across a C boundary are naughty!".to_owned()));
-                },
-                ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
-                ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, None)),
-            };
-
-            buffer.push_str(&docs);
-            buffer.push_str(&format!("{} {}(", output_type, name));
-
-            let has_args = !fn_decl.inputs.is_empty();
-
-            for arg in &fn_decl.inputs {
-                let arg_name = pprust::pat_to_string(&*arg.pat);
-                let arg_type = try_some!(rust_to_c(&*arg.ty, Some(&arg_name)));
-                buffer.push_str(&format!("{}, ", arg_type));
-            }
-
-            if has_args {
-                // Remove the trailing comma and space.
-                buffer.pop();
-                buffer.pop();
-            }
-
-            buffer.push_str(");\n\n");
-        } else {
-            context.sess.span_fatal(item.span, "`parse_fn` called on wrong `Item_`");
-        }
-
-        Ok(Some(buffer))
-    }
-}
-
-
-/// Parse plugin arguments into a file path and create any directories required.
-fn parse_plugin_args(reg: &mut rustc_plugin::Registry) -> std::result::Result<(PathBuf, Option<String>), ()> {
-    let mut dir = PathBuf::new();
-    let mut file: Option<&str> = None;
-    let mut module: Option<String> = None;
-
-    for arg in reg.args() {
-        if let ast::MetaItem_::MetaNameValue(ref name, ref value) = arg.node {
-            let name: &str = name;
-
-            if name == "dir" {
-                if let ast::Lit_::LitStr(ref dir_str, _) = value.node {
-                    let dir_str: &str = dir_str;
-                    dir.push(&dir_str);
-                } else {
-                    reg.sess.span_err(value.span, "`dir` argument value must be a string literal");
-                    return Err(());
-                }
-            } else if name == "file" {
-                if let ast::Lit_::LitStr(ref file_str, _) = value.node {
-                    let file_str: &str = file_str;
-                    file = Some(file_str);
-                } else {
-                    reg.sess.span_err(value.span, "`file` argument value must be a string literal");
-                    return Err(());
-                }
-            } else if name == "module" {
-                if let ast::Lit_::LitStr(ref file_str, _) = value.node {
-                    let file_str: &str = file_str;
-                    module = Some(file_str.to_owned());
-                } else {
-                    reg.sess.span_err(value.span, "`module` argument value must be a string literal");
-                    return Err(());
-                }
-            } else {
-                reg.sess.span_err(arg.span, &format!("unrecognised cheddar argument `{}`", &name));
-                return Err(());
-            }
-        } else {
-            reg.sess.span_err(arg.span, "cheddar plugin arguments must be of the form `name = value`");
-            return Err(());
-        }
-    }
-
-    // Create all the directories before we push the file name.
-    if let Err(error) = fs::create_dir_all(&dir) {
-        reg.sess.err(&format!("could not create directories in '{}': {}", dir.display(), error));
-        return Err(());
-    }
-
-    let file = file
-        .map(PathBuf::from)
-        // If no file was specified in the arguments try using the crate name.
-        .or(reg.sess.opts.crate_name.clone()
-            // Crate name is a String so convert it.
-            .map(|name| PathBuf::from(name)
-                 .with_extension("h")))
-        // If there is no crate name try using the source file name.
-        .or(reg.sess.local_crate_source_file.clone()
-            // Don't want the full path.
-            .and_then(|file| file.file_name()
-                      // `.file_name()` returns an Option<OsStr>.
-                      .map(PathBuf::from))
-            .map(|file| file.with_extension("h")))
-        // If all else fails...
-        .unwrap_or(PathBuf::from("cheddar.h"));
-
-    dir.push(&file);
-
-    Ok((dir, module))
-}
-
-#[plugin_registrar]
-pub fn plugin_registrar(reg: &mut rustc_plugin::registry::Registry) {
-    let (file, module) = if let Ok(val) = parse_plugin_args(reg) {
-        val
-    } else {
-        return;
-    };
-
-    reg.register_early_lint_pass(box CheddarPass { file: file, module: module });
 }
