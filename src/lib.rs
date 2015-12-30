@@ -31,9 +31,10 @@
 //! This should work as is providing you've set up your project correctly. **Don't forget to add a
 //! `build = ...` to your `[package]` section, see [the cargo docs] for more info.**
 //!
-//! rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR/include` where `$OUT_DIR`
-//! is set by `cargo` (usually //! `target/debug`). Note that rusty-cheddar emits very few
-//! warnings, it is up to the programmer to write a library which can be correctly called from C.
+//! rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR` where `$OUT_DIR` is set by
+//! `cargo` (usually `target/debug/build/{your crate}_{some hash}/out`). Note that rusty-cheddar
+//! emits very few warnings, it is up to the programmer to write a library which can be correctly
+//! called from C.
 //!
 //! ### API In a Module
 //!
@@ -271,9 +272,11 @@
 //! [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
 
 extern crate syntex_syntax as syntax;
+extern crate toml;
 
-use std::path;
+use std::io::Read;
 use std::io::Write;
+use std::path;
 
 
 /// Unwraps Result<Option<..>> if it is Ok(Some(..)) else returns.
@@ -339,7 +342,7 @@ pub struct Cheddar {
     ///
     /// Default is `cheddar.h`.
     outfile: path::PathBuf,
-    // TODO: store this as a syntax::ast::Path
+    // TODO: store this as a syntax::ast::Path when allowing arbitrary modules.
     /// The module which contains the C API.
     module: Option<String>,
 }
@@ -347,8 +350,7 @@ pub struct Cheddar {
 impl Cheddar {
     /// Create a new Cheddar compiler.
     pub fn new() -> Cheddar {
-        // TODO: explicitly check the Cargo.toml and fall back to "src/lib.rs"
-        let input = Source::File(path::PathBuf::from("src/lib.rs"));
+        let input = Source::File(path::PathBuf::from(source_file_from_cargo()));
         let outdir = std::env::var_os("OUT_DIR")
             .map(path::PathBuf::from)
             .unwrap_or(path::PathBuf::new());
@@ -459,4 +461,40 @@ impl Cheddar {
             sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error))
         };
     }
+}
+
+// TODO: proper error handling for this.
+/// Extract the path to the root source file from a `Cargo.toml`.
+fn source_file_from_cargo() -> String {
+    let default = "src/lib.rs";
+
+    let cargo_toml = path::Path::new(
+        &std::env::var_os("CARGO_MANIFEST_DIR")
+            .unwrap_or(std::ffi::OsString::from(""))
+    ).join("Cargo.toml");
+
+    let mut cargo_toml = match std::fs::File::open(&cargo_toml) {
+        Ok(value) => value,
+        // Cargo.toml was not found.
+        Err(..) => return default.to_owned(),
+    };
+
+    let mut buf = String::new();
+    match cargo_toml.read_to_string(&mut buf) {
+        Ok(..) => {},
+        // Cargo.toml could not be read.
+        Err(..) => return default.to_owned(),
+    };
+
+    let table = match toml::Parser::new(&buf).parse() {
+        Some(value) => value,
+        // Cargo.toml could not be read.
+        None => return default.to_owned(),
+    };
+
+    table.get("lib")
+        .and_then(|t| t.lookup("path"))
+        .and_then(|s| s.as_str())
+        .unwrap_or(default)
+        .to_owned()
 }
