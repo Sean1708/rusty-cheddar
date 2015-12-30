@@ -1,22 +1,18 @@
 //! Functions for actually parsing the source file.
 
-use std::path;
-use std::io::Write;
-
 use syntax::ast;
 use syntax::parse;
 use syntax::print;
 
-use ::types;
-
-use ::Result;
+use types;
 
 
 /// The main entry point when looking for a specific module.
 ///
 /// Determines which module to parse, ensures it is `pub use`ed then hands off to
 /// `Cheddar::parse_mod`.
-pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, file: &path::Path) {
+pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, file_name: &str)
+-> ::std::result::Result<String, String> {
     let mut mod_item = None;
     let mut pub_used = false;
 
@@ -47,15 +43,12 @@ pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, fi
 
     if let Some(mod_item) = mod_item {
         if pub_used {
-            parse_mod(sess, &mod_item, file);
+            Ok(parse_mod(sess, &mod_item, file_name))
         } else {
-            sess.span_diagnostic.err(&format!(
-                "C api must exist in top level module, try `pub use {}::*`",
-                module,
-            ));
+            Err(format!("C api must exist in top level module, try `pub use {}::*`", module))
         }
     } else {
-        sess.span_diagnostic.err(&format!("could not find module '{}'", module));
+        Err(format!("could not find module '{}'", module))
     }
 }
 
@@ -63,11 +56,8 @@ pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, fi
 ///
 /// Iterates through all items in the module and dispatches to correct methods, then pulls all
 /// the results together into a header.
-pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file: &path::Path) {
-    let mut buffer = format!(
-        "#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n",
-        file.file_stem().and_then(|p| p.to_str()).unwrap_or("default"),
-    );
+pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file_name: &str) -> String {
+    let mut buffer = format!("#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n", file_name);
     buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
     buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
 
@@ -87,8 +77,8 @@ pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file: &path::Path) 
             _ => Ok(None),
         };
 
-        // Display any non-fatal errors, fatal errors are handled at cause.
         match res {
+            // Display any non-fatal errors, fatal errors are handled at cause.
             Err((span, msg)) => sess.span_diagnostic.span_err(span, &msg),
             Ok(Some(buf)) => buffer.push_str(&buf),
             // TODO: put span notes in these or would that just get annoying?
@@ -99,17 +89,13 @@ pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file: &path::Path) 
     buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
     buffer.push_str("#endif\n");
 
-    let bytes_buf = buffer.into_bytes();
-
-    if let Err(error) = ::std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-        sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error))
-    };
+    buffer
 }
 
 /// Convert `pub type A = B;` into `typedef B A;`.
 ///
 /// Aborts if A is generic.
-fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> Result {
+fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
     let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
 
     let mut buffer = String::new();
@@ -139,7 +125,7 @@ fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> Result {
 /// will abort.
 ///
 /// Cheddar will error if the enum if generic or if it contains non-unit variants.
-fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> Result {
+fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
     let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
     // If it's not #[repr(C)] then it can't be called from C.
     if !repr_c { return Ok(None); }
@@ -179,7 +165,7 @@ fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> Result {
 /// abort.
 ///
 /// Cheddar will error if the struct is generic or if the struct is a unit or tuple struct.
-fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> Result {
+fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
     let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
     // If it's not #[repr(C)] then it can't be called from C.
     if !repr_c { return Ok(None); }
@@ -235,7 +221,7 @@ fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> Result {
 /// function will abort.
 ///
 /// If the declaration is generic or diverges then cheddar will error.
-fn parse_fn(sess: &parse::ParseSess, item: &ast::Item) -> Result {
+fn parse_fn(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
     let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
     // If it's not #[no_mangle] then it can't be called from C.
     if !no_mangle { return Ok(None); }

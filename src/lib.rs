@@ -312,6 +312,7 @@
 extern crate syntex_syntax as syntax;
 
 use std::path;
+use std::io::Write;
 
 
 /// Unwraps Result<Option<..>> if it is Ok(Some(..)) else returns.
@@ -350,6 +351,9 @@ mod parse;
 // }
 // then have
 // type Result = std::result::Result<Option(String), Vec<Error>>;
+// then parse_mod and parse_crate can return a vector of errors.
+// compile_to_string should also return a vec of errors and should not print any.
+// then we should privide a helper function for users to print out errors.
 
 
 type Result = std::result::Result<Option<String>, (syntax::codemap::Span, String)>;
@@ -426,16 +430,35 @@ impl Cheddar {
         self
     }
 
-    /// Compile the header file.
-    pub fn compile(&self) {
+    /// Compile the header into a string.
+    pub fn compile_to_string(&self) -> String {
         let sess = syntax::parse::ParseSess::new();
         let krate = syntax::parse::parse_crate_from_file(&self.input, vec![], &sess);
-        let file = self.outdir.join(&self.outfile);
+        let file_name = self.outfile.file_stem().and_then(|p| p.to_str()).unwrap_or("default");
 
         if let Some(ref module) = self.module {
-            parse::parse_crate(&sess, &krate, module, &file);
+            match parse::parse_crate(&sess, &krate, module, &file_name) {
+                Err(err) => {
+                    sess.span_diagnostic.err(&err);
+                    String::new()
+                },
+                Ok(header) => header,
+            }
         } else {
-            parse::parse_mod(&sess, &krate.module, &file);
+            parse::parse_mod(&sess, &krate.module, &file_name)
         }
+    }
+
+    /// Write the header to a file.
+    pub fn compile(&self) {
+        let file = self.outdir.join(&self.outfile);
+
+        let header = self.compile_to_string();
+
+        let bytes_buf = header.into_bytes();
+        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            let sess = syntax::parse::ParseSess::new();
+            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error))
+        };
     }
 }
