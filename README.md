@@ -30,7 +30,7 @@ Then create the following `build.rs`:
 extern crate cheddar;
 
 fn main() {
-    cheddar::Cheddar::new()
+    cheddar::Cheddar::new().expect("could not read manifest")
         .file("my_header.h")
         .compile();
 }
@@ -59,7 +59,7 @@ available in the top-level scope:
 extern crate cheddar;
 
 fn main() {
-    cheddar::Cheddar::new()
+    cheddar::Cheddar::new().expect("could not read manifest")
         .file("my_header.h")
         .module("c_api")
         .compile();

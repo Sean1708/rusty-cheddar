@@ -292,18 +292,6 @@ mod types;
 mod parse;
 
 
-// TODO: error handling by having an enum with levels and returning Vec?
-// enum Error {
-//     Error(Option<Span>, String),
-//     Warn(Option<Span>, String),
-//     Note(Option<Span>, String),
-// }
-// then have
-// type Result = std::result::Result<Option(String), Vec<Error>>;
-// then parse_mod and parse_crate can return a vector of errors.
-// compile_to_string should also return a vec of errors and should not print any.
-// then we should privide a helper function for users to print out errors.
-
 pub use syntax::errors::Level;
 
 /// Describes an error encountered by the compiler.
