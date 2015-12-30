@@ -405,6 +405,9 @@ impl Cheddar {
         self
     }
 
+    // TODO: `parse_crate` and `parse_mod` should return a vector of errors which contain the error
+    // level, an optional span, and an error message. compile_to_string should also return these
+    // There should be a Result for this file and a ParseResult for parse.rs.
     /// Compile the header into a string.
     pub fn compile_to_string(&self) -> String {
         let sess = syntax::parse::ParseSess::new();
@@ -436,10 +439,20 @@ impl Cheddar {
 
     /// Write the header to a file.
     pub fn compile(&self) {
-        let file = self.outdir.join(&self.outfile);
+        if let Err(error) = std::fs::create_dir_all(&self.outdir) {
+            let sess = syntax::parse::ParseSess::new();
+            sess.span_diagnostic.err(&format!(
+                "could not create directories in '{}': {}",
+                self.outdir.display(),
+                error,
+            ));
+
+            return;
+        }
 
         let header = self.compile_to_string();
 
+        let file = self.outdir.join(&self.outfile);
         let bytes_buf = header.into_bytes();
         if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
             let sess = syntax::parse::ParseSess::new();
