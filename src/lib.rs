@@ -359,10 +359,16 @@ mod parse;
 type Result = std::result::Result<Option<String>, (syntax::codemap::Span, String)>;
 
 
+/// Store the source code.
+enum Source {
+    String(String),
+    File(path::PathBuf),
+}
+
 /// Stores configuration for the Cheddar compiler.
 pub struct Cheddar {
     /// The root source file of the crate.
-    input: path::PathBuf,
+    input: Source,
     /// The directory in which to place the header file.
     ///
     /// Default is the environment variable `OUT_DIR` when available, otherwise it is the current
@@ -381,7 +387,7 @@ impl Cheddar {
     /// Create a new Cheddar compiler.
     pub fn new() -> Cheddar {
         // TODO: explicitly check the Cargo.toml and fall back to "src/lib.rs"
-        let input = path::PathBuf::from("src/lib.rs");
+        let input = Source::File(path::PathBuf::from("src/lib.rs"));
         let outdir = std::env::var_os("OUT_DIR")
             .map(path::PathBuf::from)
             .unwrap_or(path::PathBuf::new());
@@ -397,8 +403,16 @@ impl Cheddar {
     /// Set the path to the root source file of the crate.
     ///
     /// This should only be used when not using a `cargo` build system.
-    pub fn input(&mut self, path: &str) -> &mut Cheddar {
-        self.input = path::PathBuf::from(path);
+    pub fn source_file(&mut self, path: &str) -> &mut Cheddar {
+        self.input = Source::File(path::PathBuf::from(path));
+        self
+    }
+
+    /// Set a string to be used as source code.
+    ///
+    /// Currently this should only be used with small strings as it requires at least one `.clone()`.
+    pub fn source_string(&mut self, source: &str) -> &mut Cheddar {
+        self.input = Source::String(source.to_owned());
         self
     }
 
@@ -433,8 +447,18 @@ impl Cheddar {
     /// Compile the header into a string.
     pub fn compile_to_string(&self) -> String {
         let sess = syntax::parse::ParseSess::new();
-        let krate = syntax::parse::parse_crate_from_file(&self.input, vec![], &sess);
         let file_name = self.outfile.file_stem().and_then(|p| p.to_str()).unwrap_or("default");
+
+        let krate = match self.input {
+            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], &sess),
+            Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
+                "cheddar_source".to_owned(),
+                // TODO: this clone could be quite costly, maybe rethink this design?
+                source.clone(),
+                vec![],
+                &sess,
+            ),
+        };
 
         if let Some(ref module) = self.module {
             match parse::parse_crate(&sess, &krate, module, &file_name) {
