@@ -69,7 +69,7 @@ fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
 ///
 /// Rust function pointers are of the form
 ///
-/// ```no_run
+/// ```ignore
 /// fn(arg1: Ty1, ...) -> RetTy
 /// ```
 ///

@@ -5,99 +5,60 @@
 //! open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 //! (after arguing with you lots and lots).
 //!
-//! ## Invocation From the Command Line
+//! ## As a Library
 //!
-//! You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
-//! (remember to use nightly Rust to build rusty-cheddar):
-//!
-//! ```sh
-//! $ cargo build --release
-//! ```
-//! Then compile your file with:
-//!
-//! ```sh
-//! $ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar $SOURCE
-//! ```
-//!
-//! where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` (it should be enough for the dylib to
-//! be in your `$PATH` but I've not checked this yet) and `$SOURCE` is the source file you wish to
-//! compile, you may also need to add the `--crate-type=...` flag.
-//!
-//! Another common workflow is to use rusty-cheddar to compile the header file without compiling the
-//! rest of the crate. For projects using `cargo` you can do:
-//!
-//! ```sh
-//! $ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-//! ```
-//!
-//! Otherwise:
-//!
-//! ```sh
-//! $ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
-//! ```
-//!
-//! ### Using rusty-cheddar With Crates Built for Stable Rust
-//!
-//! Using the above technique and [multirust] you can build your crate on stable while still being able
-//! to invoke rusty-cheddar. First you must grab the source from the [repo] and build it with _nightly_
-//! Rust:
-//!
-//! ```sh
-//! $ cd $CHEDDAR
-//! $ multirust run nightly cargo build --release
-//! ```
-//!
-//! Then build your project on stable Rust and use nightly Rust to invoke rusty-cheddar:
-//!
-//! ```sh
-//! $ cd $YOUR_PROJECT
-//! $ multirust override stable  # if you have a different default
-//! $ cargo build --release
-//! $ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-//! ```
-//!
-//! ## Invocation In Source File
-//!
-//! You can also get rusty-cheddar to run automatically each time you compile, but this means that your
-//! crate must be built with nightly Rust. First add the following to your `Cargo.toml`:
+//! The most useful way to use rusty-cheddar is in a build script. To do this add the following
+//! `build-dependencies` section to your `Cargo.toml` (to use it as a normal library simply replace
+//! `build-dependencies` with `dependencies`):
 //!
 //! ```toml
-//! [dependencies]
-//! rusty-cheddar = "0.1"
+//! [build-dependencies]
+//! rusty-cheddar = "0.3"
 //! ```
 //!
-//! Then at the top of your `lib.rs`:
+//! Then create the following `build.rs`:
 //!
 //! ```no_run
-//! #![feature(plugin)]
-//! #![plugin(cheddar)]
+//! extern crate cheddar;
+//!
+//! fn main() {
+//!     cheddar::Cheddar::new()
+//!         .file("my_header.h")
+//!         .compile();
+//! }
 //! ```
 //!
-//! rusty-cheddar will then create a `cheddar.h` file in your working directory containing the generated
-//! header file. Note that rusty-cheddar emits very few warnings, it is up to the programmer to write a
-//! library which can be correctly called from C.
+//! This should work as is providing you've set up your project correctly. **Don't forget to add a
+//! `build = ...` to your `[package]` section, see [the cargo docs] for more info.**
 //!
-//! You can optionally specify a path for the header file using plugin arguments. Use `dir =
-//! "/path/to/out/dir"` to specify an output directory and `file = "name.h"`. So
+//! rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR/include` where `$OUT_DIR`
+//! is set by `cargo` (usually //! `target/debug`). Note that rusty-cheddar emits very few
+//! warnings, it is up to the programmer to write a library which can be correctly called from C.
+//!
+//! ### API In a Module
+//!
+//! You can also place your API in a module to help keep your source code neat. **Note that this
+//! module must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is
+//! not.**
+//!
+//! To do this you must supply the name of the module to Cheddar, then ensure that the items are
+//! available in the top-level scope:
 //!
 //! ```no_run
-//! #![plugin(dir = "target/include", file = "my_header.h")]
+//! // build.rs
+//!
+//! extern crate cheddar;
+//!
+//! fn main() {
+//!     cheddar::Cheddar::new()
+//!         .file("my_header.h")
+//!         .module("c_api")
+//!         .compile();
+//! }
 //! ```
 //!
-//! will first create the directories in `target/include` if they don't exist and will then create
-//! `my_header.h` in `target/include`.
-//!
-//! ## API In a Module
-//!
-//! You can also place your API in a to help keep your source code neat. **Note that this module
-//! must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is not.**
-//!
-//! To do this you must specify the name of the module in the plugin args, then you must `pub use`
-//! the module with a glob to bring all the items into the top level module.
-//!
-//! ```no_run
-//! #![feature(plugin)]
-//! #![plugin(cheddar(module = "c_api"))]
+//! ```ignore
+//! // src/lib.rs
 //!
 //! pub use c_api::*;
 //!
@@ -114,7 +75,7 @@
 //!
 //! Rust:
 //!
-//! ```no_run
+//! ```ignore
 //! type UInt32 = u32;
 //! pub type UInt64 = u64;
 //! pub type MyOption<T> = Option<T>
@@ -136,7 +97,7 @@
 //!
 //! Rust:
 //!
-//! ```no_run
+//! ```ignore
 //! #[repr(C)]
 //! pub enum Colours {
 //!     Red = -6,
@@ -147,7 +108,7 @@
 //!
 //! // This would fail is it was #[repr(C)].
 //! pub enum Tastes<T> {
-//!     Savoury,
+//!     Savoury(T),
 //!     Sweet,
 //! }
 //!
@@ -184,7 +145,7 @@
 //!
 //! Rust:
 //!
-//! ```no_run
+//! ```ignore
 //! #[repr(C)]
 //! pub struct Person {
 //!     age: i32,
@@ -215,7 +176,7 @@
 //!
 //! Rust:
 //!
-//! ```no_run
+//! ```ignore
 //! struct Foo<T> {
 //!     bar: i32,
 //!     baz: Option<T>,
@@ -253,7 +214,7 @@
 //!
 //! Rust:
 //!
-//! ```no_run
+//! ```ignore
 //! use std::ops::Add;
 //!
 //! #[no_mangle]
@@ -295,7 +256,7 @@
 //! rusty-cheddar currently does not handle type paths (e.g. `mymod::MyType`), instead they must be `use`ed
 //! first:
 //!
-//! ```no_run
+//! ```ignore
 //! // pub type MyCType = mymod::MyType;  // This will put `typedef mymod::MyType MyCType;` into the header.
 //! use mymod::MyType;
 //! pub type MyCType = MyType;
@@ -305,7 +266,7 @@
 //! (e.g. `libc::c_void`) so that they can be converted properly.
 //!
 //!
-//! [multirust]: https://github.com/brson/multirust
+//! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
 //! [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
 
