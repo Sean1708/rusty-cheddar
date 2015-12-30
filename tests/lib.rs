@@ -2,6 +2,44 @@ extern crate cheddar;
 
 use std::process::Command;
 
+macro_rules! inner_cheddar_cmp_test {
+    ($name:ident, $compile:expr, $header:expr) => {
+        #[test]
+        fn $name() {
+            let expected = concat!(
+                // Due to the way CppHeaderParser works we only need to add the #define.
+                "#define cheddar_gen_cheddar_h\n",
+                $header,
+            );
+
+            let actual = $compile;
+
+            let cmp_script = std::env::current_dir()
+                .map(|p| p.join("tests/cmp_header.py"))
+                .expect("internal testing error: unable to find current directory");
+
+            // Compare the headers.
+            let output = Command::new(&cmp_script)
+                .arg(&expected)
+                .arg(&actual)
+                .output()
+                .expect("internal testing error: could not run `cmp_header.py`");
+
+            if !output.status.success() {
+                if !output.stderr.is_empty() {
+                    panic!(
+                        "internal testing error: `cmp_header.py` failed: {}",
+                        String::from_utf8_lossy(&output.stderr),
+                    );
+                } else {
+                    panic!("{}: {}", String::from_utf8_lossy(&output.stdout), actual);
+                }
+            }
+        }
+    };
+}
+
+
 /// Compares a generated header file to an expected one using `cmp_header.py`.
 ///
 /// Do not put any boiler plate in the strings, only put the items you want to test.
@@ -36,77 +74,18 @@ use std::process::Command;
 /// ```
 macro_rules! cheddar_cmp_test {
     ($name:ident, $api:expr, $header:expr, $rust:expr) => {
-        #[test]
-        fn $name() {
-            let expected = concat!(
-                // Due to the way CppHeaderParser works we only need to add the #define.
-                "#define cheddar_gen_cheddar_h\n",
-                $header,
-            );
-
-            let actual = cheddar::Cheddar::new()
-                .source_string($rust)
-                .module($api)
-                .compile_to_string();
-
-            let cmp_script = std::env::current_dir()
-                .map(|p| p.join("tests/cmp_header.py"))
-                .expect("internal testing error: unable to find current directory");
-
-            // Compare the headers.
-            let output = Command::new(&cmp_script)
-                .arg(&expected)
-                .arg(&actual)
-                .output()
-                .expect("internal testing error: could not run `cmp_header.py`");
-
-            if !output.status.success() {
-                if !output.stderr.is_empty() {
-                    panic!(
-                        "internal testing error: `cmp_header.py` failed: {}",
-                        String::from_utf8_lossy(&output.stderr),
-                    );
-                } else {
-                    panic!("{}: {}", String::from_utf8_lossy(&output.stdout), actual);
-                }
-            }
+        inner_cheddar_cmp_test! {
+            $name,
+            cheddar::Cheddar::new().source_string($rust).module($api).compile_to_string(),
+            $header
         }
     };
 
     ($name:ident, $header:expr, $rust:expr) => {
-        #[test]
-        fn $name() {
-            let expected = concat!(
-                // Due to the way CppHeaderParser works we only need to add the #define.
-                "#define cheddar_gen_cheddar_h\n",
-                $header,
-            );
-
-            let actual = cheddar::Cheddar::new()
-                .source_string($rust)
-                .compile_to_string();
-
-            let cmp_script = std::env::current_dir()
-                .map(|p| p.join("tests/cmp_header.py"))
-                .expect("internal testing error: unable to find current directory");
-
-            // Compare the headers.
-            let output = Command::new(&cmp_script)
-                .arg(&expected)
-                .arg(&actual)
-                .output()
-                .expect("internal testing error: could not run `cmp_header.py`");
-
-            if !output.status.success() {
-                if !output.stderr.is_empty() {
-                    panic!(
-                        "internal testing error: `cmp_header.py` failed: {}",
-                        String::from_utf8_lossy(&output.stderr),
-                    );
-                } else {
-                    panic!("{}: {}", String::from_utf8_lossy(&output.stdout), actual);
-                }
-            }
+        inner_cheddar_cmp_test! {
+            $name,
+            cheddar::Cheddar::new().source_string($rust).compile_to_string(),
+            $header
         }
     };
 }
