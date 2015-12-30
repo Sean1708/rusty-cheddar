@@ -22,7 +22,7 @@
 //! extern crate cheddar;
 //!
 //! fn main() {
-//!     cheddar::Cheddar::new()
+//!     cheddar::Cheddar::new().expect("could not read manifest")
 //!         .file("my_header.h")
 //!         .compile();
 //! }
@@ -51,7 +51,7 @@
 //! extern crate cheddar;
 //!
 //! fn main() {
-//!     cheddar::Cheddar::new()
+//!     cheddar::Cheddar::new().expect("could not read manifest")
 //!         .file("my_header.h")
 //!         .module("c_api")
 //!         .compile();
@@ -287,21 +287,6 @@ macro_rules! try_some {
     }}};
 }
 
-/// Print a fatal error message then panic.
-macro_rules! fatal {
-    () => { panic!("abort due to fatal error"); };
-
-    ($sess:expr, $msg:expr) => {
-        let _ = $sess.span_diagnostic.fatal($msg);
-        fatal!();
-    };
-
-    ($sess:expr, $span:expr, $msg:expr) => {
-        let _ = $sess.span_diagnostic.span_fatal($span, $msg);
-        fatal!();
-    }
-}
-
 
 mod types;
 mod parse;
@@ -319,8 +304,61 @@ mod parse;
 // compile_to_string should also return a vec of errors and should not print any.
 // then we should privide a helper function for users to print out errors.
 
+pub use syntax::errors::Level;
 
-type Result = std::result::Result<Option<String>, (syntax::codemap::Span, String)>;
+/// Describes an error encountered by the compiler.
+#[derive(Debug)]
+pub struct Error {
+    pub level: Level,
+    span: Option<syntax::codemap::Span>,
+    pub message: String,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "{}: {}", self.level, self.message)
+    }
+}
+
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        match self.level {
+            Level::Bug => "internal error",
+            Level::Fatal | Level::Error => "error",
+            Level::Warning => "warning",
+            Level::Note => "note",
+            Level::Help => "help",
+        }
+    }
+}
+
+impl Error {
+    /// Use a ParseSess to print the error in the correct format.
+    #[allow(unused_must_use)]
+    fn print(&self, sess: &syntax::parse::ParseSess) {
+        // TODO: there must be some way to reduce the amount of code here.
+        // Throw away the results (with { ...; }) since they are handled elsewhere.
+        if let Some(span) = self.span {
+            match self.level {
+                Level::Bug => { sess.span_diagnostic.span_bug(span, &self.message); },
+                Level::Fatal => { sess.span_diagnostic.span_fatal(span, &self.message); },
+                Level::Error => { sess.span_diagnostic.span_err(span, &self.message); },
+                Level::Warning => { sess.span_diagnostic.span_warn(span, &self.message); },
+                Level::Note => { sess.span_diagnostic.span_note(span, &self.message); },
+                Level::Help => { sess.span_diagnostic.span_help(span, &self.message); },
+            };
+        } else {
+            match self.level {
+                Level::Bug => { sess.span_diagnostic.bug(&self.message); },
+                Level::Fatal => { sess.span_diagnostic.fatal(&self.message); },
+                Level::Error => { sess.span_diagnostic.err(&self.message); },
+                Level::Warning => { sess.span_diagnostic.warn(&self.message); },
+                Level::Note => { sess.span_diagnostic.note(&self.message); },
+                Level::Help => { sess.span_diagnostic.help(&self.message); },
+            };
+        }
+    }
+}
 
 
 /// Store the source code.
@@ -345,22 +383,32 @@ pub struct Cheddar {
     // TODO: store this as a syntax::ast::Path when allowing arbitrary modules.
     /// The module which contains the C API.
     module: Option<String>,
+    /// The current parser session.
+    ///
+    /// Used for printing errors.
+    session: syntax::parse::ParseSess,
 }
 
 impl Cheddar {
     /// Create a new Cheddar compiler.
-    pub fn new() -> Cheddar {
-        let input = Source::File(path::PathBuf::from(source_file_from_cargo()));
+    ///
+    /// This can only fail if there are issues reading the cargo manifest. If there is no cargo
+    /// manifest available then the source file defaults to `src/lib.rs`.
+    pub fn new() -> std::result::Result<Cheddar, Error> {
+        let source_path = try!(source_file_from_cargo());
+        let input = Source::File(path::PathBuf::from(source_path));
+
         let outdir = std::env::var_os("OUT_DIR")
             .map(path::PathBuf::from)
             .unwrap_or(path::PathBuf::new());
 
-        Cheddar {
+        Ok(Cheddar {
             input: input,
             outdir: outdir,
             outfile: path::PathBuf::from("cheddar.h"),
             module: None,
-        }
+            session: syntax::parse::ParseSess::new(),
+        })
     }
 
     /// Set the path to the root source file of the crate.
@@ -407,94 +455,115 @@ impl Cheddar {
         self
     }
 
-    // TODO: `parse_crate` and `parse_mod` should return a vector of errors which contain the error
-    // level, an optional span, and an error message. compile_to_string should also return these
-    // There should be a Result for this file and a ParseResult for parse.rs.
     /// Compile the header into a string.
-    pub fn compile_to_string(&self) -> String {
-        let sess = syntax::parse::ParseSess::new();
+    ///
+    /// Returns a vector of errors which can be printed using `Cheddar::print_error`.
+    pub fn compile_to_string(&self) -> Result<String, Vec<Error>> {
+        let sess = &self.session;
         let file_name = self.outfile.file_stem().and_then(|p| p.to_str()).unwrap_or("default");
 
         let krate = match self.input {
-            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], &sess),
+            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], sess),
             Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
                 "cheddar_source".to_owned(),
                 // TODO: this clone could be quite costly, maybe rethink this design?
                 source.clone(),
                 vec![],
-                &sess,
+                sess,
             ),
         };
 
         if let Some(ref module) = self.module {
-            match parse::parse_crate(&sess, &krate, module, &file_name) {
-                Err(err) => {
-                    sess.span_diagnostic.err(&err);
-                    String::new()
-                },
-                Ok(header) => header,
-            }
+            parse::parse_crate(&krate, module, &file_name)
         } else {
-            parse::parse_mod(&sess, &krate.module, &file_name)
+            parse::parse_mod(&krate.module, &file_name)
         }
     }
 
     /// Write the header to a file.
+    ///
+    /// This is a convenience method for use in build scripts. If errors occur during compilation
+    /// they will be printed then the function will panic.
+    ///
+    /// # Panics
+    ///
+    /// Panics on any compilation error so that the build script exits.
     pub fn compile(&self) {
+        let sess = &self.session;
+
         if let Err(error) = std::fs::create_dir_all(&self.outdir) {
-            let sess = syntax::parse::ParseSess::new();
             sess.span_diagnostic.err(&format!(
                 "could not create directories in '{}': {}",
                 self.outdir.display(),
                 error,
             ));
 
-            return;
+            panic!("errors compiling header file");
         }
 
-        let header = self.compile_to_string();
+        let header = match self.compile_to_string() {
+            Ok(header) => header,
+            Err(errors) => {
+                for error in errors {
+                    error.print(sess);
+                }
+
+                panic!("errors compiling header file");
+            },
+        };
+
 
         let file = self.outdir.join(&self.outfile);
         let bytes_buf = header.into_bytes();
         if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            let sess = syntax::parse::ParseSess::new();
-            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error))
+            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error));
+            panic!("errors compiling header file");
         };
+    }
+
+    /// Print an error using the ParseSess stored in Cheddar.
+    pub fn print_error(&self, error: &Error) {
+        error.print(&self.session);
     }
 }
 
-// TODO: proper error handling for this.
 /// Extract the path to the root source file from a `Cargo.toml`.
-fn source_file_from_cargo() -> String {
-    let default = "src/lib.rs";
-
+fn source_file_from_cargo() -> std::result::Result<String, Error> {
     let cargo_toml = path::Path::new(
         &std::env::var_os("CARGO_MANIFEST_DIR")
             .unwrap_or(std::ffi::OsString::from(""))
     ).join("Cargo.toml");
 
+    // If no `Cargo.toml` assume `src/lib.rs` until told otherwise.
+    let default = "src/lib.rs";
     let mut cargo_toml = match std::fs::File::open(&cargo_toml) {
         Ok(value) => value,
-        // Cargo.toml was not found.
-        Err(..) => return default.to_owned(),
+        Err(..) => return Ok(default.to_owned()),
     };
 
     let mut buf = String::new();
     match cargo_toml.read_to_string(&mut buf) {
         Ok(..) => {},
-        // Cargo.toml could not be read.
-        Err(..) => return default.to_owned(),
+        Err(..) => return Err(Error {
+            level: Level::Fatal,
+            span: None,
+            message: "could not read cargo manifest".into(),
+        }),
     };
 
     let table = match toml::Parser::new(&buf).parse() {
         Some(value) => value,
-        // Cargo.toml could not be read.
-        None => return default.to_owned(),
+        None => return Err(Error {
+            level: Level::Fatal,
+            span: None,
+            message: "could not parse cargo manifest".into(),
+        }),
     };
 
-    table.get("lib")
+    // If not explicitly stated then defaults to `src/lib.rs`.
+    Ok(table.get("lib")
         .and_then(|t| t.lookup("path"))
         .and_then(|s| s.as_str())
         .unwrap_or(default)
-        .to_owned()
+        .into())
 }

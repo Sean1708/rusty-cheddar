@@ -4,8 +4,8 @@ use syntax::ast;
 use syntax::codemap;
 use syntax::print;
 
-
-pub type Result = super::Result;
+use Error;
+use Level;
 
 // TODO: C function pointers _must_ have a name associated with them but this Option business feels
 //       like a shit way to handle that
@@ -13,7 +13,7 @@ pub type Result = super::Result;
 /// Turn a Rust (type, name) pair into a C (type, name) pair.
 ///
 /// If name is `None` then there is no name associated with that type.
-pub fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
+pub fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result<Option<String>, Error> {
     match ty.node {
         // Standard pointers.
         ast::Ty_::TyPtr(ref mutty) => ptr_to_c(mutty, name),
@@ -21,7 +21,11 @@ pub fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
         ast::Ty_::TyBareFn(ref bare_fn) => if let Some(name) = name {
             fn_ptr_to_c(bare_fn, ty.span, name)
         } else {
-            Err((ty.span, "C function pointers must have a name associated with them".to_owned()))
+            Err(Error {
+                level: Level::Error,
+                span: Some(ty.span),
+                message: "C function pointers must have a name associated with them".into(),
+            })
         },
         // Plain old types.
         ast::Ty_::TyPath(None, ref path) => ty_to_c(path, name),
@@ -35,14 +39,18 @@ pub fn rust_to_c(ty: &ast::Ty, name: Option<&str>) -> Result {
                     "void".to_owned()
                 }))
             } else {
-                Err((ty.span, format!("cheddar can not handle the type `{}`", new_type)))
+                Err(Error {
+                    level: Level::Error,
+                    span: Some(ty.span),
+                    message: format!("cheddar can not handle the type `{}`", new_type),
+                })
             }
         },
     }
 }
 
 /// Turn a Rust pointer (*mut or *const) into the correct C form.
-fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
+fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result<Option<String>, Error> {
     let new_type = try_some!(rust_to_c(&ty.ty, None));
     let const_spec = match ty.mutbl {
         // *const T
@@ -80,7 +88,7 @@ fn ptr_to_c(ty: &ast::MutTy, name: Option<&str>) -> Result {
 /// ```
 ///
 /// C function pointers _must_ have a name associated with them.
-fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Result {
+fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Result<Option<String>, Error> {
     use syntax::abi::Abi;
     match fn_ty.abi {
         // If it doesn't have a C ABI it can't be called from C.
@@ -89,7 +97,11 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
     }
 
     if !fn_ty.lifetimes.is_empty() {
-        return Err((fn_span, "cheddar can not handle lifetimes".to_owned()));
+        return Err(Error {
+            level: Level::Error,
+            span: Some(fn_span),
+            message: "cheddar can not handle lifetimes".into(),
+        });
     }
 
     let fn_decl: &ast::FnDecl = &*fn_ty.decl;
@@ -97,7 +109,11 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
     let output_type = &fn_decl.output;
     let output_type = match *output_type {
         ast::FunctionRetTy::NoReturn(span) => {
-            return Err((span, "panics across a C boundary are naughty!".to_owned()));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(span),
+                message: "panics across a C boundary are naughty!".into(),
+            });
         },
         ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
         ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, None)),
@@ -128,15 +144,16 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, name: &str) -> Res
 ///
 /// Types hidden behind modules are almost certainly custom types (which wouldn't work) except
 /// types in `libc` which we special case.
-fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
+fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result<Option<String>, Error> {
     let new_type;
 
     // I don't think this is possible.
     if path.segments.is_empty() {
-        return Err((
-            path.span,
-            "what the fuck have you done to this type?! this may be a bug".to_owned()
-        ));
+        return Err(Error {
+            level: Level::Bug,
+            span: Some(path.span),
+            message: "what the fuck have you done to this type?!".into(),
+        });
     // Types in modules, `my_mod::MyType`.
     } else if path.segments.len() > 1 {
         let module: &str = &path.segments[0].identifier.name.as_str();
@@ -145,10 +162,15 @@ fn ty_to_c(path: &ast::Path, name: Option<&str>) -> Result {
             .identifier.name.as_str();
 
         if module != "libc" {
-            return Err((path.span, format!(
-                "cheddar can not handle types in modules (except `libc`), try `use {}::{}` if you really know what you're doing",
-                module, ty,
-            )));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(path.span),
+                message: format!(
+                    "cheddar can not handle types in modules (except `libc`), try `use {}::{}` if you really know what you're doing",
+                    module,
+                    ty,
+                ),
+            });
         } else {
             new_type = libc_ty_to_c(ty).to_owned();
         }

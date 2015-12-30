@@ -12,7 +12,15 @@ macro_rules! inner_cheddar_cmp_test {
                 $header,
             );
 
-            let actual = $compile;
+            let actual = match $compile {
+                Ok(actual) => actual,
+                Err(errors) => {
+                    for error in errors {
+                        println!("{:?}", error);
+                    }
+                    panic!("compilation errors");
+                },
+            };
 
             let cmp_script = std::env::current_dir()
                 .map(|p| p.join("tests/cmp_header.py"))
@@ -76,7 +84,7 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().source_string($rust).module($api).compile_to_string(),
+            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_to_string(),
             $header
         }
     };
@@ -84,7 +92,7 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().source_string($rust).compile_to_string(),
+            cheddar::Cheddar::new().unwrap().source_string($rust).compile_to_string(),
             $header
         }
     };

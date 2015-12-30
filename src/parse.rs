@@ -1,18 +1,18 @@
 //! Functions for actually parsing the source file.
 
 use syntax::ast;
-use syntax::parse;
 use syntax::print;
 
 use types;
+use Error;
+use Level;
 
 
 /// The main entry point when looking for a specific module.
 ///
 /// Determines which module to parse, ensures it is `pub use`ed then hands off to
 /// `Cheddar::parse_mod`.
-pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, file_name: &str)
--> ::std::result::Result<String, String> {
+pub fn parse_crate(krate: &ast::Crate, module: &str, file_name: &str) -> Result<String, Vec<Error>> {
     let mut mod_item = None;
     let mut pub_used = false;
 
@@ -43,12 +43,20 @@ pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, fi
 
     if let Some(mod_item) = mod_item {
         if pub_used {
-            Ok(parse_mod(sess, &mod_item, file_name))
+            parse_mod(&mod_item, file_name)
         } else {
-            Err(format!("C api must exist in top level module, try `pub use {}::*`", module))
+            Err(vec![Error {
+                level: Level::Error,
+                span: None,
+                message: format!("C api must exist in top level module, try `pub use {}::*`", module),
+            }])
         }
     } else {
-        Err(format!("could not find module '{}'", module))
+        Err(vec![Error {
+            level: Level::Error,
+            span: None,
+            message: format!("could not find module '{}'", module),
+        }])
     }
 }
 
@@ -56,11 +64,12 @@ pub fn parse_crate(sess: &parse::ParseSess, krate: &ast::Crate, module: &str, fi
 ///
 /// Iterates through all items in the module and dispatches to correct methods, then pulls all
 /// the results together into a header.
-pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file_name: &str) -> String {
+pub fn parse_mod(module: &ast::Mod, file_name: &str) -> Result<String, Vec<Error>> {
     let mut buffer = format!("#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n", file_name);
     buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
     buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
 
+    let mut errors = vec![];
     for item in &module.items {
         // If it's not visible it can't be called from C.
         if let ast::Visibility::Inherited = item.vis { continue; }
@@ -70,16 +79,16 @@ pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file_name: &str) ->
             // TODO: Check for ItemStatic and ItemConst as well.
             //     - How would this work?
             //     - Is it even possible?
-            ast::Item_::ItemTy(..) => parse_ty(sess, item),
-            ast::Item_::ItemEnum(..) => parse_enum(sess, item),
-            ast::Item_::ItemStruct(..) => parse_struct(sess, item),
-            ast::Item_::ItemFn(..) => parse_fn(sess, item),
+            ast::Item_::ItemTy(..) => parse_ty(item),
+            ast::Item_::ItemEnum(..) => parse_enum(item),
+            ast::Item_::ItemStruct(..) => parse_struct(item),
+            ast::Item_::ItemFn(..) => parse_fn(item),
             _ => Ok(None),
         };
 
         match res {
             // Display any non-fatal errors, fatal errors are handled at cause.
-            Err((span, msg)) => sess.span_diagnostic.span_err(span, &msg),
+            Err(error) => errors.push(error),
             Ok(Some(buf)) => buffer.push_str(&buf),
             // TODO: put span notes in these or would that just get annoying?
             Ok(None) => {},  // Item should not be written to header.
@@ -89,13 +98,17 @@ pub fn parse_mod(sess: &parse::ParseSess, module: &ast::Mod, file_name: &str) ->
     buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
     buffer.push_str("#endif\n");
 
-    buffer
+    if errors.is_empty() {
+        Ok(buffer)
+    } else {
+        Err(errors)
+    }
 }
 
 /// Convert `pub type A = B;` into `typedef B A;`.
 ///
 /// Aborts if A is generic.
-fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
+fn parse_ty(item: &ast::Item) -> Result<Option<String>, Error> {
     let (_, docs) = parse_attr(&item.attrs, |_| true, |attr| retrieve_docstring(attr, ""));
 
     let mut buffer = String::new();
@@ -110,7 +123,11 @@ fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
             try_some!(types::rust_to_c(&*ty, Some(&name)))
         },
         _ => {
-            fatal!(sess, item.span, "`parse_ty` called on incorrect `Item_`");
+            return Err(Error {
+                level: Level::Bug,
+                span: Some(item.span),
+                message: "`parse_ty` called on wrong `Item_`".into(),
+            });
         },
     };
 
@@ -125,7 +142,7 @@ fn parse_ty(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
 /// will abort.
 ///
 /// Cheddar will error if the enum if generic or if it contains non-unit variants.
-fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
+fn parse_enum(item: &ast::Item) -> Result<Option<String>, Error> {
     let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
     // If it's not #[repr(C)] then it can't be called from C.
     if !repr_c { return Ok(None); }
@@ -137,12 +154,20 @@ fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
     buffer.push_str(&format!("typedef enum {} {{\n", name));
     if let ast::Item_::ItemEnum(ref definition, ref generics) = item.node {
         if generics.is_parameterized() {
-            return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` enums".to_owned()));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(item.span),
+                message: "cheddar can not handle parameterized `#[repr(C)]` enums".into(),
+            });
         }
 
         for var in &definition.variants {
             if !var.node.data.is_unit() {
-                return Err((var.span, "cheddar can not handle `#[repr(C)]` enums with non-unit variants".to_owned()));
+                return Err(Error {
+                    level: Level::Error,
+                    span: Some(var.span),
+                    message: "cheddar can not handle `#[repr(C)]` enums with non-unit variants".into(),
+                });
             }
 
             let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
@@ -151,7 +176,11 @@ fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
             buffer.push_str(&format!("\t{},\n", print::pprust::variant_to_string(var)));
         }
     } else {
-        fatal!(sess, item.span, "`parse_enum` called in wrong `Item_`");
+        return Err(Error {
+            level: Level::Bug,
+            span: Some(item.span),
+            message: "`parse_enum` called on wrong `Item_`".into(),
+        });
     }
 
     buffer.push_str(&format!("}} {};\n\n", name));
@@ -165,7 +194,7 @@ fn parse_enum(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
 /// abort.
 ///
 /// Cheddar will error if the struct is generic or if the struct is a unit or tuple struct.
-fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
+fn parse_struct(item: &ast::Item) -> Result<Option<String>, Error> {
     let (repr_c, docs) = parse_attr(&item.attrs, check_repr_c, |attr| retrieve_docstring(attr, ""));
     // If it's not #[repr(C)] then it can't be called from C.
     if !repr_c { return Ok(None); }
@@ -178,10 +207,13 @@ fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
 
     if let ast::Item_::ItemStruct(ref variants, ref generics) = item.node {
         if generics.is_parameterized() {
-            return Err((item.span, "cheddar can not handle parameterized `#[repr(C)]` structs".to_owned()));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(item.span),
+                message: "cheddar can not handle parameterized `#[repr(C)]` structs".into(),
+            });
         }
 
-        // TODO: refactor this into mutliple methods.
         if variants.is_struct() {
             buffer.push_str(" {\n");
 
@@ -201,13 +233,18 @@ fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
         } else if variants.is_tuple() && variants.fields().len() == 1 {
             // #[repr(C)] pub struct Foo(Bar);  =>  typedef struct Foo Foo;
         } else {
-            return Err((
-                item.span,
-                "cheddar can not handle unit or tuple `#[repr(C)]` structs with >1 members".to_owned()
-            ));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(item.span),
+                message: "cheddar can not handle unit or tuple `#[repr(C)]` structs with >1 members".into(),
+            });
         }
     } else {
-        fatal!(sess, item.span, "`parse_struct` called on wrong `Item_`");
+        return Err(Error {
+            level: Level::Bug,
+            span: Some(item.span),
+            message: "`parse_struct` called on wrong `Item_`".into(),
+        });
     }
 
     buffer.push_str(&format!(" {};\n\n", name));
@@ -221,7 +258,7 @@ fn parse_struct(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
 /// function will abort.
 ///
 /// If the declaration is generic or diverges then cheddar will error.
-fn parse_fn(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
+fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
     let (no_mangle, docs) = parse_attr(&item.attrs, check_no_mangle, |attr| retrieve_docstring(attr, ""));
     // If it's not #[no_mangle] then it can't be called from C.
     if !no_mangle { return Ok(None); }
@@ -238,14 +275,22 @@ fn parse_fn(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
         }
 
         if generics.is_parameterized() {
-            return Err((item.span, "cheddar can not handle parameterized extern functions".to_owned()));
+            return Err(Error {
+                level: Level::Error,
+                span: Some(item.span),
+                message: "cheddar can not handle parameterized extern functions".into(),
+            });
         }
 
         let fn_decl: &ast::FnDecl = &*fn_decl;
         let output_type = &fn_decl.output;
         let output_type = match *output_type {
             ast::FunctionRetTy::NoReturn(span) => {
-                return Err((span, "panics across a C boundary are naughty!".to_owned()));
+                return Err(Error {
+                    level: Level::Error,
+                    span: Some(span),
+                    message: "panics across a C boundary are naughty!".into(),
+                });
             },
             ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
             ast::FunctionRetTy::Return(ref ty) => try_some!(types::rust_to_c(&*ty, None)),
@@ -270,7 +315,11 @@ fn parse_fn(sess: &parse::ParseSess, item: &ast::Item) -> ::Result {
 
         buffer.push_str(");\n\n");
     } else {
-        fatal!(sess, item.span, "`parse_fn` called on wrong `Item_`");
+        return Err(Error {
+            level: Level::Bug,
+            span: Some(item.span),
+            message: "`parse_fn` called on wrong `Item_`".into(),
+        });
     }
 
     Ok(Some(buffer))
