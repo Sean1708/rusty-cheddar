@@ -271,11 +271,11 @@
 //!
 //! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
-//! [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
 
 extern crate syntex_syntax as syntax;
 extern crate toml;
 
+use std::convert;
 use std::io::Read;
 use std::io::Write;
 use std::path;
@@ -404,7 +404,9 @@ impl Cheddar {
     /// Set the path to the root source file of the crate.
     ///
     /// This should only be used when not using a `cargo` build system.
-    pub fn source_file(&mut self, path: &str) -> &mut Cheddar {
+    pub fn source_file<T>(&mut self, path: T) -> &mut Cheddar
+        where path::PathBuf: convert::From<T>,
+    {
         self.input = Source::File(path::PathBuf::from(path));
         self
     }
@@ -422,7 +424,9 @@ impl Cheddar {
     /// Default is [`OUT_DIR`] when available, otherwise it is the current directory.
     ///
     /// [`OUT_DIR`]: http://doc.crates.io/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
-    pub fn directory(&mut self, path: &str) -> &mut Cheddar {
+    pub fn directory<T>(&mut self, path: T) -> &mut Cheddar
+        where path::PathBuf: convert::From<T>,
+    {
         self.outdir = path::PathBuf::from(path);
         self
     }
@@ -430,7 +434,9 @@ impl Cheddar {
     /// Set the name for the created header file.
     ///
     /// Default is `cheddar.h`.
-    pub fn file(&mut self, path: &str) -> &mut Cheddar {
+    pub fn file<T>(&mut self, path: T) -> &mut Cheddar
+        where path::PathBuf: convert::From<T>,
+    {
         self.outfile = path::PathBuf::from(path);
         self
     }
