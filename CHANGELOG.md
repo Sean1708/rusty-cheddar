@@ -1,5 +1,16 @@
 # [master]
 
+## Changed
+
+- the whole fucking thing!
+    - no longer requires nightly
+    - works as a library which leverages syntex
+    - see the README for the new interface
+
+## Added
+
+- the `cheddar` executable which acts as a thin wrapper around the library functionality
+
 # [0.2.0] - 2015-12-28
 
 ## Added

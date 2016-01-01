@@ -1,107 +1,35 @@
-#![feature(path_relative_from)]
+extern crate cheddar;
 
-use std::fs::File;
-use std::io::Write;
 use std::process::Command;
 
-/// Compares a generated header file to an expected one using `cmp_header.py`.
-///
-/// Do not put any boiler plate in the strings, only put the items you want to test.
-///
-/// For the rust file omit:
-///
-/// ```none
-/// #![feature(plugin)]
-/// #![plugin(cheddar)]
-/// ```
-///
-/// For the header file omit:
-///
-/// ```none
-/// #ifndef cheddar_gen_cheddar_h
-/// #define cheddar_gen_cheddar_h
-///
-/// #ifdef __cplusplus
-/// extern "C" {
-/// #endif
-///
-/// #include <stdint.h>
-/// #include <stdbool.h>
-///
-/// #ifdef __cplusplus
-/// }
-/// #endif
-///
-/// #endif
-/// ```
-macro_rules! cheddar_cmp_test {
-    ($name:ident, $header:expr, $rust:expr) => {
-        cheddar_cmp_test! { $name,
-            "#![plugin(cheddar(dir = \"{}\", file = \"actual.h\"))]",
-            $header,
-            $rust
-        }
-    };
-
-    ($name:ident, $pre:expr, $header:expr, $rust:expr) => {
+macro_rules! inner_cheddar_cmp_test {
+    ($name:ident, $compile:expr, $header:expr) => {
         #[test]
         fn $name() {
-            let package_dir = std::env::current_dir()
+            let expected = concat!(
+                // Due to the way CppHeaderParser works we only need to add the #define.
+                "#define cheddar_gen_cheddar_h\n",
+                $header,
+            );
+
+            let actual = match $compile {
+                Ok(actual) => actual,
+                Err(errors) => {
+                    for error in errors {
+                        println!("{:?}", error);
+                    }
+                    panic!("compilation errors");
+                },
+            };
+
+            let cmp_script = std::env::current_dir()
+                .map(|p| p.join("tests/cmp_header.py"))
                 .expect("internal testing error: unable to find current directory");
-            let test_dir = package_dir.join("tests");
-            let dir = test_dir.join(stringify!($name));
-            let plugin_dir = package_dir
-                .join("target")
-                .join("debug");
-            let cmp_script = test_dir.join("cmp_header.py");
-            let source = dir.join(concat!(stringify!($name), ".rs"));
-            let expected_header = dir.join("expected.h");
-            let actual_header = dir.join("actual.h");
-
-            // Create and move into a fresh directory.
-            std::fs::create_dir_all(&dir)
-                .expect("internal testing error: could not create directory");
-
-            // Write the expected header and source files.
-            File::create(&expected_header)
-                .expect("internal testing error: could not create expected header file")
-                .write_all(concat!(
-                    // Due to the way CppHeaderParser works we only need to add the #define.
-                    "#define cheddar_gen_actual_h\n",
-                    $header,
-                ).as_bytes())
-                .expect("internal testing error: could not write to expected header file");
-
-            let dir_rel_to_cur = dir.relative_from(&package_dir)
-                .expect("internal testing error: unable determine relative path to test dir")
-                .display();
-
-            File::create(&source)
-                .expect("internal testing error: could not create rust source file")
-                .write_all(format!(
-                    concat!("#![feature(plugin)]\n", $pre, "\n{}"),
-                    dir_rel_to_cur, $rust,
-                ).as_bytes())
-                .expect("internal testing error: could not write to rust source file");
-
-            // Compile the header.
-            let output = Command::new("rustc")
-                .args(&["--crate-type", "dylib"])
-                .arg("-L").arg(plugin_dir.as_os_str())
-                .args(&["-Z", "no-trans"])
-                .arg(&source)
-                .output()
-                .expect("internal testing error: could not run `rustc`");
-
-            if !output.status.success() { panic!(
-                "internal testing error: compilation failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ); }
 
             // Compare the headers.
             let output = Command::new(&cmp_script)
-                .arg(&expected_header)
-                .arg(&actual_header)
+                .arg(&expected)
+                .arg(&actual)
                 .output()
                 .expect("internal testing error: could not run `cmp_header.py`");
 
@@ -112,9 +40,60 @@ macro_rules! cheddar_cmp_test {
                         String::from_utf8_lossy(&output.stderr),
                     );
                 } else {
-                    panic!("{}", String::from_utf8_lossy(&output.stdout));
+                    panic!("{}: {}", String::from_utf8_lossy(&output.stdout), actual);
                 }
             }
+        }
+    };
+}
+
+
+/// Compares a generated header file to an expected one using `cmp_header.py`.
+///
+/// Do not put any boiler plate in the strings, only put the items you want to test.
+///
+/// For the rust file omit:
+///
+/// ```no_run
+/// #![feature(plugin)]
+/// #![plugin(cheddar)]
+/// ```
+///
+/// For the header file omit:
+///
+/// ```C
+/// #ifndef cheddar_gen_cheddar_h
+/// #define cheddar_gen_cheddar_h
+///
+/// #ifdef __cplusplus
+/// extern "C" {
+/// #endif
+///
+/// #include <stdint.h>
+/// #include <stdbool.h>
+///
+/// ...
+///
+/// #ifdef __cplusplus
+/// }
+/// #endif
+///
+/// #endif
+/// ```
+macro_rules! cheddar_cmp_test {
+    ($name:ident, $api:expr, $header:expr, $rust:expr) => {
+        inner_cheddar_cmp_test! {
+            $name,
+            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_to_string(),
+            $header
+        }
+    };
+
+    ($name:ident, $header:expr, $rust:expr) => {
+        inner_cheddar_cmp_test! {
+            $name,
+            cheddar::Cheddar::new().unwrap().source_string($rust).compile_to_string(),
+            $header
         }
     };
 }
@@ -372,7 +351,7 @@ cheddar_cmp_test! { test_libc_types,
 }
 
 cheddar_cmp_test! { test_module,
-    "#![plugin(cheddar(dir = \"{}\", file = \"actual.h\", module = \"api\"))]",
+    "api",
     "
     typedef float Float;
     ",

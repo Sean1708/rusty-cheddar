@@ -4,113 +4,66 @@
 [![crates.io](http://meritbadge.herokuapp.com/rusty-cheddar)](https://crates.io/crates/rusty-cheddar)
 ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 
-A rustc compiler plugin to automatically generate C header files from Rust source files.
-
-## Usage
-
-Compiler plugins have not yet been stabilised so you must use a nightly compiler to build
-rusty-cheddar, however there are ways to use rusty-cheddar with a crate designed for stable Rust
-which are described below. If you wish to build against stable Rust as well then you must use
-[multirust] or [multirust-rs](https://github.com/Diggsey/multirust-rs).
+rusty-cheddar is a library for converting Rust source files into C header files.
 
 rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 `stdbool.h`), if you really really really really really have to use an older standard then please
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 (after arguing with you lots and lots).
 
-### Invocation From the Command Line
-
-You can invoke rusty-cheddar from the command line. First you must grab the [repo] and build it
-(remember to use nightly Rust to build rusty-cheddar):
-
-```sh
-$ cargo build --release
-```
-Then compile your file with:
-
-```sh
-$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar $SOURCE
-```
-
-where `$CHEDDAR` is the path to rusty-cheddar's `Cargo.toml` (it should be enough for the dylib to
-be in your `$PATH` but I've not checked this yet) and `$SOURCE` is the source file you wish to
-compile, you may also need to add the `--crate-type=...` flag.
-
-Another common workflow is to use rusty-cheddar to compile the header file without compiling the
-rest of the crate. For projects using `cargo` you can do:
-
-```sh
-$ cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-```
-
-Otherwise:
-
-```sh
-$ rustc -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans $SOURCE
-```
-
-#### Using rusty-cheddar With Crates Built for Stable Rust
-
-Using the above technique and [multirust] you can build your crate on stable while still being able
-to invoke rusty-cheddar. First you must grab the source from the [repo] and build it with _nightly_
-Rust:
-
-```sh
-$ cd $CHEDDAR
-$ multirust run nightly cargo build --release
-```
-
-Then build your project on stable Rust and use nightly Rust to invoke rusty-cheddar:
-
-```sh
-$ cd $YOUR_PROJECT
-$ multirust override stable  # if you have a different default
-$ cargo build --release
-$ multirust run nightly cargo rustc -- -L $CHEDDAR/target/release -Z extra-plugins=cheddar -Z no-trans
-```
-
-### Invocation In Source File
-
-You can also get rusty-cheddar to run automatically each time you compile, but this means that your
-crate must be built with nightly Rust. First add the following to your `Cargo.toml`:
+The most useful way to use rusty-cheddar is in a build script. To do this add the following
+`build-dependencies` section to your `Cargo.toml` (to use it as a normal library simply replace
+`build-dependencies` with `dependencies`):
 
 ```toml
-[dependencies]
-rusty-cheddar = "0.1"
+[build-dependencies]
+rusty-cheddar = "0.3"
 ```
 
-Then at the top of your `lib.rs`:
+Then create the following `build.rs`:
 
 ```rust
-#![feature(plugin)]
-#![plugin(cheddar)]
+extern crate cheddar;
+
+fn main() {
+    cheddar::Cheddar::new().expect("could not read manifest")
+        .file("my_header.h")
+        .compile();
+}
 ```
 
-rusty-cheddar will then create a `cheddar.h` file in your working directory containing the generated
-header file. Note that rusty-cheddar emits very few warnings, it is up to the programmer to write a
-library which can be correctly called from C.
+This should work as is providing you've set up your project correctly. **Don't forget to add a
+`build = ...` to your `[package]` section, see [the cargo docs] for more info.**
 
-You can optionally specify a path for the header file using plugin arguments. Use `dir =
-"/path/to/out/dir"` to specify an output directory and `file = "name.h"`. So
+rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR` where `$OUT_DIR` is set by
+`cargo` (usually `target/debug/build/{your crate}_{some hash}/out`). Note that rusty-cheddar
+emits very few warnings, it is up to the programmer to write a library which can be correctly
+called from C.
+
+#### API In a Module
+
+You can also place your API in a module to help keep your source code neat. **Note that this
+module must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is
+not.**
+
+To do this you must supply the name of the module to Cheddar, then ensure that the items are
+available in the top-level scope:
 
 ```rust
-#![plugin(dir = "target/include", file = "my_header.h")]
+// build.rs
+
+extern crate cheddar;
+
+fn main() {
+    cheddar::Cheddar::new().expect("could not read manifest")
+        .file("my_header.h")
+        .module("c_api")
+        .compile();
+}
 ```
 
-will first create the directories in `target/include` if they don't exist and will then create
-`my_header.h` in `target/include`.
-
-### API In a Module
-
-You can also place your API in a to help keep your source code neat. **Note that this module
-must currently be only one level deep, i.e. `api::*` is fine but `api::c_api::*` is not.**
-
-To do this you must specify the name of the module in the plugin args, then you must `pub use`
-the module with a glob to bring all the items into the top level module.
-
 ```rust
-#![feature(plugin)]
-#![plugin(cheddar(module = "c_api"))]
+// src/lib.rs
 
 pub use c_api::*;
 
@@ -118,6 +71,10 @@ mod c_api {
     // api goes here ...
 }
 ```
+
+There is also the `.compile_to_string()` method for finer control.
+
+## Conversions
 
 In the examples below, boilerplate has been omitted from the header.
 
@@ -160,7 +117,7 @@ pub enum Colours {
 
 // This would fail is it was #[repr(C)].
 pub enum Tastes<T> {
-    Savoury,
+    Savoury(T),
     Sweet,
 }
 
@@ -318,9 +275,8 @@ The very important exception to this rule is `libc`, types used from `libc` _mus
 (e.g. `libc::c_void`) so that they can be converted properly.
 
 
-[multirust]: https://github.com/brson/multirust
+[the cargo docs]: http://doc.crates.io/build-script.html
 [repo]: https://github.com/Sean1708/rusty-cheddar
-[CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
 
 ## Contributing
 
@@ -336,10 +292,9 @@ code as clear as possible but I'm not very good at it, so any help in that regar
 
 ### PRs
 
-I love pull requests they tend to make my job much easier, so if you want to fix a bug or implement a
-feature yourself then that would be great. If you're confused by anything or need some pointers on
-how to proceed then feel free to open an issue so that I can help, otherwise
-[these docs](http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html) are a good
+I love pull requests they tend to make my job much easier, so if you want to fix a bug or implement
+a feature yourself then that would be great. If you're confused by anything or need some pointers on
+how to proceed then feel free to open an issue so that I can help, otherwise [these docs] are a good
 place to start.
 
 #### Tests
@@ -348,3 +303,6 @@ The tests require you to have a recent version (> `v2.7.2`) of [CppHeaderParser]
 version of Python which is installed as `python` (usually Python 2). Furthermore due to the fact
 that the tests are a massive pile of wanky hacks, you must be in the same directory as
 rusty-cheddar's `Cargo.toml` to successfully run them.
+
+[these docs]: http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html
+[CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
