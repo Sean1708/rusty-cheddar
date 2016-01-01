@@ -1,11 +1,9 @@
-//! # Usage
+//! rusty-cheddar is a library for converting Rust source files into C header files.
 //!
 //! rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 //! `stdbool.h`), if you really really really really really have to use an older standard then please
 //! open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
 //! (after arguing with you lots and lots).
-//!
-//! ## As a Library
 //!
 //! The most useful way to use rusty-cheddar is in a build script. To do this add the following
 //! `build-dependencies` section to your `Cargo.toml` (to use it as a normal library simply replace
@@ -67,6 +65,10 @@
 //!     // api goes here ...
 //! }
 //! ```
+//!
+//! There is also the `.compile_to_string()` method for finer control.
+//!
+//! # Conversions
 //!
 //! In the examples below, boilerplate has been omitted from the header.
 //!
