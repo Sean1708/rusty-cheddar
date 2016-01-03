@@ -1,7 +1,21 @@
+sudo: false
 language: rust
 rust:
     - stable
     - beta
     - nightly
-before_install:
-    - sudo pip install CppHeaderParser
+before_script:
+    - pip install 'travis-cargo>=0.1.0,<0.2.0' --user
+    - pip install 'CppHeaderParser>=2.7.2,<3.0.0' --user
+    - export PATH="$HOME/.local/bin:$PATH"
+script:
+    - travis-cargo build
+    - travis-cargo test
+    - travis-cargo --only stable doc
+after_success:
+    - travis-cargo --only stable doc-upload
+env:
+    global:
+        - RUST_BACKTRACE=1
+        - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+        - secure: MigFKBfPB7ySE9+UBEqI4a0iGpmPtNV53jTuYM0iY8n7oQOQDlckMzPOR6u6JysRJvQ5ICa8TLEChE+KNCBJ6ElczE02xpi9w2whKX9IZla/A3OU66hdPRKkqA28FHjWS9sQh+WGyMx8JNQaX9L3+FXQZMtjnAiosAMLYQ1mJHCqOhCAjxqDsWvVXpkFf+7qC6R9ndGxS6F0O1YdEHekoxpspPQdbVlU19hO3PEcVUTGlOean8CoEy/wGzVDwoQ93uQILhc4Bkhxm/oHirOkvNrAgUAUAGEOTCIDKx78U7M+FMpMaRKSLyIvVE9WDT3sHeQMyFKFrYqni8MzuSR3rU7KD2ZiwZ3nnltP+U8H/jf4s8bBOa9IkWzCGxKbBVdhEPSMf4PpEFp+X5zxNge4CEQFwMagoNTShMFCY5BiNOT54NY/umoJxivyPiOdeo/5B0dhexcpH7JCr0FxtfobeP1S6aW4+i7C2XDbS8XrykK7dXmWGqp0poqppbOk8Idhi0MPsqw/Bi/M7+xOFxJmG5wqtGNQM/FnBhhkd9QmmtVkClZMqcNclyp4M0/WhC35yH1hSwgHuBfqaB/FbcioiG3G+4b3mpDtprpjfRDIRK6YoJyI2wlJfbD0/Rm+gb9m7YKoPsnyG1tswoZz+hr+BXyJgvRvWOu9cBXdLq2c5bQ=
