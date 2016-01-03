@@ -9,6 +9,7 @@ keywords = ["c", "header", "ffi"]
 
 homepage = "https://github.com/Sean1708/rusty-cheddar"
 repository = "https://github.com/Sean1708/rusty-cheddar.git"
+documentation = "http://sean1708.github.io/rusty-cheddar"
 
 license = "MIT"
 
