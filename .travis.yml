@@ -1,5 +1,9 @@
 sudo: false
 language: rust
+addons:
+    apt:
+        packages:
+            - libssl-dev
 rust:
     - stable
     - beta
