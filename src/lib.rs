@@ -389,8 +389,7 @@ impl Cheddar {
         let input = Source::File(path::PathBuf::from(source_path));
 
         let outdir = std::env::var_os("OUT_DIR")
-            .map(path::PathBuf::from)
-            .unwrap_or(path::PathBuf::new());
+            .map_or_else(path::PathBuf::new, path::PathBuf::from);
 
         Ok(Cheddar {
             input: input,
