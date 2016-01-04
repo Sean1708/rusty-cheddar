@@ -14,8 +14,8 @@ before_script:
     - export PATH="$PWD/target/release:$PATH"
 script:
     - travis-cargo build
-    - cargo clippy --lib
-    - cargo clippy --bin cheddar
+    - [[ "$TRAVIS_RUST_VERSION" = 'nightly' ]] && cargo clippy --lib) || true
+    - [[ "$TRAVIS_RUST_VERSION" = 'nightly' ]] && cargo clippy --bin cheddar) || true
     - travis-cargo test
     - travis-cargo --only stable doc
 after_success:
