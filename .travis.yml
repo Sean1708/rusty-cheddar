@@ -9,7 +9,7 @@ before_script:
     - pip install 'CppHeaderParser>=2.7.2,<3.0.0' --user
     - export PATH="$HOME/.local/bin:$PATH"
     - git clone https://github.com/Manishearth/rust-clippy.git
-    - cd rust-clippy
+    - cd clippy
     - travis-cargo --only nightly build
     - export CLIPPY_PATH="$PWD/target/debug"
     - cd ..
