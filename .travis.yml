@@ -12,6 +12,7 @@ before_script:
     - cd cargo-clippy
     - travis-cargo --only nightly build
     - export PATH="$PWD/target/debug:$PATH"
+    - cd ..
 script:
     - travis-cargo build
     - ./on-nightly cargo clippy --lib
