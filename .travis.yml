@@ -1,19 +1,26 @@
 sudo: false
 language: rust
 rust:
-- stable
-- beta
-- nightly
+    - stable
+    - beta
+    - nightly
 before_script:
-- pip install 'travis-cargo>=0.1.0,<0.2.0' --user
-- pip install 'CppHeaderParser>=2.7.2,<3.0.0' --user
-- export PATH="$HOME/.local/bin:$PATH"
+    - pip install 'travis-cargo>=0.1.0,<0.2.0' --user
+    - pip install 'CppHeaderParser>=2.7.2,<3.0.0' --user
+    - export PATH="$HOME/.local/bin:$PATH"
+    - git clone https://github.com/arcnmx/cargo-clippy.git
+    - cd cargo-clippy
+    - travis-cargo --only nightly build
+    - export PATH="$PWD/target/debug:$PATH"
+    - cd ..
 script:
-- travis-cargo build
-- travis-cargo test
-- travis-cargo --only stable doc
+    - travis-cargo build
+    - ./on-nightly cargo clippy --lib
+    - ./on-nightly cargo clippy --bin cheddar
+    - travis-cargo test
+    - travis-cargo --only stable doc
 after_success:
-- travis-cargo --only stable doc-upload
+    - travis-cargo --only stable doc-upload
 env:
     global:
         - RUST_BACKTRACE=1

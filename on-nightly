@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+if [[ "$TRAVIS_RUST_VERSION" = 'nightly' ]]
+then
+    $@
+fi
