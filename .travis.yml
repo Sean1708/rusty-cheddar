@@ -8,15 +8,15 @@ before_script:
     - pip install 'travis-cargo>=0.1.0,<0.2.0' --user
     - pip install 'CppHeaderParser>=2.7.2,<3.0.0' --user
     - export PATH="$HOME/.local/bin:$PATH"
-    - git clone https://github.com/Manishearth/clippy.git
-    - cd clippy
+    - git clone https://github.com/arcnmx/cargo-clippy.git
+    - cd cargo-clippy
     - travis-cargo --only nightly build
-    - export CLIPPY_PATH="$PWD/target/debug"
+    - export PATH="$PWD/target/debug:$PATH"
     - cd ..
 script:
     - travis-cargo build
-    - travis-cargo --only nightly rustc --lib -- -L "$CLIPPY_PATH" -l clippy -Z extra-plugins=clippy -Z no-trans
-    - travis-cargo --only nightly rustc --bin cheddar -- -L "$CLIPPY_PATH" -l clippy -Z extra-plugins=clippy -Z no-trans
+    - ./on-nightly cargo clippy --lib
+    - ./on-nightly cargo clippy --bin cheddar
     - travis-cargo test
     - travis-cargo --only stable doc
 after_success:
