@@ -10,12 +10,12 @@ before_script:
     - export PATH="$HOME/.local/bin:$PATH"
     - git clone https://github.com/arcnmx/cargo-clippy.git
     - cd cargo-clippy
-    - cargo build --release
+    - travis-cargo --only nightly build --release
     - export PATH="$PWD/target/release:$PATH"
 script:
     - travis-cargo build
-    - [[ "$TRAVIS_RUST_VERSION" = 'nightly' ]] && cargo clippy --lib) || true
-    - [[ "$TRAVIS_RUST_VERSION" = 'nightly' ]] && cargo clippy --bin cheddar) || true
+    - ./on-nightly cargo clippy --lib
+    - ./on-nightly cargo clippy --bin cheddar
     - travis-cargo test
     - travis-cargo --only stable doc
 after_success:
