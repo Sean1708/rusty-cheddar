@@ -10,8 +10,8 @@ before_script:
     - export PATH="$HOME/.local/bin:$PATH"
     - git clone https://github.com/arcnmx/cargo-clippy.git
     - cd cargo-clippy
-    - travis-cargo --only nightly build --release
-    - export PATH="$PWD/target/release:$PATH"
+    - travis-cargo --only nightly build
+    - export PATH="$PWD/target/debug:$PATH"
 script:
     - travis-cargo build
     - ./on-nightly cargo clippy --lib
