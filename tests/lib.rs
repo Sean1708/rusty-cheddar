@@ -6,11 +6,7 @@ macro_rules! inner_cheddar_cmp_test {
     ($name:ident, $compile:expr, $header:expr) => {
         #[test]
         fn $name() {
-            let expected = concat!(
-                // Due to the way CppHeaderParser works we only need to add the #define.
-                "#define cheddar_gen_cheddar_h\n",
-                $header,
-            );
+            let expected = $header;
 
             let actual = match $compile {
                 Ok(actual) => actual,
@@ -84,7 +80,7 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_to_string(),
+            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_code(),
             $header
         }
     };
@@ -92,7 +88,7 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).compile_to_string(),
+            cheddar::Cheddar::new().unwrap().source_string($rust).compile_code(),
             $header
         }
     };

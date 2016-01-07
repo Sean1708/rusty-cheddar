@@ -41,16 +41,8 @@ fn main() {
     }
 
     if let Some(output) = matches.value_of("OUTPUT") {
-        let path = std::path::Path::new(&output);
-
-        if let Some(dir) = path.parent() {
-            cheddar.directory(dir);
-        }
-
-        if let Some(file) = path.file_name() {
-            cheddar.file(file);
-        }
-    }
-
-    cheddar.compile();
+        cheddar.write(&output);
+    } else {
+        cheddar.write("cheddar.h");
+    };
 }

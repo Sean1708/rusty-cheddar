@@ -50,7 +50,7 @@ pub extern fn datalib_data_f64_append(data: *mut datalib_data_f64, x: f64, y: f6
 fn main() {
     let header = cheddar::Cheddar::new().expect("failed to read cargo manifest")
         .source_string(RUST)
-        .compile_to_string()
+        .compile("SOME_HEADER_NAME")
         .expect("header could not be compiled");
 
     println!("RUST SOURCE FILE:\n{}\n", RUST);

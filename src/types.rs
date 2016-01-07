@@ -7,9 +7,11 @@ use syntax::print;
 use Error;
 use Level;
 
-// TODO: C function pointers _must_ have a name associated with them but this Option business feels
-//       like a shit way to handle that
-//     - maybe have a named_rust_to_c which allows fn_pointers and rust_to_c doesn't?
+// TODO: don't pass a Ty and a &str, pass
+// enum Type<'t, 'n> {
+//     Named(&'t ast::Ty, &'n name),
+//     Unnamed(&'t ast::Ty),
+// }
 /// Turn a Rust (type, name) pair into a C (type, name) pair.
 ///
 /// If name is `None` then there is no name associated with that type.
