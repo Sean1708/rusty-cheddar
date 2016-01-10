@@ -16,27 +16,29 @@ The most useful way to use rusty-cheddar is in a build script. To do this add th
 `build-dependencies` with `dependencies`):
 
 ```toml
+# Cargo.toml
+
 [build-dependencies]
-rusty-cheddar = "0.3"
+rusty-cheddar = "0.3.0"
 ```
 
 Then create the following `build.rs`:
 
 ```rust
+// build.rs
+
 extern crate cheddar;
 
 fn main() {
     cheddar::Cheddar::new().expect("could not read manifest")
-        .file("my_header.h")
-        .compile();
+        .run_build("include/my_header.h");
 }
 ```
 
 This should work as is providing you've set up your project correctly. **Don't forget to add a
 `build = ...` to your `[package]` section, see [the cargo docs] for more info.**
 
-rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR` where `$OUT_DIR` is set by
-`cargo` (usually `target/debug/build/{your crate}_{some hash}/out`). Note that rusty-cheddar
+rusty-cheddar will then create a `my_header.h` file in `include/`. Note that rusty-cheddar
 emits very few warnings, it is up to the programmer to write a library which can be correctly
 called from C.
 
@@ -56,9 +58,8 @@ extern crate cheddar;
 
 fn main() {
     cheddar::Cheddar::new().expect("could not read manifest")
-        .file("my_header.h")
         .module("c_api")
-        .compile();
+        .run_build("target/include/rusty.h");
 }
 ```
 
@@ -72,7 +73,7 @@ mod c_api {
 }
 ```
 
-There is also the `.compile_to_string()` method for finer control.
+There is also the `.compile()` and `.compile_code()` methods for finer control.
 
 ## Conversions
 
@@ -260,16 +261,11 @@ uint16_t MyAdd_add_u16(uint16_t l, uint16_t r);
 // Some more boilerplate omitted.
 ```
 
-### Type Conversions
+### Paths
 
-rusty-cheddar currently does not handle type paths (e.g. `mymod::MyType`), instead they must be `use`ed
-first:
-
-```rust
-// pub type MyCType = mymod::MyType;  // This will put `typedef mymod::MyType MyCType;` into the header.
-use mymod::MyType;
-pub type MyCType = MyType;
-```
+You must not put types defined in other modules in an exported type signature without hiding it
+behind an opaque struct. This is because the C compiler must know the layout of the type and
+rusty-cheddar can not yet search other modules.
 
 The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
 (e.g. `libc::c_void`) so that they can be converted properly.
