@@ -356,6 +356,51 @@ enum Source {
 }
 
 /// Stores configuration for the Cheddar compiler.
+///
+/// # Examples
+///
+/// Since construction can only fail if there is an error _while_ reading the cargo manifest it is
+/// usually safe to call `.unwrap()` on the result (though `.expect()` is considered better
+/// practice).
+///
+/// ```no_run
+/// cheddar::Cheddar::new().expect("unable to read cargo manifest");
+/// ```
+///
+/// If your project is a valid cargo project or follows the same structure, you can simply place
+/// the following in your build script.
+///
+/// ```no_run
+/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
+///     .run_build("path/to/output/file");
+/// ```
+///
+/// If you use a different structure you should use `.source_file("...")` to set the path to the
+/// root crate file.
+///
+/// ```no_run
+/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
+///     .source_file("src/root.rs")
+///     .run_build("include/my_header.h");
+/// ```
+///
+/// You can also supply the Rust source as a string.
+///
+/// ```no_run
+/// let rust = "pub type Float32 = f32;";
+/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
+///     .source_string(rust)
+///     .run_build("target/include/header.h");
+/// ```
+///
+/// If you wish to hide your C API behind a module you must specify the module with `.module()`
+/// (don't forget to `pub use` the items in the module!).
+///
+/// ```no_run
+/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
+///     .module("c_api")
+///     .run_build("header.h");
+/// ```
 pub struct Cheddar {
     /// The root source file of the crate.
     input: Source,
