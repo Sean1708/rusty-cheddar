@@ -483,14 +483,13 @@ impl Cheddar {
     /// Write the header to a file.
     pub fn write<P: AsRef<path::Path>>(&self, file: P) -> Result<(), Vec<Error>> {
         let file = file.as_ref();
-        let sess = &self.session;
 
         if let Some(dir) = file.parent() {
             if let Err(error) = std::fs::create_dir_all(dir) {
                 return Err(vec![Error {
                     level: Level::Fatal,
                     span: None,
-                    msg: format!("could not create directories in '{}': {}", dir.display(), error),
+                    message: format!("could not create directories in '{}': {}", dir.display(), error),
                 }]);
             }
         }
@@ -498,16 +497,15 @@ impl Cheddar {
         let file_name = file.file_name().map(|os| os.to_string_lossy()).unwrap_or("default".into());
         let header = try!(self.compile(&file_name));
 
-
         let bytes_buf = header.into_bytes();
         if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
             Err(vec![Error {
                 level: Level::Fatal,
                 span: None,
-                msg: format!("could not write to '{}': {}", file.display(), error),
-            }]);
+                message: format!("could not write to '{}': {}", file.display(), error),
+            }])
         } else {
-            OK(())
+            Ok(())
         }
     }
 
@@ -522,7 +520,7 @@ impl Cheddar {
     pub fn run_build<P: AsRef<path::Path>>(&self, file: P) {
         if let Err(errors) = self.write(file) {
             for error in &errors {
-                self.print_err(error);
+                self.print_error(error);
             }
 
             panic!("errors compiling header file");

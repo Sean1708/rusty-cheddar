@@ -41,8 +41,8 @@ fn main() {
     }
 
     if let Some(output) = matches.value_of("OUTPUT") {
-        cheddar.write(&output);
+        cheddar.run_build(&output);
     } else {
-        cheddar.write("cheddar.h");
+        cheddar.run_build("cheddar.h");
     };
 }
