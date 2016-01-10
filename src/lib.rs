@@ -25,7 +25,7 @@
 //!
 //! fn main() {
 //!     cheddar::Cheddar::new().expect("could not read manifest")
-//!         .write("include/my_header.h");
+//!         .run_build("include/my_header.h");
 //! }
 //! ```
 //!
@@ -53,7 +53,7 @@
 //! fn main() {
 //!     cheddar::Cheddar::new().expect("could not read manifest")
 //!         .module("c_api")
-//!         .write("target/include/rusty.h");
+//!         .run_build("target/include/rusty.h");
 //! }
 //! ```
 //!
@@ -481,47 +481,52 @@ impl Cheddar {
     }
 
     /// Write the header to a file.
+    pub fn write<P: AsRef<path::Path>>(&self, file: P) -> Result<(), Vec<Error>> {
+        let file = file.as_ref();
+        let sess = &self.session;
+
+        if let Some(dir) = file.parent() {
+            if let Err(error) = std::fs::create_dir_all(dir) {
+                return Err(vec![Error {
+                    level: Level::Fatal,
+                    span: None,
+                    msg: format!("could not create directories in '{}': {}", dir.display(), error),
+                }]);
+            }
+        }
+
+        let file_name = file.file_name().map(|os| os.to_string_lossy()).unwrap_or("default".into());
+        let header = try!(self.compile(&file_name));
+
+
+        let bytes_buf = header.into_bytes();
+        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            Err(vec![Error {
+                level: Level::Fatal,
+                span: None,
+                msg: format!("could not write to '{}': {}", file.display(), error),
+            }]);
+        } else {
+            OK(())
+        }
+    }
+
+    /// Write the header to a file, panicking on error.
     ///
     /// This is a convenience method for use in build scripts. If errors occur during compilation
     /// they will be printed then the function will panic.
     ///
     /// # Panics
     ///
-    /// Panics on any compilation error so that the build script exits.
-    pub fn write<P: AsRef<path::Path>>(&self, file: P) {
-        let file = file.as_ref();
-        let sess = &self.session;
-
-        if let Some(dir) = file.parent() {
-            if let Err(error) = std::fs::create_dir_all(dir) {
-                sess.span_diagnostic.err(&format!(
-                    "could not create directories in '{}': {}",
-                    dir.display(),
-                    error,
-                ));
-
-                panic!("errors compiling header file");
+    /// Panics on any compilation error so that the build script exits and prints output.
+    pub fn run_build<P: AsRef<path::Path>>(&self, file: P) {
+        if let Err(errors) = self.write(file) {
+            for error in &errors {
+                self.print_err(error);
             }
-        }
 
-        let file_name = file.file_name().map(|os| os.to_string_lossy()).unwrap_or("default".into());
-        let header = match self.compile(&file_name) {
-            Ok(header) => header,
-            Err(errors) => {
-                for error in errors {
-                    error.print(sess);
-                }
-
-                panic!("errors compiling header file");
-            },
-        };
-
-
-        let bytes_buf = header.into_bytes();
-        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error));
             panic!("errors compiling header file");
-        };
+        }
     }
 
     /// Print an error using the ParseSess stored in Cheddar.
