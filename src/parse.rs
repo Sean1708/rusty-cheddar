@@ -7,12 +7,21 @@ use types;
 use Error;
 use Level;
 
+// TODO: we should use our own parse state which tracks what types are callable from C
+//     - then we can give decent errors for ones that aren't
+//     - will require multiple passes of the module
+//         - each time a struct, enum, or typedef changes do another pass
+//         - only store errors on the final pass
+//             - maybe there will be some errors which will need to be stored before then
+//     - search inside struct as well for whitelisted types
+//     - possibly also search other crates when encountering a path
+
 
 /// The main entry point when looking for a specific module.
 ///
 /// Determines which module to parse, ensures it is `pub use`ed then hands off to
-/// `Cheddar::parse_mod`.
-pub fn parse_crate(krate: &ast::Crate, module: &str, file_name: &str) -> Result<String, Vec<Error>> {
+/// `cheddar::parse::parse_mod`.
+pub fn parse_crate(krate: &ast::Crate, module: &str) -> Result<String, Vec<Error>> {
     let mut mod_item = None;
     let mut pub_used = false;
 
@@ -43,7 +52,7 @@ pub fn parse_crate(krate: &ast::Crate, module: &str, file_name: &str) -> Result<
 
     if let Some(mod_item) = mod_item {
         if pub_used {
-            parse_mod(&mod_item, file_name)
+            parse_mod(&mod_item)
         } else {
             Err(vec![Error {
                 level: Level::Error,
@@ -64,11 +73,8 @@ pub fn parse_crate(krate: &ast::Crate, module: &str, file_name: &str) -> Result<
 ///
 /// Iterates through all items in the module and dispatches to correct methods, then pulls all
 /// the results together into a header.
-pub fn parse_mod(module: &ast::Mod, file_name: &str) -> Result<String, Vec<Error>> {
-    let mut buffer = format!("#ifndef cheddar_gen_{0}_h\n#define cheddar_gen_{0}_h\n\n", file_name);
-    buffer.push_str("#ifdef __cplusplus\nextern \"C\" {\n#endif\n\n");
-    buffer.push_str("#include <stdint.h>\n#include <stdbool.h>\n\n");
-
+pub fn parse_mod(module: &ast::Mod) -> Result<String, Vec<Error>> {
+    let mut buffer = String::new();
     let mut errors = vec![];
     for item in &module.items {
         // If it's not visible it can't be called from C.
@@ -94,9 +100,6 @@ pub fn parse_mod(module: &ast::Mod, file_name: &str) -> Result<String, Vec<Error
             Ok(None) => {},  // Item should not be written to header.
         };
     }
-
-    buffer.push_str("#ifdef __cplusplus\n}\n#endif\n\n");
-    buffer.push_str("#endif\n");
 
     if errors.is_empty() {
         Ok(buffer)

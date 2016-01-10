@@ -10,27 +10,29 @@
 //! `build-dependencies` with `dependencies`):
 //!
 //! ```toml
+//! # Cargo.toml
+//!
 //! [build-dependencies]
-//! rusty-cheddar = "0.3"
+//! rusty-cheddar = "0.3.0"
 //! ```
 //!
 //! Then create the following `build.rs`:
 //!
 //! ```no_run
+//! // build.rs
+//!
 //! extern crate cheddar;
 //!
 //! fn main() {
 //!     cheddar::Cheddar::new().expect("could not read manifest")
-//!         .file("my_header.h")
-//!         .compile();
+//!         .run_build("include/my_header.h");
 //! }
 //! ```
 //!
 //! This should work as is providing you've set up your project correctly. **Don't forget to add a
 //! `build = ...` to your `[package]` section, see [the cargo docs] for more info.**
 //!
-//! rusty-cheddar will then create a `my_header.h` file in in `$OUT_DIR` where `$OUT_DIR` is set by
-//! `cargo` (usually `target/debug/build/{your crate}_{some hash}/out`). Note that rusty-cheddar
+//! rusty-cheddar will then create a `my_header.h` file in `include/`. Note that rusty-cheddar
 //! emits very few warnings, it is up to the programmer to write a library which can be correctly
 //! called from C.
 //!
@@ -50,9 +52,8 @@
 //!
 //! fn main() {
 //!     cheddar::Cheddar::new().expect("could not read manifest")
-//!         .file("my_header.h")
 //!         .module("c_api")
-//!         .compile();
+//!         .run_build("target/include/rusty.h");
 //! }
 //! ```
 //!
@@ -66,7 +67,7 @@
 //! }
 //! ```
 //!
-//! There is also the `.compile_to_string()` method for finer control.
+//! There is also the `.compile()` and `.compile_code()` methods for finer control.
 //!
 //! # Conversions
 //!
@@ -254,16 +255,11 @@
 //! // Some more boilerplate omitted.
 //! ```
 //!
-//! ## Type Conversions
+//! ## Paths
 //!
-//! rusty-cheddar currently does not handle type paths (e.g. `mymod::MyType`), instead they must be `use`ed
-//! first:
-//!
-//! ```ignore
-//! // pub type MyCType = mymod::MyType;  // This will put `typedef mymod::MyType MyCType;` into the header.
-//! use mymod::MyType;
-//! pub type MyCType = MyType;
-//! ```
+//! You must not put types defined in other modules in an exported type signature without hiding it
+//! behind an opaque struct. This is because the C compiler must know the layout of the type and
+//! rusty-cheddar can not yet search other modules.
 //!
 //! The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
 //! (e.g. `libc::c_void`) so that they can be converted properly.
@@ -297,6 +293,8 @@ mod parse;
 pub use syntax::errors::Level;
 
 /// Describes an error encountered by the compiler.
+///
+/// These can be printed nicely using the `Cheddar::print_err` method.
 #[derive(Debug)]
 pub struct Error {
     pub level: Level,
@@ -361,16 +359,8 @@ enum Source {
 pub struct Cheddar {
     /// The root source file of the crate.
     input: Source,
-    /// The directory in which to place the header file.
-    ///
-    /// Default is the environment variable `OUT_DIR` when available, otherwise it is the current
-    /// directory.
-    outdir: path::PathBuf,
-    /// The file name of the header file.
-    ///
-    /// Default is `cheddar.h`.
-    outfile: path::PathBuf,
     // TODO: store this as a syntax::ast::Path when allowing arbitrary modules.
+    // TODO: this should be part of a ParseOpts struct
     /// The module which contains the C API.
     module: Option<String>,
     /// The current parser session.
@@ -388,13 +378,8 @@ impl Cheddar {
         let source_path = try!(source_file_from_cargo());
         let input = Source::File(path::PathBuf::from(source_path));
 
-        let outdir = std::env::var_os("OUT_DIR")
-            .map_or_else(path::PathBuf::new, path::PathBuf::from);
-
         Ok(Cheddar {
             input: input,
-            outdir: outdir,
-            outfile: path::PathBuf::from("cheddar.h"),
             module: None,
             session: syntax::parse::ParseSess::new(),
         })
@@ -418,28 +403,6 @@ impl Cheddar {
         self
     }
 
-    /// Set the output directory.
-    ///
-    /// Default is [`OUT_DIR`] when available, otherwise it is the current directory.
-    ///
-    /// [`OUT_DIR`]: http://doc.crates.io/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
-    pub fn directory<T>(&mut self, path: T) -> &mut Cheddar
-        where path::PathBuf: convert::From<T>,
-    {
-        self.outdir = path::PathBuf::from(path);
-        self
-    }
-
-    /// Set the name for the created header file.
-    ///
-    /// Default is `cheddar.h`.
-    pub fn file<T>(&mut self, path: T) -> &mut Cheddar
-        where path::PathBuf: convert::From<T>,
-    {
-        self.outfile = path::PathBuf::from(path);
-        self
-    }
-
     /// Set the module which contains the header file.
     ///
     /// The module should be described using Rust's path syntax, i.e. in the same way that you
@@ -450,18 +413,19 @@ impl Cheddar {
         self
     }
 
-    /// Compile the header into a string.
+    /// Compile just the code into header declarations.
     ///
-    /// Returns a vector of errors which can be printed using `Cheddar::print_error`.
-    pub fn compile_to_string(&self) -> Result<String, Vec<Error>> {
+    /// This does not add any include-guards, includes, or extern declarations. It is mainly
+    /// intended for internal use, but may be of interest to people who wish to embed
+    /// rusty-cheddar's generated code in another file.
+    pub fn compile_code(&self) -> Result<String, Vec<Error>> {
         let sess = &self.session;
-        let file_name = self.outfile.file_stem().and_then(|p| p.to_str()).unwrap_or("default");
-
         let krate = match self.input {
             Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], sess),
             Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
                 "cheddar_source".to_owned(),
                 // TODO: this clone could be quite costly, maybe rethink this design?
+                //     or just use a slice.
                 source.clone(),
                 vec![],
                 sess,
@@ -469,51 +433,98 @@ impl Cheddar {
         };
 
         if let Some(ref module) = self.module {
-            parse::parse_crate(&krate, module, &file_name)
+            parse::parse_crate(&krate, module)
         } else {
-            parse::parse_mod(&krate.module, &file_name)
+            parse::parse_mod(&krate.module)
         }
     }
 
+    /// Compile the header declarations then add the needed `#include`s.
+    ///
+    /// Currently includes:
+    ///
+    /// - `stdint.h`
+    /// - `stdbool.h`
+    fn compile_with_includes(&self) -> Result<String, Vec<Error>> {
+        let code = try!(self.compile_code());
+
+        Ok(format!("#include <stdint.h>\n#include <stdbool.h>\n\n{}", code))
+    }
+
+    /// Compile a header while conforming to C89 (or ANSI C).
+    ///
+    /// This does not include `stdint.h` or `stdbool.h` and also wraps single line comments with
+    /// `/*` and `*/`.
+    ///
+    /// `id` is used to help generate the include guard and may be empty.
+    ///
+    /// # TODO
+    ///
+    /// This is intended to be a public API, but currently comments are not handled correctly so it
+    /// is being kept private.
+    ///
+    /// The parser should warn on uses of `bool` or fixed-width integers (`i16`, `u32`, etc.).
+    #[allow(dead_code)]
+    fn compile_c89(&self, id: &str) -> Result<String, Vec<Error>> {
+        let code = try!(self.compile_code());
+
+        Ok(wrap_guard(&wrap_extern(&code), id))
+    }
+
+    /// Compile a header.
+    ///
+    /// `id` is used to help generate the include guard and may be empty.
+    pub fn compile(&self, id: &str) -> Result<String, Vec<Error>> {
+        let code = try!(self.compile_with_includes());
+
+        Ok(wrap_guard(&wrap_extern(&code), id))
+    }
+
     /// Write the header to a file.
+    pub fn write<P: AsRef<path::Path>>(&self, file: P) -> Result<(), Vec<Error>> {
+        let file = file.as_ref();
+
+        if let Some(dir) = file.parent() {
+            if let Err(error) = std::fs::create_dir_all(dir) {
+                return Err(vec![Error {
+                    level: Level::Fatal,
+                    span: None,
+                    message: format!("could not create directories in '{}': {}", dir.display(), error),
+                }]);
+            }
+        }
+
+        let file_name = file.file_name().map(|os| os.to_string_lossy()).unwrap_or("default".into());
+        let header = try!(self.compile(&file_name));
+
+        let bytes_buf = header.into_bytes();
+        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
+            Err(vec![Error {
+                level: Level::Fatal,
+                span: None,
+                message: format!("could not write to '{}': {}", file.display(), error),
+            }])
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Write the header to a file, panicking on error.
     ///
     /// This is a convenience method for use in build scripts. If errors occur during compilation
     /// they will be printed then the function will panic.
     ///
     /// # Panics
     ///
-    /// Panics on any compilation error so that the build script exits.
-    pub fn compile(&self) {
-        let sess = &self.session;
-
-        if let Err(error) = std::fs::create_dir_all(&self.outdir) {
-            sess.span_diagnostic.err(&format!(
-                "could not create directories in '{}': {}",
-                self.outdir.display(),
-                error,
-            ));
+    /// Panics on any compilation error so that the build script exits and prints output.
+    pub fn run_build<P: AsRef<path::Path>>(&self, file: P) {
+        if let Err(errors) = self.write(file) {
+            for error in &errors {
+                self.print_error(error);
+            }
 
             panic!("errors compiling header file");
         }
-
-        let header = match self.compile_to_string() {
-            Ok(header) => header,
-            Err(errors) => {
-                for error in errors {
-                    error.print(sess);
-                }
-
-                panic!("errors compiling header file");
-            },
-        };
-
-
-        let file = self.outdir.join(&self.outfile);
-        let bytes_buf = header.into_bytes();
-        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            sess.span_diagnostic.err(&format!("could not write to '{}': {}", file.display(), error));
-            panic!("errors compiling header file");
-        };
     }
 
     /// Print an error using the ParseSess stored in Cheddar.
@@ -561,4 +572,31 @@ fn source_file_from_cargo() -> std::result::Result<String, Error> {
         .and_then(|s| s.as_str())
         .unwrap_or(default)
         .into())
+}
+
+/// Wrap a block of code with an extern declaration.
+fn wrap_extern(code: &str) -> String {
+    format!(r#"
+#ifdef __cplusplus
+extern "C" {{
+#endif
+
+{}
+
+#ifdef __cplusplus
+}}
+#endif
+"#, code)
+}
+
+/// Wrap a block of code with an include-guard.
+fn wrap_guard(code: &str, id: &str) -> String {
+    format!(r"
+#ifndef cheddar_generated_{0}_h
+#define cheddar_generated_{0}_h
+
+{1}
+
+#endif
+", id, code)
 }

@@ -1,3 +1,4 @@
+//! Demonstrates a C API based on the stack.
 extern crate cheddar;
 
 const RUST: &'static str = r#"
@@ -33,7 +34,7 @@ pub extern fn Student_change_grade(student: Student, changer: extern fn(f64) -> 
 fn main() {
     let header = cheddar::Cheddar::new().expect("failed to read cargo manifest")
         .source_string(RUST)
-        .compile_to_string()
+        .compile("SOME_HEADER_NAME")
         .expect("header could not be compiled");
 
     println!("RUST SOURCE FILE:\n{}\n", RUST);
