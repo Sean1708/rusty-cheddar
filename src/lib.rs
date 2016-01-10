@@ -494,7 +494,7 @@ impl Cheddar {
             }
         }
 
-        let file_name = file.file_name().map(|os| os.to_string_lossy()).unwrap_or("default".into());
+        let file_name = file.file_name().map_or("default".into(), |os| os.to_string_lossy());
         let header = try!(self.compile(&file_name));
 
         let bytes_buf = header.into_bytes();
