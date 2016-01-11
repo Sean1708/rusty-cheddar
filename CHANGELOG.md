@@ -1,5 +1,7 @@
 # [master]
 
+# [0.3.0] - 2015-01-10
+
 ## Changed
 
 - the whole fucking thing!
@@ -29,5 +31,6 @@
     - old: `#![plugin(cheddar(path,to,file))]`
     - new: `#![plugin(cheddar(dir = "path/to", file = "file.h"))]`
 
-[master]: https://github.com/Sean1708/rusty-cheddar/compare/v0.2.0...HEAD
+[master]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Sean1708/rusty-cheddar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Sean1708/rusty-cheddar/compare/v0.1.0...v0.2.0
