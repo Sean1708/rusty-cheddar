@@ -250,8 +250,10 @@ cheddar_cmp_test! { test_compilable_function_pointers,
     double cmp(double (*cmp_fn)(double lhs, double rhs), double lhs, double rhs);
 
     typedef bool (*Foo)(double, double);
+
+    void (*signal(int sig, void (*func)(int)))(int);
     ",
-    "
+    r#"
     pub type TwoIntPtrFnPtr = extern fn(argument: *mut f64) -> *const *mut i32;
 
     #[no_mangle]
@@ -260,7 +262,13 @@ cheddar_cmp_test! { test_compilable_function_pointers,
     }
 
     pub type Foo = extern fn(f64, f64) -> bool;
-    "
+
+    #[no_mangle]
+    pub extern fn signal(sig: libc::c_int, func: extern fn(libc::c_int)) -> extern fn(libc::c_int) {
+        println!("{}", sig);
+        func
+    }
+    "#
 }
 
 cheddar_cmp_test! { test_pure_rust_types,

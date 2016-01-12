@@ -123,7 +123,7 @@ fn parse_ty(item: &ast::Item) -> Result<Option<String>, Error> {
             // Can not yet convert generics.
             if generics.is_parameterized() { return Ok(None); }
 
-            try_some!(types::rust_to_c(&*ty, Some(&name)))
+            try_some!(types::rust_to_c(&*ty, &name))
         },
         _ => {
             return Err(Error {
@@ -228,7 +228,7 @@ fn parse_struct(item: &ast::Item) -> Result<Option<String>, Error> {
                     Some(name) => name.name.as_str(),
                     None => unreachable!("a tuple struct snuck through"),
                 };
-                let ty = try_some!(types::rust_to_c(&*field.node.ty, Some(&name)));
+                let ty = try_some!(types::rust_to_c(&*field.node.ty, &name));
                 buffer.push_str(&format!("\t{};\n", ty));
             }
 
@@ -268,6 +268,7 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
 
     let mut buffer = String::new();
     let name = item.ident.name.as_str();
+    buffer.push_str(&docs);
 
     if let ast::Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
         use syntax::abi::Abi;
@@ -286,8 +287,30 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
         }
 
         let fn_decl: &ast::FnDecl = &*fn_decl;
+        // Handle the case when the return type is a function pointer (which requires that the
+        // entire declaration is wrapped by the function pointer type) by first creating the name
+        // and parameters, then passing that whole thing to `rust_to_c`.
+        let mut buf_without_return = format!("{}(", name);
+
+        let has_args = !fn_decl.inputs.is_empty();
+
+        for arg in &fn_decl.inputs {
+            let arg_name = print::pprust::pat_to_string(&*arg.pat);
+            let arg_type = try_some!(types::rust_to_c(&*arg.ty, &arg_name));
+            buf_without_return.push_str(&arg_type);
+            buf_without_return.push_str(", ");
+        }
+
+        if has_args {
+            // Remove the trailing comma and space.
+            buf_without_return.pop();
+            buf_without_return.pop();
+        }
+
+        buf_without_return.push_str(")");
+
         let output_type = &fn_decl.output;
-        let output_type = match *output_type {
+        let full_declaration = match *output_type {
             ast::FunctionRetTy::NoReturn(span) => {
                 return Err(Error {
                     level: Level::Error,
@@ -295,28 +318,12 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
                     message: "panics across a C boundary are naughty!".into(),
                 });
             },
-            ast::FunctionRetTy::DefaultReturn(..) => "void".to_owned(),
-            ast::FunctionRetTy::Return(ref ty) => try_some!(types::rust_to_c(&*ty, None)),
+            ast::FunctionRetTy::DefaultReturn(..) => format!("void {}", buf_without_return),
+            ast::FunctionRetTy::Return(ref ty) => try_some!(types::rust_to_c(&*ty, &buf_without_return)),
         };
 
-        buffer.push_str(&docs);
-        buffer.push_str(&format!("{} {}(", output_type, name));
-
-        let has_args = !fn_decl.inputs.is_empty();
-
-        for arg in &fn_decl.inputs {
-            let arg_name = print::pprust::pat_to_string(&*arg.pat);
-            let arg_type = try_some!(types::rust_to_c(&*arg.ty, Some(&arg_name)));
-            buffer.push_str(&format!("{}, ", arg_type));
-        }
-
-        if has_args {
-            // Remove the trailing comma and space.
-            buffer.pop();
-            buffer.pop();
-        }
-
-        buffer.push_str(");\n\n");
+        buffer.push_str(&full_declaration);
+        buffer.push_str(";\n\n");
     } else {
         return Err(Error {
             level: Level::Bug,
