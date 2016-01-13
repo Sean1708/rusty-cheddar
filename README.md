@@ -6,6 +6,11 @@
 
 rusty-cheddar is a library for converting Rust source files into C header files.
 
+**A note on versioning:** While rusty-cheddar is still in a significant flux (i.e.
+pre-`v1.0.0`) it will likely go through numerous breaking changes. However, until `v1.0.0`, any
+time a breaking change is made the minor version will be bumped and any time a new feature is
+added the path version will be bumped.
+
 rusty-cheddar targets C99 or later (for sane single line comments and use of `stdint.h` and
 `stdbool.h`), if you really really really really really have to use an older standard then please
 open an issue at the [repo] and I will begrudgingly figure out how to implement support for it
