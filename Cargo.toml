@@ -1,6 +1,6 @@
 [package]
 name = "rusty-cheddar"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Sean Marshallsay <srm.1708@gmail.com>"]
 
 description = "A library to automatically generate C header files from Rust source files."
