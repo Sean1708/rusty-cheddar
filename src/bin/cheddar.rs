@@ -37,7 +37,13 @@ fn main() {
     }
 
     if let Some(module) = matches.value_of("MODULE") {
-        cheddar.module(&module);
+        if let Err(errs) = cheddar.module(&module) {
+            for err in errs {
+                cheddar.print_error(&err);
+            }
+
+            panic!("errors setting module");
+        }
     }
 
     if let Some(output) = matches.value_of("OUTPUT") {

@@ -16,57 +16,67 @@ use Level;
 //     - search inside struct as well for whitelisted types
 //     - possibly also search other crates when encountering a path
 
+/// Check that an expected path has been `pub use`d.
+fn check_pub_use(item: &ast::Item, expected: &ast::Path) -> bool {
+    if let ast::Item_::ItemUse(ref path) = item.node {
+        // API has to be public to be used.
+        if let ast::Visibility::Public = item.vis {
+            // Easiest way to ensure all of API has been brought into scope.
+            if let ast::ViewPath_::ViewPathGlob(ref path) = path.node {
+                return path.segments == expected.segments;
+            }
+        }
+    }
+
+    false
+}
+
 
 /// The main entry point when looking for a specific module.
 ///
 /// Determines which module to parse, ensures it is `pub use`ed then hands off to
 /// `cheddar::parse::parse_mod`.
-pub fn parse_crate(krate: &ast::Crate, module: &str) -> Result<String, Vec<Error>> {
-    let mut mod_item = None;
-    let mut pub_used = false;
-
-    // Find the module.
-    for item in &krate.module.items {
-        match item.node {
-            ast::Item_::ItemMod(ref inner_mod) => {
-                let name: &str = &item.ident.name.as_str();
-                if name == module {
-                    mod_item = Some(inner_mod);
-                }
-            },
-            ast::Item_::ItemUse(ref path) => {
-                if let ast::Visibility::Public = item.vis {
-                    if let ast::ViewPath_::ViewPathGlob(ref path) = path.node {
-                        if let Some(path) = path.segments.first() {
-                            let path: &str = &path.identifier.name.as_str();
-                            if path == module {
-                                pub_used = true;
-                            }
-                        }
-                    }
-                }
-            },
-            _ => {},
-        }
-    }
-
-    if let Some(mod_item) = mod_item {
-        if pub_used {
-            parse_mod(&mod_item)
-        } else {
-            Err(vec![Error {
+pub fn parse_crate(krate: &ast::Crate, path: &ast::Path) -> Result<String, Vec<Error>> {
+    // First look to see if the module has been `pub use`d.
+    if !krate.module.items.iter().any(|item| check_pub_use(&item, &path)) {
+        return Err(vec![
+            Error {
                 level: Level::Error,
                 span: None,
-                message: format!("C api must exist in top level module, try `pub use {}::*`", module),
-            }])
-        }
-    } else {
-        Err(vec![Error {
-            level: Level::Error,
-            span: None,
-            message: format!("could not find module '{}'", module),
-        }])
+                message: format!("module `{}` has not been brought into global scope", path),
+            },
+            Error {
+                level: Level::Help,
+                span: None,
+                message: format!("try putting `pub use {}::*` in your root source file", path),
+            },
+        ]);
     }
+
+    // For each module in the path, look for the corresponding module in the source.
+    let mut current_module = &krate.module;
+    for module in &path.segments {
+        let mut found = false;
+        for item in &current_module.items {
+            if let ast::Item_::ItemMod(ref new_module) = item.node {
+                if module.identifier == item.ident {
+                    current_module = new_module;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if !found {
+            return Err(vec![Error {
+                level: Level::Fatal,
+                span: None,
+                message: format!("module `{}` could not be found", module.identifier),
+            }]);
+        }
+    }
+
+    parse_mod(&current_module)
 }
 
 /// The manager of rusty-cheddar and entry point when the crate is the module.
