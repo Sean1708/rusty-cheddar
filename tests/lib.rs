@@ -88,7 +88,7 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, api $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_code(),
+            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).unwrap().compile_code(),
             $header
         }
     };
@@ -370,6 +370,20 @@ cheddar_cmp_test! { test_module, api "api",
     pub use api::*;
     mod api {
         pub type Float = f32;
+    }
+    "
+}
+
+cheddar_cmp_test! { test_inside_module, api "c::api",
+    "
+    typedef float Float;
+    ",
+    "
+    pub use c::api::*;
+    mod c {
+        mod api {
+            pub type Float = f32;
+        }
     }
     "
 }
