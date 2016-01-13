@@ -49,12 +49,9 @@ called from C.
 
 #### API In a Module
 
-You can also place your API in a module to help keep your source code neat. **Note that this
-module must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is
-not.**
-
-To do this you must supply the name of the module to Cheddar, then ensure that the items are
-available in the top-level scope:
+You can also place your API in a module to help keep your source code neat. To do this you must
+supply the name of the module to Cheddar, then ensure that the items are available in the
+top-level scope:
 
 ```rust
 // build.rs
@@ -63,7 +60,7 @@ extern crate cheddar;
 
 fn main() {
     cheddar::Cheddar::new().expect("could not read manifest")
-        .module("c_api")
+        .module("c_api").expect("malformed module path")
         .run_build("target/include/rusty.h");
 }
 ```

@@ -43,12 +43,9 @@
 //!
 //! ### API In a Module
 //!
-//! You can also place your API in a module to help keep your source code neat. **Note that this
-//! module must currently be only one level deep, e.g. `api::*` is fine but `api::c_api::*` is
-//! not.**
-//!
-//! To do this you must supply the name of the module to Cheddar, then ensure that the items are
-//! available in the top-level scope:
+//! You can also place your API in a module to help keep your source code neat. To do this you must
+//! supply the name of the module to Cheddar, then ensure that the items are available in the
+//! top-level scope:
 //!
 //! ```no_run
 //! // build.rs
@@ -57,7 +54,7 @@
 //!
 //! fn main() {
 //!     cheddar::Cheddar::new().expect("could not read manifest")
-//!         .module("c_api")
+//!         .module("c_api").expect("malformed module path")
 //!         .run_build("target/include/rusty.h");
 //! }
 //! ```
@@ -403,16 +400,15 @@ enum Source {
 ///
 /// ```no_run
 /// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .module("c_api")
+///     .module("c_api").expect("malformed header path")
 ///     .run_build("header.h");
 /// ```
 pub struct Cheddar {
     /// The root source file of the crate.
     input: Source,
-    // TODO: store this as a syntax::ast::Path when allowing arbitrary modules.
     // TODO: this should be part of a ParseOpts struct
     /// The module which contains the C API.
-    module: Option<String>,
+    module: Option<syntax::ast::Path>,
     /// Custom C code which is placed after the `#include`s.
     custom_code: String,
     /// The current parser session.
@@ -459,11 +455,31 @@ impl Cheddar {
     /// Set the module which contains the header file.
     ///
     /// The module should be described using Rust's path syntax, i.e. in the same way that you
-    /// would `use` the module (`"path::to::api"`). Cheddar can not yet handle multiple path
-    /// segments.
-    pub fn module(&mut self, module: &str) -> &mut Cheddar {
-        self.module = Some(module.to_owned());
-        self
+    /// would `use` the module (`"path::to::api"`).
+    ///
+    /// # Fails
+    ///
+    /// If the path is malformed (e.g. `path::to:module`).
+    pub fn module(&mut self, module: &str) -> Result<&mut Cheddar, Vec<Error>> {
+        // TODO: `parse_item_from_source_str` doesn't work. Why?
+        let sess = syntax::parse::ParseSess::new();
+        let mut parser = ::syntax::parse::new_parser_from_source_str(
+            &sess,
+            vec![],
+            "".into(),
+            module.into(),
+        );
+
+        if let Ok(path) = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed) {
+            self.module = Some(path);
+            Ok(self)
+        } else {
+            Err(vec![Error {
+                level: Level::Fatal,
+                span: None,
+                message: format!("malformed module path `{}`", module),
+            }])
+        }
     }
 
     /// Insert custom code before the declarations which are parsed from the Rust source.
