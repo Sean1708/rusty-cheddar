@@ -77,7 +77,15 @@ macro_rules! inner_cheddar_cmp_test {
 /// #endif
 /// ```
 macro_rules! cheddar_cmp_test {
-    ($name:ident, $api:expr, $header:expr, $rust:expr) => {
+    ($name:ident, custom $custom:expr, $header:expr, $rust:expr) => {
+        inner_cheddar_cmp_test! {
+            $name,
+            cheddar::Cheddar::new().unwrap().source_string($rust).insert_code($custom).compile_code(),
+            $header
+        }
+    };
+
+    ($name:ident, api $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
             cheddar::Cheddar::new().unwrap().source_string($rust).module($api).compile_code(),
@@ -354,8 +362,7 @@ cheddar_cmp_test! { test_libc_types,
     "
 }
 
-cheddar_cmp_test! { test_module,
-    "api",
+cheddar_cmp_test! { test_module, api "api",
     "
     typedef float Float;
     ",
@@ -364,6 +371,19 @@ cheddar_cmp_test! { test_module,
     mod api {
         pub type Float = f32;
     }
+    "
+}
+
+cheddar_cmp_test! { test_custom,
+    custom "
+    typedef F64 MyF64;
+    ",
+    "
+    typedef double F64;
+    typedef F64 MyF64;
+    ",
+    "
+    pub type F64 = f64;
     "
 }
 

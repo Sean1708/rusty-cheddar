@@ -408,6 +408,8 @@ pub struct Cheddar {
     // TODO: this should be part of a ParseOpts struct
     /// The module which contains the C API.
     module: Option<String>,
+    /// Custom C code which is placed after the `#include`s.
+    custom_code: String,
     /// The current parser session.
     ///
     /// Used for printing errors.
@@ -426,6 +428,7 @@ impl Cheddar {
         Ok(Cheddar {
             input: input,
             module: None,
+            custom_code: String::new(),
             session: syntax::parse::ParseSess::new(),
         })
     }
@@ -458,6 +461,16 @@ impl Cheddar {
         self
     }
 
+    /// Insert custom code before the declarations which are parsed from the Rust source.
+    ///
+    /// If you compile a full header file, this is inserted after the `#include`s.
+    ///
+    /// This can be called multiple times, each time appending more code.
+    pub fn insert_code(&mut self, code: &str) -> &mut Cheddar {
+        self.custom_code.push_str(code);
+        self
+    }
+
     /// Compile just the code into header declarations.
     ///
     /// This does not add any include-guards, includes, or extern declarations. It is mainly
@@ -481,7 +494,7 @@ impl Cheddar {
             parse::parse_crate(&krate, module)
         } else {
             parse::parse_mod(&krate.module)
-        }
+        }.map(|source| format!("{}\n\n{}", self.custom_code, source))
     }
 
     /// Compile the header declarations then add the needed `#include`s.
