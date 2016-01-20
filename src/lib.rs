@@ -573,7 +573,7 @@ impl Cheddar {
             }
         }
 
-        let file_name = file.file_name().map_or("default".into(), |os| os.to_string_lossy());
+        let file_name = file.file_stem().map_or("default".into(), |os| os.to_string_lossy());
         let header = try!(self.compile(&file_name));
 
         let bytes_buf = header.into_bytes();
@@ -677,5 +677,27 @@ fn wrap_guard(code: &str, id: &str) -> String {
 {1}
 
 #endif
-", id, code)
+", sanitise_id(id), code)
+}
+
+/// Remove illegal characters from the identifier.
+///
+/// This is because macros names must be valid C identifiers. Note that the identifier will always
+/// be concatenated onto `cheddar_generated_` so can start with a digit.
+fn sanitise_id(id: &str) -> String {
+    // `char.is_digit(36)` ensures `char` is in `[A-Za-z0-9]`
+    id.chars().filter(|ch| ch.is_digit(36) || *ch == '_').collect()
+}
+
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_sanitise_id() {
+        assert!(super::sanitise_id("") == "");
+        assert!(super::sanitise_id("9_id") == "_id");
+        assert!(super::sanitise_id("!@£$%^&*()_+") == "_");
+        // https://github.com/Sean1708/rusty-cheddar/issues/29
+        assert!(super::sanitise_id("filename.h") == "filenameh");
+    }
 }
