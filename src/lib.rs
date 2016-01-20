@@ -695,7 +695,6 @@ mod test {
     #[test]
     fn test_sanitise_id() {
         assert!(super::sanitise_id("") == "");
-        assert!(super::sanitise_id("9_id") == "_id");
         assert!(super::sanitise_id("!@£$%^&*()_+") == "_");
         // https://github.com/Sean1708/rusty-cheddar/issues/29
         assert!(super::sanitise_id("filename.h") == "filenameh");
