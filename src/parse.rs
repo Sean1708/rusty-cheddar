@@ -186,7 +186,7 @@ fn parse_enum(item: &ast::Item) -> Result<Option<String>, Error> {
             let (_, docs) = parse_attr(&var.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
             buffer.push_str(&docs);
 
-            buffer.push_str(&format!("\t{},\n", print::pprust::variant_to_string(var)));
+            buffer.push_str(&format!("\t{}_{},\n", name, print::pprust::variant_to_string(var)));
         }
     } else {
         return Err(Error {

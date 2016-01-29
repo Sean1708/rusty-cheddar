@@ -142,10 +142,10 @@ Header:
 ```C
 // Some boilerplate omitted.
 typedef enum Colours {
-        Red = -6,
-        Blue,
-        Green = 7,
-        Yellow,
+        Colours_Red = -6,
+        Colours_Blue,
+        Colours_Green = 7,
+        Colours_Yellow,
 } Colours;
 // Some more boilerplate omitted.
 ```
