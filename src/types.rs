@@ -154,14 +154,14 @@ fn path_to_c(path: &ast::Path) -> Result<Option<String>, Error> {
             .expect("already checked that there were at least two elements")
             .identifier.name.as_str();
 
-        if module != "libc" {
-            Err(Error {
-                level: Level::Error,
-                span: Some(path.span),
-                message: "cheddar can not handle types in other modules (except `libc`)".into(),
-            })
-        } else {
-            Ok(Some(libc_ty_to_c(ty).into()))
+        match module {
+            "libc" => Ok(Some(libc_ty_to_c(ty).into())),
+            "std::os::raw" => Ok(Some(osraw_ty_to_c(ty).into())),
+            _ => Err(Error {
+                    level: Level::Error,
+                    span: Some(path.span),
+                    message: "cheddar can not handle types in other modules (except `libc`)".into(),
+            }),
         }
     } else {
         Ok(Some(rust_ty_to_c(&path.segments[0].identifier.name.as_str()).into()))
@@ -187,6 +187,30 @@ fn libc_ty_to_c(ty: &str) -> &str {
         "c_ulong" => "unsigned long",
         "c_longlong" => "long long",
         "c_ulonglong" => "unsigned long long",
+        // All other types should map over to C.
+        ty => ty,
+    }
+}
+
+/// Convert a Rust type from `std::os::raw` into a C type.
+///
+/// These mostly mirror the libc crate.
+fn osraw_ty_to_c(ty: &str) -> &str {
+    match ty {
+        "c_void" => "void",
+        "c_char" => "char",
+        "c_double" => "double",
+        "c_float" => "float",
+        "c_int" => "int",
+        "c_long" => "long",
+        "c_longlong" => "long long",
+        "c_schar" => "signed char",
+        "c_short" => "short",
+        "c_uchar" => "unsigned char",
+        "c_uint" => "unsigned int",
+        "c_ulong" => "unsigned long",
+        "c_ulonglong" => "unsigned long long",
+        "c_ushort" => "unsigned short",
         // All other types should map over to C.
         ty => ty,
     }
