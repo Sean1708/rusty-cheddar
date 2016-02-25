@@ -362,6 +362,40 @@ cheddar_cmp_test! { test_libc_types,
     "
 }
 
+cheddar_cmp_test! { test_os_raw_types,
+    "
+    typedef void CVoid;
+    typedef char CChar;
+    typedef double CDouble;
+    typedef float CFloat;
+    typedef int CInt;
+    typedef long CLong;
+    typedef long long CLongLong;
+    typedef signed char CSChar;
+    typedef short CShort;
+    typedef unsigned char CUChar;
+    typedef unsigned int CUInt;
+    typedef unsigned long CULong;
+    typedef unsigned long long CULongLong;
+    typedef unsigned short CUShort;
+    ",
+    "
+    pub type CVoid = std::os::raw::c_void;
+    pub type CChar = std::os::raw::c_char;
+    pub type CDouble = std::os::raw::c_double;
+    pub type CFloat = std::os::raw::c_float;
+    pub type CInt = std::os::raw::c_int;
+    pub type CLong = std::os::raw::c_long;
+    pub type CLongLong = std::os::raw::c_longlong;
+    pub type CSChar = std::os::raw::c_schar;
+    pub type CShort = std::os::raw::c_short;
+    pub type CUChar = std::os::raw::c_uchar;
+    pub type CUInt = std::os::raw::c_uint;
+    pub type CULong = std::os::raw::c_ulong;
+    pub type CULongLong = std::os::raw::c_ulonglong;
+    pub type CUShort = std::os::raw::c_ushort;
+    "
+}
 cheddar_cmp_test! { test_module, api "api",
     "
     typedef float Float;
