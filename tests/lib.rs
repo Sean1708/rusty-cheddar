@@ -113,7 +113,7 @@ macro_rules! cheddar_cmp_test {
 
 
 
-cheddar_cmp_test! { test_compilable_typedefs,
+cheddar_cmp_test! { compilable_typedefs,
     "
     typedef int64_t Int64;
     ",
@@ -126,7 +126,7 @@ cheddar_cmp_test! { test_compilable_typedefs,
     "
 }
 
-cheddar_cmp_test! { test_compilable_enums,
+cheddar_cmp_test! { compilable_enums,
     "
     typedef enum Colours {
         Red,
@@ -187,7 +187,7 @@ cheddar_cmp_test! { test_compilable_enums,
     "
 }
 
-cheddar_cmp_test! { test_compilable_structs,
+cheddar_cmp_test! { compilable_structs,
     "
     typedef struct Student {
         int32_t id;
@@ -220,7 +220,7 @@ cheddar_cmp_test! { test_compilable_structs,
     "
 }
 
-cheddar_cmp_test! { test_opaque_structs,
+cheddar_cmp_test! { opaque_structs,
     "
     typedef struct Foo Foo;
     ",
@@ -230,7 +230,7 @@ cheddar_cmp_test! { test_opaque_structs,
     "
 }
 
-cheddar_cmp_test! { test_compilable_functions,
+cheddar_cmp_test! { compilable_functions,
     "
     int64_t add_i64(int64_t lhs, int64_t rhs);
     ",
@@ -260,7 +260,7 @@ cheddar_cmp_test! { test_compilable_functions,
     "#
 }
 
-cheddar_cmp_test! { test_compilable_function_pointers,
+cheddar_cmp_test! { compilable_function_pointers,
     "
     typedef const int32_t** (*TwoIntPtrFnPtr)(double* argument);
 
@@ -288,7 +288,7 @@ cheddar_cmp_test! { test_compilable_function_pointers,
     "#
 }
 
-cheddar_cmp_test! { test_pure_rust_types,
+cheddar_cmp_test! { pure_rust_types,
     "
     typedef void MyVoid;
     typedef float Float32;
@@ -331,7 +331,7 @@ cheddar_cmp_test! { test_pure_rust_types,
     "
 }
 
-cheddar_cmp_test! { test_libc_types,
+cheddar_cmp_test! { libc_types,
     "
     typedef void CVoid;
     typedef float CFloat;
@@ -371,7 +371,7 @@ cheddar_cmp_test! { test_libc_types,
     "
 }
 
-cheddar_cmp_test! { test_os_raw_types,
+cheddar_cmp_test! { std_os_raw_types,
     "
     typedef void CVoid;
     typedef char CChar;
@@ -407,7 +407,7 @@ cheddar_cmp_test! { test_os_raw_types,
 }
 
 // Verify we don't accept module types without a full prefix.
-cheddar_cmp_test! { test_module_no_prefix, xfail,
+cheddar_cmp_test! { module_no_prefix, xfail,
     "
     typedef CVoid void;
     ",
@@ -421,7 +421,7 @@ cheddar_cmp_test! { test_module_no_prefix, xfail,
 }
 
 
-cheddar_cmp_test! { test_module, api "api",
+cheddar_cmp_test! { module, api "api",
     "
     typedef float Float;
     ",
@@ -433,7 +433,7 @@ cheddar_cmp_test! { test_module, api "api",
     "
 }
 
-cheddar_cmp_test! { test_inside_module, api "c::api",
+cheddar_cmp_test! { inside_module, api "c::api",
     "
     typedef float Float;
     ",
@@ -447,7 +447,7 @@ cheddar_cmp_test! { test_inside_module, api "c::api",
     "
 }
 
-cheddar_cmp_test! { test_custom,
+cheddar_cmp_test! { custom,
     custom "
     typedef F64 MyF64;
     ",
@@ -460,7 +460,7 @@ cheddar_cmp_test! { test_custom,
     "
 }
 
-cheddar_cmp_test! { test_general_interplay,
+cheddar_cmp_test! { general_interplay,
     "
     typedef float Kg;
     typedef float Lbs;
