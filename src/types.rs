@@ -149,18 +149,22 @@ fn path_to_c(path: &ast::Path) -> Result<Option<String>, Error> {
         })
     // Types in modules, `my_mod::MyType`.
     } else if path.segments.len() > 1 {
-        let module: &str = &path.segments[0].identifier.name.as_str();
-        let ty: &str = &path.segments.last()
-            .expect("already checked that there were at least two elements")
-            .identifier.name.as_str();
-
-        match module {
+        let (ty, module) = path.segments.split_last()
+            .expect("already checked that there were at least two elements");
+        let ty: &str = &ty.identifier.name.as_str();
+        let mut segments = Vec::with_capacity(module.len());
+        for segment in module {
+            segments.push(String::from(&*segment.identifier.name.as_str()));
+        }
+        let module = segments.join("::");
+        println!("Checking type {} in module {}...", ty, module);
+        match &*module {
             "libc" => Ok(Some(libc_ty_to_c(ty).into())),
             "std::os::raw" => Ok(Some(osraw_ty_to_c(ty).into())),
             _ => Err(Error {
                     level: Level::Error,
                     span: Some(path.span),
-                    message: "cheddar can not handle types in other modules (except `libc`)".into(),
+                    message: "cheddar can not handle types in other modules (except `libc` and `std::os::raw`)".into(),
             }),
         }
     } else {
