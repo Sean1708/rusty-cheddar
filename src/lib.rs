@@ -263,9 +263,11 @@
 //! behind an opaque struct. This is because the C compiler must know the layout of the type and
 //! rusty-cheddar can not yet search other modules.
 //!
-//! The very important exception to this rule is `libc`, types used from `libc` _must_ be qualified
-//! (e.g. `libc::c_void`) so that they can be converted properly.
-//!
+//! The very important exception to this rule are the C ABI types defined in
+//! the `libc` crate and `std::os::raw`. Types from these two modules _must_
+//! be fully qualified (e.g. `libc::c_void` or `std::os::raw::c_longlong)
+//! so that they can be converted properly. Importing them with a `use`
+//! statement will not work.
 //!
 //! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar

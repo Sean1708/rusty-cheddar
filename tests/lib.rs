@@ -396,6 +396,7 @@ cheddar_cmp_test! { test_os_raw_types,
     pub type CUShort = std::os::raw::c_ushort;
     "
 }
+
 cheddar_cmp_test! { test_module, api "api",
     "
     typedef float Float;
