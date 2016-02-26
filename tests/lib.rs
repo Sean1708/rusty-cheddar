@@ -406,6 +406,21 @@ cheddar_cmp_test! { test_os_raw_types,
     "
 }
 
+// Verify we don't accept module types without a full prefix.
+cheddar_cmp_test! { test_module_no_prefix, xfail,
+    "
+    typedef CVoid void;
+    ",
+    "
+    extern crate libc;
+    use libc::FILE;
+    use std::os::raw;
+    pub type CVoid = raw::c_void;
+    pub type CFile = FILE;
+    "
+}
+
+
 cheddar_cmp_test! { test_module, api "api",
     "
     typedef float Float;
