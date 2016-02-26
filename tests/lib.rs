@@ -3,7 +3,8 @@ extern crate cheddar;
 use std::process::Command;
 
 macro_rules! inner_cheddar_cmp_test {
-    ($name:ident, $(#[$attr:meta])*, $compile:expr, $header:expr) => {
+    ($name:ident $(#[$attr:meta])*, $compile:expr, $header:expr) => {
+        #[test]
         $(#[$attr])*
         fn $name() {
             let expected = $header;
@@ -79,7 +80,7 @@ macro_rules! inner_cheddar_cmp_test {
 macro_rules! cheddar_cmp_test {
     ($name:ident, custom $custom:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
-            $name, #[test],
+            $name,
             cheddar::Cheddar::new().unwrap().source_string($rust).insert_code($custom).compile_code(),
             $header
         }
@@ -87,7 +88,7 @@ macro_rules! cheddar_cmp_test {
 
     ($name:ident, api $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
-            $name, #[test],
+            $name,
             cheddar::Cheddar::new().unwrap().source_string($rust).module($api).unwrap().compile_code(),
             $header
         }
@@ -95,7 +96,7 @@ macro_rules! cheddar_cmp_test {
 
     ($name:ident, xfail, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
-            $name, #[test] #[should_panic],
+            $name #[should_panic],
             cheddar::Cheddar::new().unwrap().source_string($rust).compile_code(),
             $header
         }
@@ -103,7 +104,7 @@ macro_rules! cheddar_cmp_test {
 
     ($name:ident, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
-            $name, #[test],
+            $name,
             cheddar::Cheddar::new().unwrap().source_string($rust).compile_code(),
             $header
         }
