@@ -695,7 +695,7 @@ fn sanitise_id(id: &str) -> String {
 #[cfg(test)]
 mod test {
     #[test]
-    fn test_sanitise_id() {
+    fn sanitise_id() {
         assert!(super::sanitise_id("") == "");
         assert!(super::sanitise_id("!@£$%^&*()_+") == "_");
         // https://github.com/Sean1708/rusty-cheddar/issues/29

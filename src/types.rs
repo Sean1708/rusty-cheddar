@@ -267,7 +267,7 @@ mod test {
     // rust_to_c_fail_generic
     #[test]
     #[ignore]
-    fn test_generics() {
+    fn generics() {
         let name = "azazael";
 
         let source = "Result<f64, i32>";
@@ -282,7 +282,7 @@ mod test {
     }
 
     #[test]
-    fn test_pure_rust_types() {
+    fn pure_rust_types() {
         let type_map = [
             ("()", "void"),
             ("f32", "float"),
@@ -315,7 +315,7 @@ mod test {
     }
 
     #[test]
-    fn test_libc_types() {
+    fn libc_types() {
         let type_map = [
             ("libc::c_void", "void"),
             ("libc::c_float", "float"),
@@ -353,7 +353,7 @@ mod test {
     }
 
     #[test]
-    fn test_const_pointers() {
+    fn const_pointers() {
         let name = "maalik";
 
         let source = "*const u8";
@@ -382,7 +382,7 @@ mod test {
     }
 
     #[test]
-    fn test_mut_pointers() {
+    fn mut_pointers() {
         let name = "raphael";
 
         let source = "*mut u16";
@@ -411,7 +411,7 @@ mod test {
     }
 
     #[test]
-    fn test_mixed_pointers() {
+    fn mixed_pointers() {
         let name = "samael";
 
         let source = "*const *mut *const bool";
@@ -428,7 +428,7 @@ mod test {
     }
 
     #[test]
-    fn test_function_pointers() {
+    fn function_pointers() {
         let name = "sariel";
 
         let source = "fn(a: bool)";
@@ -448,7 +448,7 @@ mod test {
     }
 
     #[test]
-    fn test_paths() {
+    fn paths() {
         let name = "zachariel";
 
         let source = "MyType";
