@@ -157,7 +157,6 @@ fn path_to_c(path: &ast::Path) -> Result<Option<String>, Error> {
             segments.push(String::from(&*segment.identifier.name.as_str()));
         }
         let module = segments.join("::");
-        println!("Checking type {} in module {}...", ty, module);
         match &*module {
             "libc" => Ok(Some(libc_ty_to_c(ty).into())),
             "std::os::raw" => Ok(Some(osraw_ty_to_c(ty).into())),
