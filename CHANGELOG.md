@@ -6,7 +6,7 @@
 
 - rusty-cheddar now correctly converts types in `std::os::raw`
 
-# [0.3.1] - 2015-01-20
+# [0.3.1] - 2016-01-20
 
 ## Changed
 
@@ -17,7 +17,7 @@
 - the include guard is sanitised to avoid illegal characters in a macro definition
 
 
-# [0.3.0] - 2015-01-10
+# [0.3.0] - 2016-01-10
 
 ## Changed
 
