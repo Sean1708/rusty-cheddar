@@ -1,58 +1,79 @@
-//! Functions for converting Rust types to C types.
+//! Helper functions for turning Rust types into string representations of C types.
 
+use compiler::Stop;
 use syntax::ast;
 use syntax::codemap;
 use syntax::print;
 
-use Error;
-use Level;
+// TODO: GET RID OF SUPER!!! AND ::!!!
+//     ACTUALLY THIS MIGHT BE A GOOD USE OF SUPER!!!
 
 /// Turn a Rust type with an associated name or type into a C type.
-pub fn rust_to_c(ty: &ast::Ty, assoc: &str) -> Result<Option<String>, Error> {
+///
+/// `assoc` is required because of function pointers. Function pointers have to "wrap" something,
+/// e.g.
+///
+/// ```c
+/// float* (*my_func)(int a, char b);
+/// ```
+///
+/// where the function pointer "wraps" the name `my_func`, or
+///
+/// ```c
+/// void (*foo(int bar, void* baz))(char* bux);
+/// ```
+///
+/// where the function pointer "wraps" the partial declaration
+///
+/// ```c
+/// foo(int bar, void* baz)
+/// ```
+///
+/// . `assoc` is therefore the thing which the function pointer "wraps".
+pub fn rust_to_c(session: &mut ::parse::Session, ty: &ast::Ty, assoc: &str, spec: super::Spec) -> Result<String, Stop> {
     match ty.node {
         // Function pointers make life an absolute pain here.
-        ast::Ty_::TyBareFn(ref bare_fn) => fn_ptr_to_c(bare_fn, ty.span, assoc),
+        ast::Ty_::TyBareFn(ref bare_fn) => fn_ptr_to_c(session, bare_fn, ty.span, assoc, spec),
         // All other types just have a name associated with them.
-        _ => Ok(Some(format!("{} {}", try_some!(anon_rust_to_c(ty)), assoc))),
+        _ => Ok(format!("{} {}", try!(anon_rust_to_c(session, ty, spec)), assoc)),
     }
 }
 
 /// Turn a Rust type into a C type.
-fn anon_rust_to_c(ty: &ast::Ty) -> Result<Option<String>, Error> {
+fn anon_rust_to_c(session: &mut ::parse::Session, ty: &ast::Ty, spec: super::Spec) -> Result<String, Stop> {
     match ty.node {
         // Function pointers should not be in this function.
-        ast::Ty_::TyBareFn(..) => Err(Error {
-            level: Level::Error,
-            span: Some(ty.span),
-            message: "C function pointers must have a name or function declaration associated with them".into(),
-        }),
+        ast::Ty_::TyBareFn(..) => Err(session.span_err(
+            ty.span,
+            "C function pointers must have a name or function declaration associated with them",
+        )),
         // Standard pointers.
-        ast::Ty_::TyPtr(ref ptr) => ptr_to_c(ptr),
+        ast::Ty_::TyPtr(ref ptr) => ptr_to_c(session, ptr, spec),
         // Plain old types.
-        ast::Ty_::TyPath(None, ref path) => path_to_c(path),
+        ast::Ty_::TyPath(None, ref path) => path_to_c(session, path),
         // Possibly void, likely not.
         _ => {
             let new_type = print::pprust::ty_to_string(ty);
             if new_type == "()" {
-                Ok(Some("void".into()))
+                Ok("void".into())
             } else {
-                Err(Error {
-                    level: Level::Error,
-                    span: Some(ty.span),
-                    message: format!("cheddar can not handle the type `{}`", new_type),
-                })
+                Err(session.span_err(
+                    ty.span,
+                    &format!("cheddar can not handle the type `{}`", new_type),
+                ))
             }
         },
     }
 }
 
 /// Turn a Rust pointer (*mut or *const) into the correct C form.
-fn ptr_to_c(ty: &ast::MutTy) -> Result<Option<String>, Error> {
-    let new_type = try_some!(anon_rust_to_c(&ty.ty));
+fn ptr_to_c(session: &mut ::parse::Session, ty: &ast::MutTy, spec: super::Spec) -> Result<String, Stop> {
+    let new_type = try!(anon_rust_to_c(session, &ty.ty, spec));
     let const_spec = match ty.mutbl {
         // *const T
         ast::Mutability::MutImmutable => {
             // Avoid multiple `const` specifiers (you can't have `const const int**` in C).
+            // TODO: but you can have `int const* const*`
             if new_type.starts_with("const ") {
                 ""
             } else {
@@ -63,7 +84,7 @@ fn ptr_to_c(ty: &ast::MutTy) -> Result<Option<String>, Error> {
         ast::Mutability::MutMutable => "",
     };
 
-    Ok(Some(format!("{}{}*", const_spec, new_type)))
+    Ok(format!("{}{}*", const_spec, new_type))
 }
 
 /// Turn a Rust function pointer into a C function pointer.
@@ -81,20 +102,16 @@ fn ptr_to_c(ty: &ast::MutTy) -> Result<Option<String>, Error> {
 /// ```
 ///
 /// where `inner` could either be a name or the rest of a function declaration.
-fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str) -> Result<Option<String>, Error> {
+fn fn_ptr_to_c(session: &mut ::parse::Session, fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str, spec: super::Spec) -> Result<String, Stop> {
     use syntax::abi::Abi;
     match fn_ty.abi {
         // If it doesn't have a C ABI it can't be called from C.
         Abi::C | Abi::Cdecl | Abi::Stdcall | Abi::Fastcall | Abi::System => {},
-        _ => return Ok(None),
+        _ => return Err(Stop::Abort),
     }
 
     if !fn_ty.lifetimes.is_empty() {
-        return Err(Error {
-            level: Level::Error,
-            span: Some(fn_span),
-            message: "cheddar can not handle lifetimes".into(),
-        });
+        return Err(session.span_err(fn_span, "cheddar can not handle lifetimes"));
     }
 
     let fn_decl: &ast::FnDecl = &*fn_ty.decl;
@@ -104,8 +121,9 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str) -> Re
     let has_args = !fn_decl.inputs.is_empty();
 
     for arg in &fn_decl.inputs {
+        // TODO: ast_util::pat_is_ident
         let arg_name = print::pprust::pat_to_string(&*arg.pat);
-        let arg_type = try_some!(rust_to_c(&*arg.ty, &arg_name));
+        let arg_type = try!(rust_to_c(session, &*arg.ty, &arg_name, spec));
         buf_without_return.push_str(&arg_type);
         buf_without_return.push_str(", ");
     }
@@ -120,33 +138,29 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str) -> Re
 
     let output_type = &fn_decl.output;
     let full_declaration = match *output_type {
-        ast::FunctionRetTy::NoReturn(span) => {
-            return Err(Error {
-                level: Level::Error,
-                span: Some(span),
-                message: "panics across a C boundary are naughty!".into(),
-            });
+        ast::FunctionRetTy::NoReturn(..) => {
+            if spec >= super::Spec::C11 {
+                format!("noreturn void {}", buf_without_return)
+            } else {
+                format!("void {}", buf_without_return)
+            }
         },
         ast::FunctionRetTy::DefaultReturn(..) => format!("void {}", buf_without_return),
-        ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, &buf_without_return)),
+        ast::FunctionRetTy::Return(ref ty) => try!(rust_to_c(session, &*ty, &buf_without_return, spec)),
     };
 
 
-    Ok(Some(full_declaration))
+    Ok(full_declaration)
 }
 
 /// Convert a Rust path type (my_mod::MyType) to a C type.
 ///
 /// Types hidden behind modules are almost certainly custom types (which wouldn't work) except
 /// types in `libc` which we special case.
-fn path_to_c(path: &ast::Path) -> Result<Option<String>, Error> {
+fn path_to_c(session: &::parse::Session, path: &ast::Path) -> Result<String, Stop> {
     // I don't think this is possible.
     if path.segments.is_empty() {
-        Err(Error {
-            level: Level::Bug,
-            span: Some(path.span),
-            message: "what the fuck have you done to this type?!".into(),
-        })
+        session.span_bug(path.span, "what the fuck have you done to this type?!")
     // Types in modules, `my_mod::MyType`.
     } else if path.segments.len() > 1 {
         let module: &str = &path.segments[0].identifier.name.as_str();
@@ -155,16 +169,15 @@ fn path_to_c(path: &ast::Path) -> Result<Option<String>, Error> {
             .identifier.name.as_str();
 
         if module != "libc" {
-            Err(Error {
-                level: Level::Error,
-                span: Some(path.span),
-                message: "cheddar can not handle types in other modules (except `libc`)".into(),
-            })
+            Err(session.span_err(
+                path.span,
+                "cheddar can not handle types in other modules (except `libc`)",
+            ))
         } else {
-            Ok(Some(libc_ty_to_c(ty).into()))
+            Ok(libc_ty_to_c(ty).into())
         }
     } else {
-        Ok(Some(rust_ty_to_c(&path.segments[0].identifier.name.as_str()).into()))
+        Ok(rust_ty_to_c(&path.segments[0].identifier.name.as_str()).into())
     }
 }
 
@@ -243,6 +256,7 @@ mod test {
     fn test_generics() {
         let name = "azazael";
 
+        // TODO: this should be an error
         let source = "Result<f64, i32>";
         let typ = super::anon_rust_to_c(&ty(source))
             .expect(&format!("error while parsing {:?} with no name", source));

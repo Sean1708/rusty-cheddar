@@ -279,165 +279,103 @@ use std::io::Write;
 use std::path;
 
 
-/// Unwraps Result<Option<..>> if it is Ok(Some(..)) else returns.
-macro_rules! try_some {
-    ($expr:expr) => {{ match $expr {
-        Ok(Some(val)) => val,
-        expr => return expr,
-    }}};
-}
+// TODO: THE WHOLE PRIVACY STORY OF THIS CRATE NEEDS REDOING!!!
 
-
-mod types;
-mod parse;
-
-
-pub use syntax::errors::Level;
-
-/// Describes an error encountered by the compiler.
-///
-/// These can be printed nicely using the `Cheddar::print_err` method.
-#[derive(Debug)]
-pub struct Error {
-    pub level: Level,
-    span: Option<syntax::codemap::Span>,
-    pub message: String,
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}: {}", self.level, self.message)
-    }
-}
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        match self.level {
-            Level::Bug => "internal error",
-            Level::Fatal | Level::Error => "error",
-            Level::Warning => "warning",
-            Level::Note => "note",
-            Level::Help => "help",
-        }
-    }
-}
-
-impl Error {
-    /// Use a ParseSess to print the error in the correct format.
-    #[allow(unused_must_use)]
-    fn print(&self, sess: &syntax::parse::ParseSess) {
-        // TODO: there must be some way to reduce the amount of code here.
-        // Throw away the results (with { ...; }) since they are handled elsewhere.
-        if let Some(span) = self.span {
-            match self.level {
-                Level::Bug => { sess.span_diagnostic.span_bug(span, &self.message); },
-                Level::Fatal => { sess.span_diagnostic.span_fatal(span, &self.message); },
-                Level::Error => { sess.span_diagnostic.span_err(span, &self.message); },
-                Level::Warning => { sess.span_diagnostic.span_warn(span, &self.message); },
-                Level::Note => { sess.span_diagnostic.span_note(span, &self.message); },
-                Level::Help => { sess.span_diagnostic.span_help(span, &self.message); },
-            };
-        } else {
-            match self.level {
-                Level::Bug => { sess.span_diagnostic.bug(&self.message); },
-                Level::Fatal => { sess.span_diagnostic.fatal(&self.message); },
-                Level::Error => { sess.span_diagnostic.err(&self.message); },
-                Level::Warning => { sess.span_diagnostic.warn(&self.message); },
-                Level::Note => { sess.span_diagnostic.note(&self.message); },
-                Level::Help => { sess.span_diagnostic.help(&self.message); },
-            };
-        }
-    }
-}
-
+pub mod compiler;
+pub mod languages;
+pub mod parse;
 
 /// Store the source code.
-enum Source {
+// TODO: this really shouldn't be public
+pub enum Source {
     String(String),
     File(path::PathBuf),
 }
 
-/// Stores configuration for the Cheddar compiler.
-///
-/// # Examples
-///
-/// Since construction can only fail if there is an error _while_ reading the cargo manifest it is
-/// usually safe to call `.unwrap()` on the result (though `.expect()` is considered better
-/// practice).
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest");
-/// ```
-///
-/// If your project is a valid cargo project or follows the same structure, you can simply place
-/// the following in your build script.
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .run_build("path/to/output/file");
-/// ```
-///
-/// If you use a different structure you should use `.source_file("...")` to set the path to the
-/// root crate file.
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .source_file("src/root.rs")
-///     .run_build("include/my_header.h");
-/// ```
-///
-/// You can also supply the Rust source as a string.
-///
-/// ```no_run
-/// let rust = "pub type Float32 = f32;";
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .source_string(rust)
-///     .run_build("target/include/header.h");
-/// ```
-///
-/// If you wish to hide your C API behind a module you must specify the module with `.module()`
-/// (don't forget to `pub use` the items in the module!).
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .module("c_api").expect("malformed header path")
-///     .run_build("header.h");
-/// ```
-pub struct Cheddar {
-    /// The root source file of the crate.
-    input: Source,
-    // TODO: this should be part of a ParseOpts struct
-    /// The module which contains the C API.
-    module: Option<syntax::ast::Path>,
-    /// Custom C code which is placed after the `#include`s.
-    custom_code: String,
-    /// The current parser session.
-    ///
-    /// Used for printing errors.
-    session: syntax::parse::ParseSess,
+impl Source {
+    // TODO: take this by value?
+    pub fn parse_crate(&self, sess: &syntax::parse::ParseSess) -> syntax::ast::Crate {
+        match *self {
+            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], sess),
+            Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
+                "cheddar_source".to_owned(),
+                // TODO: this clone could be quite costly, maybe rethink this design?
+                //     or just use a slice.
+                // TODO: can we avoid the clone if we take by value?
+                source.clone(),
+                vec![],
+                sess,
+            ),
+        }
+    }
 }
 
-impl Cheddar {
+// TODO: an error in this module which has io, parse, and compile
+
+/// The type responsible for managing the compilers of language bindings.
+pub struct Binder {
+    /// The Rust source code.
+    input: Source,
+    /// The directory in which to place all code.
+    output: std::path::PathBuf,
+    session: parse::Session,
+    compilers: Vec<LanguageCompiler>,
+}
+
+pub type Language = String;
+
+/// A compiled binding which has not yet been written to a file.
+pub struct Binding {
+    pub language: Language,
+    pub files: Vec<compiler::File>,
+    pub dependencies: Vec<Binding>,
+}
+
+/// A compiler for a specific language.
+pub struct LanguageCompiler {
+    compiler: Box<compiler::Compiler>,
+    dependencies: Vec<LanguageCompiler>,
+}
+
+impl LanguageCompiler {
+    /// Recursively create a compiler for a given language and any dependent compilers.
+    fn new(compiler: Box<compiler::Compiler>, dependencies: Vec<Box<compiler::Compiler>>) -> LanguageCompiler {
+        let mut lc_dependencies = vec![];
+
+        for dep in dependencies {
+            let recursive_dependencies = dep.dependencies();
+            lc_dependencies.push(LanguageCompiler::new(dep, recursive_dependencies));
+        }
+
+        LanguageCompiler {
+            compiler: compiler,
+            dependencies: lc_dependencies,
+        }
+    }
+}
+
+
+impl Binder {
     /// Create a new Cheddar compiler.
     ///
     /// This can only fail if there are issues reading the cargo manifest. If there is no cargo
     /// manifest available then the source file defaults to `src/lib.rs`.
-    pub fn new() -> std::result::Result<Cheddar, Error> {
+    pub fn new() -> std::result::Result<Binder, std::io::Error> {
         let source_path = try!(source_file_from_cargo());
         let input = Source::File(path::PathBuf::from(source_path));
 
-        Ok(Cheddar {
+        Ok(Binder {
             input: input,
-            module: None,
-            custom_code: String::new(),
-            session: syntax::parse::ParseSess::new(),
+            output: path::Path::new("target").join("binder"),
+            session: parse::Session::new(),
+            compilers: vec![],
         })
     }
 
     /// Set the path to the root source file of the crate.
     ///
     /// This should only be used when not using a `cargo` build system.
-    pub fn source_file<T>(&mut self, path: T) -> &mut Cheddar
+    pub fn source_file<T>(&mut self, path: T) -> &mut Binder
         where path::PathBuf: convert::From<T>,
     {
         self.input = Source::File(path::PathBuf::from(path));
@@ -447,12 +385,23 @@ impl Cheddar {
     /// Set a string to be used as source code.
     ///
     /// Currently this should only be used with small strings as it requires at least one `.clone()`.
-    pub fn source_string(&mut self, source: &str) -> &mut Cheddar {
+    pub fn source_string(&mut self, source: &str) -> &mut Binder {
         self.input = Source::String(source.to_owned());
         self
     }
 
-    /// Set the module which contains the header file.
+    /// Set the directory in which to place all output bindings.
+    ///
+    /// This defaults to `target/binder`, and the output from each language will be put in it's own
+    /// folder.
+    pub fn output_directory<T>(&mut self, path: T) -> &mut Binder
+        where path::PathBuf: convert::From<T>,
+    {
+        self.output = path::PathBuf::from(path);
+        self
+    }
+
+    /// Set the module which contains the API which is to be bound.
     ///
     /// The module should be described using Rust's path syntax, i.e. in the same way that you
     /// would `use` the module (`"path::to::api"`).
@@ -460,7 +409,7 @@ impl Cheddar {
     /// # Fails
     ///
     /// If the path is malformed (e.g. `path::to:module`).
-    pub fn module(&mut self, module: &str) -> Result<&mut Cheddar, Vec<Error>> {
+    pub fn module(&mut self, module: &str) -> Result<&mut Binder, ()> {
         // TODO: `parse_item_from_source_str` doesn't work. Why?
         let sess = syntax::parse::ParseSess::new();
         let mut parser = ::syntax::parse::new_parser_from_source_str(
@@ -471,149 +420,66 @@ impl Cheddar {
         );
 
         if let Ok(path) = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed) {
-            self.module = Some(path);
+            self.session.module = Some(path);
             Ok(self)
         } else {
-            Err(vec![Error {
-                level: Level::Fatal,
-                span: None,
-                message: format!("malformed module path `{}`", module),
-            }])
+            sess.span_diagnostic.err(&format!("malformed module path {:?}", module));
+            Err(())
         }
     }
 
-    /// Insert custom code before the declarations which are parsed from the Rust source.
-    ///
-    /// If you compile a full header file, this is inserted after the `#include`s.
-    ///
-    /// This can be called multiple times, each time appending more code.
-    pub fn insert_code(&mut self, code: &str) -> &mut Cheddar {
-        self.custom_code.push_str(code);
+    /// Register a compiler to be used to generate bindings.
+    pub fn register<C: compiler::Compiler + 'static>(&mut self, compiler: C) -> &mut Binder {
+        let dependencies = compiler.dependencies();
+
+        self.compilers.push(LanguageCompiler::new(Box::new(compiler), dependencies));
+
         self
     }
 
-    /// Compile just the code into header declarations.
+    /// Compile the bindings to strings.
     ///
-    /// This does not add any include-guards, includes, or extern declarations. It is mainly
-    /// intended for internal use, but may be of interest to people who wish to embed
-    /// rusty-cheddar's generated code in another file.
-    pub fn compile_code(&self) -> Result<String, Vec<Error>> {
-        let sess = &self.session;
-        let krate = match self.input {
-            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], sess),
-            Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
-                "cheddar_source".to_owned(),
-                // TODO: this clone could be quite costly, maybe rethink this design?
-                //     or just use a slice.
-                source.clone(),
-                vec![],
-                sess,
-            ),
-        };
-
-        if let Some(ref module) = self.module {
-            parse::parse_crate(&krate, module)
-        } else {
-            parse::parse_mod(&krate.module)
-        }.map(|source| format!("{}\n\n{}", self.custom_code, source))
+    /// # Fails
+    ///
+    /// If there was an error during compilation.
+    pub fn compile(&mut self) -> Result<Vec<Binding>, std::io::Error> {
+        let krate = self.session.parse_crate(&self.input);
+        // TODO: expose this as a utility function of some sort
+        parse::parse_crate(&krate, &mut self.session, &mut self.compilers)
     }
 
-    /// Compile the header declarations then add the needed `#include`s.
+    /// Compile the bindings and write them to the appropriate files.
     ///
-    /// Currently includes:
+    /// # Fails
     ///
-    /// - `stdint.h`
-    /// - `stdbool.h`
-    fn compile_with_includes(&self) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_code());
-
-        Ok(format!("#include <stdint.h>\n#include <stdbool.h>\n\n{}", code))
-    }
-
-    /// Compile a header while conforming to C89 (or ANSI C).
-    ///
-    /// This does not include `stdint.h` or `stdbool.h` and also wraps single line comments with
-    /// `/*` and `*/`.
-    ///
-    /// `id` is used to help generate the include guard and may be empty.
-    ///
-    /// # TODO
-    ///
-    /// This is intended to be a public API, but currently comments are not handled correctly so it
-    /// is being kept private.
-    ///
-    /// The parser should warn on uses of `bool` or fixed-width integers (`i16`, `u32`, etc.).
-    #[allow(dead_code)]
-    fn compile_c89(&self, id: &str) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_code());
-
-        Ok(wrap_guard(&wrap_extern(&code), id))
-    }
-
-    /// Compile a header.
-    ///
-    /// `id` is used to help generate the include guard and may be empty.
-    pub fn compile(&self, id: &str) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_with_includes());
-
-        Ok(wrap_guard(&wrap_extern(&code), id))
-    }
-
-    /// Write the header to a file.
-    pub fn write<P: AsRef<path::Path>>(&self, file: P) -> Result<(), Vec<Error>> {
-        let file = file.as_ref();
-
-        if let Some(dir) = file.parent() {
-            if let Err(error) = std::fs::create_dir_all(dir) {
-                return Err(vec![Error {
-                    level: Level::Fatal,
-                    span: None,
-                    message: format!("could not create directories in '{}': {}", dir.display(), error),
-                }]);
-            }
-        }
-
-        let file_name = file.file_name().map_or("default".into(), |os| os.to_string_lossy());
-        let header = try!(self.compile(&file_name));
-
-        let bytes_buf = header.into_bytes();
-        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            Err(vec![Error {
-                level: Level::Fatal,
-                span: None,
-                message: format!("could not write to '{}': {}", file.display(), error),
-            }])
-        } else {
-            Ok(())
-        }
-    }
-
-    /// Write the header to a file, panicking on error.
-    ///
-    /// This is a convenience method for use in build scripts. If errors occur during compilation
-    /// they will be printed then the function will panic.
-    ///
-    /// # Panics
-    ///
-    /// Panics on any compilation error so that the build script exits and prints output.
-    pub fn run_build<P: AsRef<path::Path>>(&self, file: P) {
-        if let Err(errors) = self.write(file) {
-            for error in &errors {
-                self.print_error(error);
-            }
-
-            panic!("errors compiling header file");
-        }
-    }
-
-    /// Print an error using the ParseSess stored in Cheddar.
-    pub fn print_error(&self, error: &Error) {
-        error.print(&self.session);
+    /// If there was an error during compilation or writing to file.
+    // TODO: expose this as a utility function of some sort
+    pub fn write(&mut self) -> Result<(), std::io::Error> {
+        let bindings = try!(self.compile());
+        write_binding(&self.output, &bindings)
     }
 }
 
+/// Recursively write bindings and their dependencies to the file system.
+fn write_binding(root: &path::Path, bindings: &[Binding]) -> Result<(), std::io::Error> {
+    for binding in bindings {
+        let out_dir = root.join(&binding.language);
+        try!(std::fs::create_dir_all(&out_dir));
+
+        for file in &binding.files {
+            let mut f = try!(std::fs::File::create(&out_dir.join(&file.path)));
+            try!(f.write_all(file.contents.as_bytes()));
+        }
+
+        let dependencies_root = out_dir.join("dependencies");
+        try!(write_binding(&dependencies_root, &binding.dependencies));
+    }
+
+    Ok(())
+}
+
 /// Extract the path to the root source file from a `Cargo.toml`.
-fn source_file_from_cargo() -> std::result::Result<String, Error> {
+fn source_file_from_cargo() -> std::result::Result<String, std::io::Error> {
     let cargo_toml = path::Path::new(
         &std::env::var_os("CARGO_MANIFEST_DIR")
             .unwrap_or(std::ffi::OsString::from(""))
@@ -627,22 +493,14 @@ fn source_file_from_cargo() -> std::result::Result<String, Error> {
     };
 
     let mut buf = String::new();
-    match cargo_toml.read_to_string(&mut buf) {
-        Ok(..) => {},
-        Err(..) => return Err(Error {
-            level: Level::Fatal,
-            span: None,
-            message: "could not read cargo manifest".into(),
-        }),
-    };
+    try!(cargo_toml.read_to_string(&mut buf));
 
     let table = match toml::Parser::new(&buf).parse() {
-        Some(value) => value,
-        None => return Err(Error {
-            level: Level::Fatal,
-            span: None,
-            message: "could not parse cargo manifest".into(),
-        }),
+        Some(t) => t,
+        None => return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "cargo manifest could not be parsed",
+        )),
     };
 
     // If not explicitly stated then defaults to `src/lib.rs`.
@@ -651,31 +509,4 @@ fn source_file_from_cargo() -> std::result::Result<String, Error> {
         .and_then(|s| s.as_str())
         .unwrap_or(default)
         .into())
-}
-
-/// Wrap a block of code with an extern declaration.
-fn wrap_extern(code: &str) -> String {
-    format!(r#"
-#ifdef __cplusplus
-extern "C" {{
-#endif
-
-{}
-
-#ifdef __cplusplus
-}}
-#endif
-"#, code)
-}
-
-/// Wrap a block of code with an include-guard.
-fn wrap_guard(code: &str, id: &str) -> String {
-    format!(r"
-#ifndef cheddar_generated_{0}_h
-#define cheddar_generated_{0}_h
-
-{1}
-
-#endif
-", id, code)
 }
