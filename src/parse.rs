@@ -305,7 +305,13 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
         let has_args = !fn_decl.inputs.is_empty();
 
         for arg in &fn_decl.inputs {
-            let arg_name = print::pprust::pat_to_string(&*arg.pat);
+            use syntax::ast::{PatIdent, BindingMode};
+            let arg_name = match arg.pat.node {
+                PatIdent(BindingMode::ByValue(_), ref ident, None) => {
+                    ident.node.name.to_string()
+                }
+                _ => panic!("hi")
+            };
             let arg_type = try_some!(types::rust_to_c(&*arg.ty, &arg_name));
             buf_without_return.push_str(&arg_type);
             buf_without_return.push_str(", ");
@@ -315,9 +321,11 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
             // Remove the trailing comma and space.
             buf_without_return.pop();
             buf_without_return.pop();
+        } else {
+            buf_without_return.push_str("void");
         }
 
-        buf_without_return.push_str(")");
+        buf_without_return.push(')');
 
         let output_type = &fn_decl.output;
         let full_declaration = match *output_type {
