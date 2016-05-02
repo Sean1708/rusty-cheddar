@@ -310,7 +310,13 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
                 PatIdent(BindingMode::ByValue(_), ref ident, None) => {
                     ident.node.name.to_string()
                 }
-                _ => panic!("hi")
+                _ => return Err(Error {
+                    level: Level::Error,
+                    span: None,
+                    message: format!("cheddar only supports by-value arguments:
+    incorrect argument `{}` in function definition `{}`",
+                        print::pprust::pat_to_string(&*arg.pat), name),
+                })
             };
             let arg_type = try_some!(types::rust_to_c(&*arg.ty, &arg_name));
             buf_without_return.push_str(&arg_type);
