@@ -1,5 +1,14 @@
 # [master]
 
+# [0.3.3] - 2016-05-03
+
+## Fixed
+
+- arbitrarily nested `const` pointers are handled correctly
+- function declarations can now contain patterns
+    - such as `fn foo(mut a: ...`
+- zero argument functions are now written out as `func(void)`
+
 # [0.3.2] - 2016-03-02
 
 ## Changed
@@ -49,7 +58,8 @@
     - old: `#![plugin(cheddar(path,to,file))]`
     - new: `#![plugin(cheddar(dir = "path/to", file = "file.h"))]`
 
-[master]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.2...HEAD
+[master]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Sean1708/rusty-cheddar/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Sean1708/rusty-cheddar/compare/v0.2.0...v0.3.0
