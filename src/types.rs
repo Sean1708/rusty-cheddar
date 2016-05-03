@@ -51,19 +51,12 @@ fn ptr_to_c(ty: &ast::MutTy) -> Result<Option<String>, Error> {
     let new_type = try_some!(anon_rust_to_c(&ty.ty));
     let const_spec = match ty.mutbl {
         // *const T
-        ast::Mutability::MutImmutable => {
-            // Avoid multiple `const` specifiers (you can't have `const const int**` in C).
-            if new_type.starts_with("const ") {
-                ""
-            } else {
-                "const "
-            }
-        },
+        ast::Mutability::MutImmutable => " const" ,
         // *mut T
         ast::Mutability::MutMutable => "",
     };
 
-    Ok(Some(format!("{}{}*", const_spec, new_type)))
+    Ok(Some(format!("{}{}*", new_type, const_spec)))
 }
 
 /// Turn a Rust function pointer into a C function pointer.
@@ -114,9 +107,11 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str) -> Re
         // Remove the trailing comma and space.
         buf_without_return.pop();
         buf_without_return.pop();
+    } else {
+      buf_without_return.push_str("void");
     }
 
-    buf_without_return.push_str(")");
+    buf_without_return.push(')');
 
     let output_type = &fn_decl.output;
     let full_declaration = match *output_type {
@@ -360,25 +355,25 @@ mod test {
         let parsed_type = super::anon_rust_to_c(&ty(source))
             .expect(&format!("error while parsing {:?} with no name", source))
             .expect(&format!("did not parse {:?} with no name", source));
-        assert_eq!(parsed_type, "const uint8_t*");
+        assert_eq!(parsed_type, "uint8_t const*");
 
         let source = "*const ()";
         let parsed_type = super::rust_to_c(&ty(source), name)
             .expect(&format!("error while parsing {:?} with name {:?}", source, name))
             .expect(&format!("did not parse {:?} with name {:?}", source, name));
-        assert_eq!(parsed_type, format!("const void* {}", name));
+        assert_eq!(parsed_type, format!("void const* {}", name));
 
         let source = "*const *const f64";
         let parsed_type = super::anon_rust_to_c(&ty(source))
             .expect(&format!("error while parsing {:?} with no name", source))
             .expect(&format!("did not parse {:?} with no name", source));
-        assert_eq!(parsed_type, "const double**");
+        assert_eq!(parsed_type, "double const* const*");
 
         let source = "*const *const i64";
         let parsed_type = super::rust_to_c(&ty(source), name)
             .expect(&format!("error while parsing {:?} with name {:?}", source, name))
             .expect(&format!("did not parse {:?} with name {:?}", source, name));
-        assert_eq!(parsed_type, format!("const int64_t** {}", name));
+        assert_eq!(parsed_type, format!("int64_t const* const* {}", name));
     }
 
     #[test]
@@ -418,13 +413,19 @@ mod test {
         let parsed_type = super::anon_rust_to_c(&ty(source))
             .expect(&format!("error while parsing {:?} with no name", source))
             .expect(&format!("did not parse {:?} with no name", source));
-        assert_eq!(parsed_type, "const bool***");
+        assert_eq!(parsed_type, "bool const** const*");
 
         let source = "*mut *mut *const libc::c_ulonglong";
         let parsed_type = super::rust_to_c(&ty(source), name)
             .expect(&format!("error while parsing {:?} with name {:?}", source, name))
             .expect(&format!("did not parse {:?} with name {:?}", source, name));
-        assert_eq!(parsed_type, format!("const unsigned long long*** {}", name));
+        assert_eq!(parsed_type, format!("unsigned long long const*** {}", name));
+
+        let source = "*const *mut *mut i8";
+        let parsed_type = super::rust_to_c(&ty(source), name)
+            .expect(&format!("error while parsing {:?} with name {:?}", source, name))
+            .expect(&format!("did not parse {:?} with name {:?}", source, name));
+        assert_eq!(parsed_type, format!("int8_t** const* {}", name));
     }
 
     #[test]

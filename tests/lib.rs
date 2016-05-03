@@ -233,11 +233,16 @@ cheddar_cmp_test! { opaque_structs,
 cheddar_cmp_test! { compilable_functions,
     "
     int64_t add_i64(int64_t lhs, int64_t rhs);
+    int get_errno(void);
     ",
     r#"
     #[no_mangle]
     pub extern fn add_i64(lhs: i64, rhs: i64) -> i64 {
         lhs + rhs
+    }
+    #[no_mangle]
+    pub extern fn get_errno() -> libc::int {
+      unsafe { *libc::__errno_location() }
     }
 
     // Shouldn't appear in the output header file.
@@ -262,11 +267,13 @@ cheddar_cmp_test! { compilable_functions,
 
 cheddar_cmp_test! { compilable_function_pointers,
     "
-    typedef const int32_t** (*TwoIntPtrFnPtr)(double* argument);
+    typedef int32_t* const* (*TwoIntPtrFnPtr)(double* argument);
 
     double cmp(double (*cmp_fn)(double lhs, double rhs), double lhs, double rhs);
 
     typedef bool (*Foo)(double, double);
+
+    typedef void (*NoOp)(void);
 
     void (*signal(int sig, void (*func)(int)))(int);
     ",
@@ -279,6 +286,8 @@ cheddar_cmp_test! { compilable_function_pointers,
     }
 
     pub type Foo = extern fn(f64, f64) -> bool;
+
+    pub type NoOp = extern fn();
 
     #[no_mangle]
     pub extern fn signal(sig: libc::c_int, func: extern fn(libc::c_int)) -> extern fn(libc::c_int) {
@@ -305,9 +314,9 @@ cheddar_cmp_test! { pure_rust_types,
     typedef uintptr_t UInt;
     typedef bool Bool;
     typedef double* FloatArray;
-    typedef const bool* LogicArray;
+    typedef bool const* LogicArray;
     typedef int32_t**** FourPointers;
-    typedef const float** TwoPointers;
+    typedef float const* const* TwoPointers;
     ",
     "
     pub type MyVoid = ();
