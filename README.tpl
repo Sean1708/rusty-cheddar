@@ -1,3 +1,6 @@
+**_Please be aware that version `v0.4.0` of rusty-cheddar will be based around the more general
+[rusty-binder] framework, though this is still work in progress._**
+
 # {{crate}}
 
 [![Build Status](https://travis-ci.org/Sean1708/rusty-cheddar.svg)](https://travis-ci.org/Sean1708/rusty-cheddar)
@@ -32,5 +35,6 @@ version of Python which is installed as `python` (usually Python 2). Furthermore
 that the tests are a massive pile of wanky hacks, you must be in the same directory as
 rusty-cheddar's `Cargo.toml` to successfully run them.
 
+[rusty-binder]: https://gitlab.com/rusty-binder/rusty-binder
 [these docs]: http://manishearth.github.io/rust-internals-docs/syntax/ast/index.html
 [CppHeaderParser]: https://bitbucket.org/senex/cppheaderparser
