@@ -21,6 +21,7 @@ name = "cheddar"
 doc = false
 
 [dependencies]
-syntex_syntax = "0.24.0"
+syntex_errors = "0.42.0"
+syntex_syntax = "0.42.0"
 toml = "0.1.25"
 clap = "1"

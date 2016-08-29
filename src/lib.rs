@@ -272,6 +272,7 @@
 //! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
 
+extern crate syntex_errors as errors;
 extern crate syntex_syntax as syntax;
 extern crate toml;
 
@@ -294,7 +295,7 @@ mod types;
 mod parse;
 
 
-pub use syntax::errors::Level;
+pub use errors::Level;
 
 /// Describes an error encountered by the compiler.
 ///
@@ -320,6 +321,7 @@ impl std::error::Error for Error {
             Level::Warning => "warning",
             Level::Note => "note",
             Level::Help => "help",
+            _ => unreachable!(),
         }
     }
 }
@@ -336,8 +338,9 @@ impl Error {
                 Level::Fatal => { sess.span_diagnostic.span_fatal(span, &self.message); },
                 Level::Error => { sess.span_diagnostic.span_err(span, &self.message); },
                 Level::Warning => { sess.span_diagnostic.span_warn(span, &self.message); },
-                Level::Note => { sess.span_diagnostic.span_note(span, &self.message); },
-                Level::Help => { sess.span_diagnostic.span_help(span, &self.message); },
+                Level::Note => { sess.span_diagnostic.span_note_without_error(span, &self.message); },
+                Level::Help => { sess.span_diagnostic.struct_dummy().span_help(span, &self.message); },
+                _ => unreachable!(),
             };
         } else {
             match self.level {
@@ -345,8 +348,9 @@ impl Error {
                 Level::Fatal => { sess.span_diagnostic.fatal(&self.message); },
                 Level::Error => { sess.span_diagnostic.err(&self.message); },
                 Level::Warning => { sess.span_diagnostic.warn(&self.message); },
-                Level::Note => { sess.span_diagnostic.note(&self.message); },
-                Level::Help => { sess.span_diagnostic.help(&self.message); },
+                Level::Note => { sess.span_diagnostic.note_without_error(&self.message); },
+                Level::Help => { sess.span_diagnostic.struct_dummy().help(&self.message); },
+                _ => unreachable!(),
             };
         }
     }
@@ -465,14 +469,17 @@ impl Cheddar {
     pub fn module(&mut self, module: &str) -> Result<&mut Cheddar, Vec<Error>> {
         // TODO: `parse_item_from_source_str` doesn't work. Why?
         let sess = syntax::parse::ParseSess::new();
-        let mut parser = ::syntax::parse::new_parser_from_source_str(
-            &sess,
-            vec![],
-            "".into(),
-            module.into(),
-        );
+        let result = {
+            let mut parser = ::syntax::parse::new_parser_from_source_str(
+                &sess,
+                vec![],
+                "".into(),
+                module.into(),
+            );
+            parser.parse_path(syntax::parse::parser::PathStyle::Mod)
+        };
 
-        if let Ok(path) = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed) {
+        if let Ok(path) = result {
             self.module = Some(path);
             Ok(self)
         } else {
@@ -511,7 +518,7 @@ impl Cheddar {
                 vec![],
                 sess,
             ),
-        };
+        }.unwrap();
 
         if let Some(ref module) = self.module {
             parse::parse_crate(&krate, module)

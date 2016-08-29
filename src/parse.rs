@@ -18,7 +18,7 @@ use Level;
 
 /// Check that an expected path has been `pub use`d.
 fn check_pub_use(item: &ast::Item, expected: &ast::Path) -> bool {
-    if let ast::Item_::ItemUse(ref path) = item.node {
+    if let ast::ItemKind::Use(ref path) = item.node {
         // API has to be public to be used.
         if let ast::Visibility::Public = item.vis {
             // Easiest way to ensure all of API has been brought into scope.
@@ -58,7 +58,7 @@ pub fn parse_crate(krate: &ast::Crate, path: &ast::Path) -> Result<String, Vec<E
     for module in &path.segments {
         let mut found = false;
         for item in &current_module.items {
-            if let ast::Item_::ItemMod(ref new_module) = item.node {
+            if let ast::ItemKind::Mod(ref new_module) = item.node {
                 if module.identifier == item.ident {
                     current_module = new_module;
                     found = true;
@@ -95,10 +95,10 @@ pub fn parse_mod(module: &ast::Mod) -> Result<String, Vec<Error>> {
             // TODO: Check for ItemStatic and ItemConst as well.
             //     - How would this work?
             //     - Is it even possible?
-            ast::Item_::ItemTy(..) => parse_ty(item),
-            ast::Item_::ItemEnum(..) => parse_enum(item),
-            ast::Item_::ItemStruct(..) => parse_struct(item),
-            ast::Item_::ItemFn(..) => parse_fn(item),
+            ast::ItemKind::Ty(..) => parse_ty(item),
+            ast::ItemKind::Enum(..) => parse_enum(item),
+            ast::ItemKind::Struct(..) => parse_struct(item),
+            ast::ItemKind::Fn(..) => parse_fn(item),
             _ => Ok(None),
         };
 
@@ -129,7 +129,7 @@ fn parse_ty(item: &ast::Item) -> Result<Option<String>, Error> {
 
     let name = item.ident.name.as_str();
     let new_type = match item.node {
-        ast::Item_::ItemTy(ref ty, ref generics) => {
+        ast::ItemKind::Ty(ref ty, ref generics) => {
             // Can not yet convert generics.
             if generics.is_parameterized() { return Ok(None); }
 
@@ -165,7 +165,7 @@ fn parse_enum(item: &ast::Item) -> Result<Option<String>, Error> {
 
     let name = item.ident.name.as_str();
     buffer.push_str(&format!("typedef enum {} {{\n", name));
-    if let ast::Item_::ItemEnum(ref definition, ref generics) = item.node {
+    if let ast::ItemKind::Enum(ref definition, ref generics) = item.node {
         if generics.is_parameterized() {
             return Err(Error {
                 level: Level::Error,
@@ -218,7 +218,7 @@ fn parse_struct(item: &ast::Item) -> Result<Option<String>, Error> {
     let name = item.ident.name.as_str();
     buffer.push_str(&format!("typedef struct {}", name));
 
-    if let ast::Item_::ItemStruct(ref variants, ref generics) = item.node {
+    if let ast::ItemKind::Struct(ref variants, ref generics) = item.node {
         if generics.is_parameterized() {
             return Err(Error {
                 level: Level::Error,
@@ -231,14 +231,14 @@ fn parse_struct(item: &ast::Item) -> Result<Option<String>, Error> {
             buffer.push_str(" {\n");
 
             for field in variants.fields() {
-                let (_, docs) = parse_attr(&field.node.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
+                let (_, docs) = parse_attr(&field.attrs, |_| true, |attr| retrieve_docstring(attr, "\t"));
                 buffer.push_str(&docs);
 
-                let name = match field.node.ident() {
+                let name = match field.ident {
                     Some(name) => name.name.as_str(),
                     None => unreachable!("a tuple struct snuck through"),
                 };
-                let ty = try_some!(types::rust_to_c(&*field.node.ty, &name));
+                let ty = try_some!(types::rust_to_c(&*field.ty, &name));
                 buffer.push_str(&format!("\t{};\n", ty));
             }
 
@@ -280,7 +280,7 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
     let name = item.ident.name.as_str();
     buffer.push_str(&docs);
 
-    if let ast::Item_::ItemFn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
+    if let ast::ItemKind::Fn(ref fn_decl, _, _, abi, ref generics, _) = item.node {
         use syntax::abi::Abi;
         match abi {
             // If it doesn't have a C ABI it can't be called from C.
@@ -305,9 +305,9 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
         let has_args = !fn_decl.inputs.is_empty();
 
         for arg in &fn_decl.inputs {
-            use syntax::ast::{PatIdent, BindingMode};
+            use syntax::ast::{PatKind, BindingMode};
             let arg_name = match arg.pat.node {
-                PatIdent(BindingMode::ByValue(_), ref ident, None) => {
+                PatKind::Ident(BindingMode::ByValue(_), ref ident, None) => {
                     ident.node.name.to_string()
                 }
                 _ => return Err(Error {
@@ -335,15 +335,15 @@ fn parse_fn(item: &ast::Item) -> Result<Option<String>, Error> {
 
         let output_type = &fn_decl.output;
         let full_declaration = match *output_type {
-            ast::FunctionRetTy::NoReturn(span) => {
+            ast::FunctionRetTy::Ty(ref ty) if ty.node == ast::TyKind::Never => {
                 return Err(Error {
                     level: Level::Error,
-                    span: Some(span),
+                    span: Some(ty.span),
                     message: "panics across a C boundary are naughty!".into(),
                 });
             },
-            ast::FunctionRetTy::DefaultReturn(..) => format!("void {}", buf_without_return),
-            ast::FunctionRetTy::Return(ref ty) => try_some!(types::rust_to_c(&*ty, &buf_without_return)),
+            ast::FunctionRetTy::Default(..) => format!("void {}", buf_without_return),
+            ast::FunctionRetTy::Ty(ref ty) => try_some!(types::rust_to_c(&*ty, &buf_without_return)),
         };
 
         buffer.push_str(&full_declaration);
@@ -384,10 +384,10 @@ fn parse_attr<C, R>(attrs: &[ast::Attribute], check: C, retrieve: R) -> (bool, S
 /// Check the attribute is #[repr(C)].
 fn check_repr_c(attr: &ast::Attribute) -> bool {
     match attr.node.value.node {
-        ast::MetaItem_::MetaList(ref name, ref word) if *name == "repr" => match word.first() {
+        ast::MetaItemKind::List(ref name, ref word) if *name == "repr" => match word.first() {
             Some(word) => match word.node {
                 // Return true only if attribute is #[repr(C)].
-                ast::MetaItem_::MetaWord(ref name) if *name == "C" => true,
+                ast::MetaItemKind::Word(ref name) if *name == "C" => true,
                 _ => false,
             },
             _ => false,
@@ -399,7 +399,7 @@ fn check_repr_c(attr: &ast::Attribute) -> bool {
 /// Check the attribute is #[no_mangle].
 fn check_no_mangle(attr: &ast::Attribute) -> bool {
     match attr.node.value.node {
-        ast::MetaItem_::MetaWord(ref name) if *name == "no_mangle" => true,
+        ast::MetaItemKind::Word(ref name) if *name == "no_mangle" => true,
         _ => false,
     }
 }
@@ -407,9 +407,9 @@ fn check_no_mangle(attr: &ast::Attribute) -> bool {
 /// If the attribute is  a docstring, indent it the required amount and return it.
 fn retrieve_docstring(attr: &ast::Attribute, prepend: &str) -> Option<String> {
     match attr.node.value.node {
-        ast::MetaItem_::MetaNameValue(ref name, ref val) if *name == "doc" => match val.node {
+        ast::MetaItemKind::NameValue(ref name, ref val) if *name == "doc" => match val.node {
             // Docstring attributes omit the trailing newline.
-            ast::Lit_::LitStr(ref docs, _) => Some(format!("{}{}\n", prepend, docs)),
+            ast::LitKind::Str(ref docs, _) => Some(format!("{}{}\n", prepend, docs)),
             _ => unreachable!("docs must be literal strings"),
         },
         _ => None,
