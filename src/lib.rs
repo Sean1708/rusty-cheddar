@@ -272,8 +272,16 @@
 //! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
 
+#![cfg_attr(not(feature = "with-syntex"), feature(rustc_private))]
+
+#[cfg(feature = "with-syntex")]
 extern crate syntex_errors as errors;
+#[cfg(not(feature = "with-syntex"))]
+extern crate rustc_errors as errors;
+#[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
+#[cfg(not(feature = "with-syntex"))]
+extern crate syntax;
 extern crate toml;
 
 use std::convert;
