@@ -121,7 +121,7 @@ pub enum Colours {
     Yellow,
 }
 
-// This would fail is it was #[repr(C)].
+// This would fail if it was #[repr(C)].
 pub enum Tastes<T> {
     Savoury(T),
     Sweet,
