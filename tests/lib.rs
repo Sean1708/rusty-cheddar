@@ -1,4 +1,5 @@
 extern crate cheddar;
+extern crate binder;
 
 use std::process::Command;
 
@@ -11,16 +12,18 @@ macro_rules! inner_cheddar_cmp_test {
 
             let actual = match $compile {
                 Ok(actual) => actual,
-                Err(errors) => {
-                    for error in errors {
-                        println!("{:?}", error);
-                    }
+                Err(error) => {
+                    println!("{:?}", error);
+                    
                     panic!("compilation errors");
                 },
             };
+            assert_eq!(actual.len(), 1);
+            assert_eq!(actual[0].files.len(), 1);
+            let actual = actual[0].files[0].contents.clone();
 
-            let cmp_script = std::env::current_dir()
-                .map(|p| p.join("tests/cmp_header.py"))
+            let cmp_script = std::env::var("CARGO_MANIFEST_DIR")
+                .map(|p| format!("{}/tests/cmp_header.py", p))
                 .expect("internal testing error: unable to find current directory");
 
             // Compare the headers.
@@ -78,18 +81,24 @@ macro_rules! inner_cheddar_cmp_test {
 /// #endif
 /// ```
 macro_rules! cheddar_cmp_test {
-    ($name:ident, custom $custom:expr, $header:expr, $rust:expr) => {
-        inner_cheddar_cmp_test! {
-            $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).insert_code($custom).compile_code(),
-            $header
-        }
-    };
+    // ($name:ident, custom $custom:expr, $header:expr, $rust:expr) => {
+    //     inner_cheddar_cmp_test! {
+    //         $name,
+    //         cheddar::Cheddar::new().unwrap().source_string($rust).insert_code($custom).compile_code(),
+    //         $header
+    //     }
+    // };
 
     ($name:ident, api $api:expr, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).module($api).unwrap().compile_code(),
+            binder::Binder::new()
+                .unwrap()
+                .register(cheddar::Cheddar::default())
+                .source_string($rust)
+                .module($api)
+                .unwrap()
+                .compile(),
             $header
         }
     };
@@ -97,7 +106,11 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, xfail, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name #[should_panic],
-            cheddar::Cheddar::new().unwrap().source_string($rust).compile_code(),
+            binder::Binder::new()
+                .unwrap()
+                .register(cheddar::Cheddar::default())
+                .source_string($rust)
+                .compile(),
             $header
         }
     };
@@ -105,7 +118,11 @@ macro_rules! cheddar_cmp_test {
     ($name:ident, $header:expr, $rust:expr) => {
         inner_cheddar_cmp_test! {
             $name,
-            cheddar::Cheddar::new().unwrap().source_string($rust).compile_code(),
+            binder::Binder::new()
+                .unwrap()
+                .register(cheddar::Cheddar::default())
+                .source_string($rust)
+                .compile(),
             $header
         }
     };
@@ -115,7 +132,23 @@ macro_rules! cheddar_cmp_test {
 
 cheddar_cmp_test! { compilable_typedefs,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef int64_t Int64;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     pub type Int64 = i64;
@@ -128,6 +161,16 @@ cheddar_cmp_test! { compilable_typedefs,
 
 cheddar_cmp_test! { compilable_enums,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef enum Colours {
         Red,
         Orange,
@@ -142,6 +185,12 @@ cheddar_cmp_test! { compilable_enums,
         Stupid = -8,
         Braindead,
     } TypesOfLabrador;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     #[repr(C)]
@@ -189,11 +238,27 @@ cheddar_cmp_test! { compilable_enums,
 
 cheddar_cmp_test! { compilable_structs,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef struct Student {
         int32_t id;
         int32_t roll;
         double score;
     } Student;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     #[repr(C)]
@@ -222,7 +287,23 @@ cheddar_cmp_test! { compilable_structs,
 
 cheddar_cmp_test! { opaque_structs,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef struct Foo Foo;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     #[repr(C)]
@@ -232,8 +313,24 @@ cheddar_cmp_test! { opaque_structs,
 
 cheddar_cmp_test! { compilable_functions,
     "
-    int64_t add_i64(int64_t lhs, int64_t rhs);
-    int get_errno(void);
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
+    extern int64_t add_i64(int64_t lhs, int64_t rhs);
+    extern int get_errno();
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     r#"
     #[no_mangle]
@@ -267,15 +364,31 @@ cheddar_cmp_test! { compilable_functions,
 
 cheddar_cmp_test! { compilable_function_pointers,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef int32_t* const* (*TwoIntPtrFnPtr)(double* argument);
 
-    double cmp(double (*cmp_fn)(double lhs, double rhs), double lhs, double rhs);
+    extern double cmp(double (*cmp_fn)(double lhs, double rhs), double lhs, double rhs);
 
     typedef bool (*Foo)(double, double);
 
     typedef void (*NoOp)(void);
 
-    void (*signal(int sig, void (*func)(int)))(int);
+    extern void (*signal(int sig, void (*func)(int)))(int);
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     r#"
     pub type TwoIntPtrFnPtr = extern fn(argument: *mut f64) -> *const *mut i32;
@@ -299,6 +412,16 @@ cheddar_cmp_test! { compilable_function_pointers,
 
 cheddar_cmp_test! { pure_rust_types,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef void MyVoid;
     typedef float Float32;
     typedef double Float64;
@@ -317,6 +440,12 @@ cheddar_cmp_test! { pure_rust_types,
     typedef bool const* LogicArray;
     typedef int32_t**** FourPointers;
     typedef float const* const* TwoPointers;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     pub type MyVoid = ();
@@ -342,6 +471,16 @@ cheddar_cmp_test! { pure_rust_types,
 
 cheddar_cmp_test! { libc_types,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef void CVoid;
     typedef float CFloat;
     typedef double CDouble;
@@ -357,11 +496,16 @@ cheddar_cmp_test! { libc_types,
     typedef long long CLongLong;
     typedef unsigned long long CULongLong;
     typedef FILE CFile;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
-    // This probably isn't the best way to test considering most people will use the crates.io version.
-    #![feature(libc)]
-    extern crate libc;
+    use libc;
+
     pub type CVoid = libc::c_void;
     pub type CFloat = libc::c_float;
     pub type CDouble = libc::c_double;
@@ -382,6 +526,16 @@ cheddar_cmp_test! { libc_types,
 
 cheddar_cmp_test! { std_os_raw_types,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef void CVoid;
     typedef char CChar;
     typedef double CDouble;
@@ -396,8 +550,15 @@ cheddar_cmp_test! { std_os_raw_types,
     typedef unsigned long CULong;
     typedef unsigned long long CULongLong;
     typedef unsigned short CUShort;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
+
     pub type CVoid = std::os::raw::c_void;
     pub type CChar = std::os::raw::c_char;
     pub type CDouble = std::os::raw::c_double;
@@ -415,10 +576,26 @@ cheddar_cmp_test! { std_os_raw_types,
     "
 }
 
-// Verify we don't accept module types without a full prefix.
-cheddar_cmp_test! { module_no_prefix, xfail,
+cheddar_cmp_test! { module_no_prefix,
     "
-    typedef CVoid void;
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
+    typedef void CVoid;
+    typedef FILE CFile ;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     extern crate libc;
@@ -432,7 +609,23 @@ cheddar_cmp_test! { module_no_prefix, xfail,
 
 cheddar_cmp_test! { module, api "api",
     "
+    #ifndef cheddar_generated_api_h
+    #define cheddar_generated_api_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef float Float;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     pub use api::*;
@@ -444,7 +637,23 @@ cheddar_cmp_test! { module, api "api",
 
 cheddar_cmp_test! { inside_module, api "c::api",
     "
+    #ifndef cheddar_generated_c_api_h
+    #define cheddar_generated_c_api_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef float Float;
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     "
     pub use c::api::*;
@@ -456,21 +665,31 @@ cheddar_cmp_test! { inside_module, api "c::api",
     "
 }
 
-cheddar_cmp_test! { custom,
-    custom "
-    typedef F64 MyF64;
-    ",
-    "
-    typedef double F64;
-    typedef F64 MyF64;
-    ",
-    "
-    pub type F64 = f64;
-    "
-}
+// cheddar_cmp_test! { custom,
+//     custom "
+//     typedef F64 MyF64;
+//     ",
+//     "
+//     typedef double F64;
+//     typedef F64 MyF64;
+//     ",
+//     "
+//     pub type F64 = f64;
+//     "
+// }
 
 cheddar_cmp_test! { general_interplay,
     "
+    #ifndef cheddar_generated_capi_h
+    #define cheddar_generated_capi_h
+
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    #ifdef __cplusplus
+    extern \"C\" {
+    #endif
+
     typedef float Kg;
     typedef float Lbs;
     typedef float M;
@@ -489,8 +708,14 @@ cheddar_cmp_test! { general_interplay,
         M height;
     } Person;
 
-    Person Person_create(int8_t age, Eye eyes, float weight_lbs, float height_ins);
-    void Person_describe(Person person);
+    extern Person Person_create(int8_t age, Eye eyes, float weight_lbs, float height_ins);
+    extern void Person_describe(Person person);
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+    #endif
     ",
     r#"
     pub type Kg = f32;

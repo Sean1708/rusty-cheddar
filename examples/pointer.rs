@@ -1,5 +1,6 @@
 //! Demonstrates a C API based around passing pointers.
 extern crate cheddar;
+extern crate binder;
 
 const RUST: &'static str = r#"
 // This can't be exposed to C since it is generic _and_ contains a standard library struct.
@@ -48,11 +49,12 @@ pub extern fn datalib_data_f64_append(data: *mut datalib_data_f64, x: f64, y: f6
 "#;
 
 fn main() {
-    let header = cheddar::Cheddar::new().expect("failed to read cargo manifest")
+    let header = binder::Binder::new().unwrap()
+        .register(cheddar::Cheddar::default())
         .source_string(RUST)
-        .compile("SOME_HEADER_NAME")
+        .compile()
         .expect("header could not be compiled");
 
     println!("RUST SOURCE FILE:\n{}\n", RUST);
-    println!("GENERATED HEADER:\n\n{}", header);
+    println!("GENERATED HEADER:\n\n{}", header[0].files[0].contents);
 }
