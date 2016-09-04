@@ -1,5 +1,7 @@
 **_Please be aware that version `v0.4.0` of rusty-cheddar will be based around the more general
-[rusty-binder] framework, though this is still work in progress._**
+[rusty-binder] framework, though this is still work in progress. Change to this version on GitHub
+should be bug fixes and minor updates only, any major changes should be made to the [version on
+GitLab](https://gitlab.com/rusty-binder/rusty-cheddar)._**
 
 # rusty-cheddar
 
