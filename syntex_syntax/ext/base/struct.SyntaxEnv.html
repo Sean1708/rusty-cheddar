@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `SyntaxEnv` struct in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, SyntaxEnv">
+
+    <title>syntex_syntax::ext::base::SyntaxEnv - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>ext</a>::<wbr><a href='index.html'>base</a></p><script>window.sidebarCurrent = {name: 'SyntaxEnv', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>ext</a>::<wbr><a href='index.html'>base</a>::<wbr><a class='struct' href=''>SyntaxEnv</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-30326' class='srclink' href='../../../src/syntex_syntax/ext/base.rs.html#841-846' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct SyntaxEnv {
+    pub names: <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;<a class='struct' href='../../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>&gt;,
+    // some fields omitted
+}</pre><div class='docblock'><p>In order to have some notion of scoping for macros,
+we want to implement the notion of a transformation
+environment.</p>
+
+<p>This environment maps Names to SyntaxExtensions.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.names' class='structfield'><code>names: <a class='struct' href='https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html' title='std::collections::hash::set::HashSet'>HashSet</a>&lt;<a class='struct' href='../../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>&gt;</code>
+                           </span><span class='stab '></span><div class='docblock'><p>All bang-style macro/extension names
+encountered so far; to be used for diagnostics in resolve</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../../syntex_syntax/ext/base/struct.SyntaxEnv.html' title='syntex_syntax::ext::base::SyntaxEnv'>SyntaxEnv</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-30332' class='srclink' href='../../../src/syntex_syntax/ext/base.rs.html#863-912' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.push_frame' class='method'><code>fn <a href='#method.push_frame' class='fnname'>push_frame</a>(&amp;mut self)</code></h4>
+<h4 id='method.pop_frame' class='method'><code>fn <a href='#method.pop_frame' class='fnname'>pop_frame</a>(&amp;mut self)</code></h4>
+<h4 id='method.find' class='method'><code>fn <a href='#method.find' class='fnname'>find</a>(&amp;self, k: <a class='struct' href='../../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='enum' href='../../../syntex_syntax/ext/base/enum.SyntaxExtension.html' title='syntex_syntax::ext::base::SyntaxExtension'>SyntaxExtension</a>&gt;&gt;</code></h4>
+<h4 id='method.insert' class='method'><code>fn <a href='#method.insert' class='fnname'>insert</a>(&amp;mut self, k: <a class='struct' href='../../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>, v: <a class='enum' href='../../../syntex_syntax/ext/base/enum.SyntaxExtension.html' title='syntex_syntax::ext::base::SyntaxExtension'>SyntaxExtension</a>)</code></h4>
+<h4 id='method.info' class='method'><code>fn <a href='#method.info' class='fnname'>info</a>(&amp;mut self) -&gt; &amp;mut <a class='struct' href='../../../syntex_syntax/ext/base/struct.BlockInfo.html' title='syntex_syntax::ext::base::BlockInfo'>BlockInfo</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

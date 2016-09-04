@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `cheddar` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, cheddar">
+
+    <title>cheddar - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'cheddar', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>cheddar</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/cheddar/src/lib.rs.html#1-704' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>rusty-cheddar is a library for converting Rust source files into C header files.</p>
+
+<p><strong>A note on versioning:</strong> While rusty-cheddar is still in a significant flux (i.e.
+pre-<code>v1.0.0</code>) it will likely go through numerous breaking changes. However, until <code>v1.0.0</code>, any
+time a breaking change is made the minor version will be bumped and any time a new feature is
+added the path version will be bumped.</p>
+
+<p>rusty-cheddar targets C99 or later (for sane single line comments and use of <code>stdint.h</code> and
+<code>stdbool.h</code>), if you really really really really really have to use an older standard then please
+open an issue at the <a href="https://github.com/Sean1708/rusty-cheddar">repo</a> and I will begrudgingly figure out how to implement support for it
+(after arguing with you lots and lots).</p>
+
+<p>The most useful way to use rusty-cheddar is in a build script. To do this add the following
+<code>build-dependencies</code> section to your <code>Cargo.toml</code> (to use it as a normal library simply replace
+<code>build-dependencies</code> with <code>dependencies</code>):</p>
+
+<pre><code class="language-toml"># Cargo.toml
+
+[build-dependencies]
+rusty-cheddar = &quot;0.3.0&quot;
+</code></pre>
+
+<p>Then create the following <code>build.rs</code>:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='comment'>// build.rs</span>
+
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>cheddar</span>;
+
+<span class='kw'>fn</span> <span class='ident'>main</span>() {
+    <span class='ident'>cheddar</span>::<span class='ident'>Cheddar</span>::<span class='ident'>new</span>().<span class='ident'>expect</span>(<span class='string'>&quot;could not read manifest&quot;</span>)
+        .<span class='ident'>run_build</span>(<span class='string'>&quot;include/my_header.h&quot;</span>);
+}</pre>
+
+<p>This should work as is providing you&#39;ve set up your project correctly. <strong>Don&#39;t forget to add a
+<code>build = ...</code> to your <code>[package]</code> section, see <a href="http://doc.crates.io/build-script.html">the cargo docs</a> for more info.</strong></p>
+
+<p>rusty-cheddar will then create a <code>my_header.h</code> file in <code>include/</code>. Note that rusty-cheddar
+emits very few warnings, it is up to the programmer to write a library which can be correctly
+called from C.</p>
+
+<h3 id='api-in-a-module' class='section-header'><a href='#api-in-a-module'>API In a Module</a></h3>
+<p>You can also place your API in a module to help keep your source code neat. To do this you must
+supply the name of the module to Cheddar, then ensure that the items are available in the
+top-level scope:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='comment'>// build.rs</span>
+
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>cheddar</span>;
+
+<span class='kw'>fn</span> <span class='ident'>main</span>() {
+    <span class='ident'>cheddar</span>::<span class='ident'>Cheddar</span>::<span class='ident'>new</span>().<span class='ident'>expect</span>(<span class='string'>&quot;could not read manifest&quot;</span>)
+        .<span class='ident'>module</span>(<span class='string'>&quot;c_api&quot;</span>).<span class='ident'>expect</span>(<span class='string'>&quot;malformed module path&quot;</span>)
+        .<span class='ident'>run_build</span>(<span class='string'>&quot;target/include/rusty.h&quot;</span>);
+}</pre>
+
+<pre class='rust rust-example-rendered'>
+<span class='comment'>// src/lib.rs</span>
+
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>c_api</span>::<span class='op'>*</span>;
+
+<span class='kw'>mod</span> <span class='ident'>c_api</span> {
+    <span class='comment'>// api goes here ...</span>
+}</pre>
+
+<p>There is also the <code>.compile()</code> and <code>.compile_code()</code> methods for finer control.</p>
+
+<h1 id='conversions' class='section-header'><a href='#conversions'>Conversions</a></h1>
+<p>In the examples below, boilerplate has been omitted from the header.</p>
+
+<h2 id='typedefs' class='section-header'><a href='#typedefs'>Typedefs</a></h2>
+<p>rusty-cheddar converts <code>pub type A = B</code> into <code>typedef B A;</code>. Types containing generics are ignored.</p>
+
+<p>Rust:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>type</span> <span class='ident'>UInt32</span> <span class='op'>=</span> <span class='ident'>u32</span>;
+<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>UInt64</span> <span class='op'>=</span> <span class='ident'>u64</span>;
+<span class='kw'>pub</span> <span class='kw'>type</span> <span class='ident'>MyOption</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> <span class='op'>=</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span></pre>
+
+<p>Header:</p>
+
+<pre><code class="language-C">// Some boilerplate omitted.
+typedef uint64_t UInt64;
+// Some more boilerplate omitted.
+</code></pre>
+
+<h2 id='enums' class='section-header'><a href='#enums'>Enums</a></h2>
+<p>rusty-cheddar will convert public enums which are marked <code>#[repr(C)]</code>. If the enum is generic or
+contains tuple or struct variants then <code>cheddar</code> will fail. rusty-cheddar should correctly handle
+explicit discriminants.</p>
+
+<p>Rust:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Colours</span> {
+    <span class='ident'>Red</span> <span class='op'>=</span> <span class='op'>-</span><span class='number'>6</span>,
+    <span class='ident'>Blue</span>,
+    <span class='ident'>Green</span> <span class='op'>=</span> <span class='number'>7</span>,
+    <span class='ident'>Yellow</span>,
+}
+
+<span class='comment'>// This would fail is it was #[repr(C)].</span>
+<span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>Tastes</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='ident'>Savoury</span>(<span class='ident'>T</span>),
+    <span class='ident'>Sweet</span>,
+}
+
+<span class='comment'>// This would fail if it was public.</span>
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>enum</span> <span class='ident'>Units</span> {
+    <span class='ident'>Kg</span>(<span class='ident'>f64</span>),
+    <span class='ident'>M</span>(<span class='ident'>f64</span>),
+    <span class='ident'>S</span>(<span class='ident'>f64</span>),
+    <span class='ident'>A</span>(<span class='ident'>f64</span>),
+    <span class='ident'>K</span>(<span class='ident'>f64</span>),
+    <span class='ident'>Mol</span>(<span class='ident'>f64</span>),
+    <span class='ident'>Cd</span>(<span class='ident'>f64</span>),
+}</pre>
+
+<p>Header:</p>
+
+<pre><code class="language-C">// Some boilerplate omitted.
+typedef enum Colours {
+        Red = -6,
+        Blue,
+        Green = 7,
+        Yellow,
+} Colours;
+// Some more boilerplate omitted.
+</code></pre>
+
+<h2 id='structs' class='section-header'><a href='#structs'>Structs</a></h2>
+<p>Structs are handled very similarly to enums, they must be public, marked <code>#[repr(C)]</code>, and they must not
+contain generics (this currently only checked at the struct-level, generic fields are not checked).</p>
+
+<p>Rust:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Person</span> {
+    <span class='ident'>age</span>: <span class='ident'>i32</span>,
+    <span class='ident'>height</span>: <span class='ident'>f64</span>,
+    <span class='ident'>weight</span>: <span class='ident'>f64</span>,
+}</pre>
+
+<p>Header:</p>
+
+<pre><code class="language-C">// Some boilerplate omitted.
+typedef struct Person {
+        int32_t age;
+        double height;
+        double weight;
+} Person;
+// Some more boilerplate omitted.
+</code></pre>
+
+<h3 id='opaque-structs' class='section-header'><a href='#opaque-structs'>Opaque Structs</a></h3>
+<p>One common C idiom is to hide the implementation of a struct using an opaque struct, which can
+only be used behind a pointer. This is especially useful in Rust-C interfaces as it allows you
+to use <em>any arbitrary Rust struct</em> in C.</p>
+
+<p>To define an opaque struct you must define a public newtype which is marked as <code>#[repr(C)]</code>.</p>
+
+<p>Rust:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>struct</span> <span class='ident'>Foo</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='ident'>bar</span>: <span class='ident'>i32</span>,
+    <span class='ident'>baz</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>,
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>MyCrate_Foo</span>(<span class='ident'>Foo</span><span class='op'>&lt;</span><span class='ident'>PathBuf</span><span class='op'>&gt;</span>);</pre>
+
+<p>Header:</p>
+
+<pre><code class="language-C">// Some boilerplate omitted.
+typedef struct MyCrate_Foo MyCrate_Foo;
+// Some boilerplate omitted.
+</code></pre>
+
+<p>Note that the newtype <em>must not</em> be generic but the type that it wraps can be arbitrary.</p>
+
+<h2 id='functions' class='section-header'><a href='#functions'>Functions</a></h2>
+<p>For rusty-cheddar to pick up on a function declaration it must be public, marked <code>#[no_mangle]</code> and
+have one of the following ABIs:</p>
+
+<ul>
+<li>C</li>
+<li>Cdecl</li>
+<li>Stdcall</li>
+<li>Fastcall</li>
+<li>System</li>
+</ul>
+
+<p>I&#39;m not totally up to speed on calling conventions so if you believe one of these has been including
+in error, or if one has been omitted, then please open an issue at the <a href="https://github.com/Sean1708/rusty-cheddar">repo</a>.</p>
+
+<p>rusty-cheddar will fail on functions which are marked as diverging (<code>-&gt; !</code>).</p>
+
+<p>Rust:</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ops</span>::<span class='ident'>Add</span>;
+
+<span class='attribute'>#[<span class='ident'>no_mangle</span>]</span>
+<span class='kw'>pub</span> <span class='kw'>extern</span> <span class='kw'>fn</span> <span class='ident'>hello</span>() {
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Hello!&quot;</span>);
+}
+
+<span class='kw'>fn</span> <span class='ident'>add</span><span class='op'>&lt;</span><span class='ident'>O</span>, <span class='ident'>R</span>, <span class='ident'>L</span>: <span class='ident'>Add</span><span class='op'>&lt;</span><span class='ident'>R</span>, <span class='ident'>Output</span><span class='op'>=</span><span class='ident'>O</span><span class='op'>&gt;&gt;</span>(<span class='ident'>l</span>: <span class='ident'>L</span>, <span class='ident'>r</span>: <span class='ident'>R</span>) <span class='op'>-&gt;</span> <span class='ident'>O</span> {
+    <span class='ident'>l</span> <span class='op'>+</span> <span class='ident'>r</span>
+}
+
+<span class='attribute'>#[<span class='ident'>no_mangle</span>]</span>
+<span class='attribute'>#[<span class='ident'>allow</span>(<span class='ident'>non_snake_case</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>extern</span> <span class='kw'>fn</span> <span class='ident'>MyAdd_add_u8</span>(<span class='ident'>l</span>: <span class='ident'>u8</span>, <span class='ident'>r</span>: <span class='ident'>u8</span>) <span class='op'>-&gt;</span> <span class='ident'>u8</span> {
+    <span class='ident'>add</span>(<span class='ident'>l</span>, <span class='ident'>r</span>)
+}
+
+<span class='attribute'>#[<span class='ident'>no_mangle</span>]</span>
+<span class='attribute'>#[<span class='ident'>allow</span>(<span class='ident'>non_snake_case</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>extern</span> <span class='kw'>fn</span> <span class='ident'>MyAdd_add_u16</span>(<span class='ident'>l</span>: <span class='ident'>u16</span>, <span class='ident'>r</span>: <span class='ident'>u16</span>) <span class='op'>-&gt;</span> <span class='ident'>u16</span> {
+    <span class='ident'>add</span>(<span class='ident'>l</span>, <span class='ident'>r</span>)
+}</pre>
+
+<p>Header:</p>
+
+<pre><code class="language-C">// Some boilerplate omitted.
+void hello();
+
+uint8_t MyAdd_add_u8(uint8_t l, uint8_t r);
+
+uint16_t MyAdd_add_u16(uint16_t l, uint16_t r);
+// Some more boilerplate omitted.
+</code></pre>
+
+<h2 id='paths' class='section-header'><a href='#paths'>Paths</a></h2>
+<p>You must not put types defined in other modules in an exported type signature without hiding it
+behind an opaque struct. This is because the C compiler must know the layout of the type and
+rusty-cheddar can not yet search other modules.</p>
+
+<p>The very important exception to this rule are the C ABI types defined in
+the <code>libc</code> crate and <code>std::os::raw</code>. Types from these two modules <em>must</em>
+be fully qualified (e.g. <code>libc::c_void</code> or <code>std::os::raw::c_longlong) so that they can be converted properly. Importing them with a</code>use`
+statement will not work.</p>
+</div><h2 id='structs-1' class='section-header'><a href="#structs-1">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Cheddar.html'
+                                  title='cheddar::Cheddar'>Cheddar</a></td>
+                           <td class='docblock short'>
+                                <p>Stores configuration for the Cheddar compiler.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Error.html'
+                                  title='cheddar::Error'>Error</a></td>
+                           <td class='docblock short'>
+                                <p>Describes an error encountered by the compiler.</p>
+                           </td>
+                       </tr></table><h2 id='enums-1' class='section-header'><a href="#enums-1">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Level.html'
+                                  title='cheddar::Level'>Level</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "cheddar";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

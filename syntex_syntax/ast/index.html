@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ast` mod in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ast">
+
+    <title>syntex_syntax::ast - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a></p><script>window.sidebarCurrent = {name: 'ast', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>syntex_syntax</a>::<wbr><a class='mod' href=''>ast</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-1942' class='srclink' href='../../src/syntex_syntax/ast.rs.html#13-2130' title='goto source code'>[src]</a></span></h1>
+<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.BinOp_.html' title='syntex_syntax::ast::BinOp_'>BinOp_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.BlockCheckMode.html' title='syntex_syntax::ast::BlockCheckMode'>BlockCheckMode</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.CaptureClause.html' title='syntex_syntax::ast::CaptureClause'>CaptureClause</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Decl_.html' title='syntex_syntax::ast::Decl_'>Decl_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.ExplicitSelf_.html' title='syntex_syntax::ast::ExplicitSelf_'>ExplicitSelf_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Expr_.html' title='syntex_syntax::ast::Expr_'>Expr_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.FloatTy.html' title='syntex_syntax::ast::FloatTy'>FloatTy</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.FunctionRetTy.html' title='syntex_syntax::ast::FunctionRetTy'>FunctionRetTy</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.ForeignItem_.html' title='syntex_syntax::ast::ForeignItem_'>ForeignItem_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.IntTy.html' title='syntex_syntax::ast::IntTy'>IntTy</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.KleeneOp.html' title='syntex_syntax::ast::KleeneOp'>KleeneOp</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Lit_.html' title='syntex_syntax::ast::Lit_'>Lit_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.LitIntType.html' title='syntex_syntax::ast::LitIntType'>LitIntType</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.MacStmtStyle.html' title='syntex_syntax::ast::MacStmtStyle'>MacStmtStyle</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.MetaItem_.html' title='syntex_syntax::ast::MetaItem_'>MetaItem_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Mutability.html' title='syntex_syntax::ast::Mutability'>Mutability</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.PathListItem_.html' title='syntex_syntax::ast::PathListItem_'>PathListItem_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.PrimTy.html' title='syntex_syntax::ast::PrimTy'>PrimTy</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Sign.html' title='syntex_syntax::ast::Sign'>Sign</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Stmt_.html' title='syntex_syntax::ast::Stmt_'>Stmt_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.StrStyle.html' title='syntex_syntax::ast::StrStyle'>StrStyle</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.StructFieldKind.html' title='syntex_syntax::ast::StructFieldKind'>StructFieldKind</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.TraitItem_.html' title='syntex_syntax::ast::TraitItem_'>TraitItem_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Ty_.html' title='syntex_syntax::ast::Ty_'>Ty_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.TyParamBound.html' title='syntex_syntax::ast::TyParamBound'>TyParamBound</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.UintTy.html' title='syntex_syntax::ast::UintTy'>UintTy</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.UnOp.html' title='syntex_syntax::ast::UnOp'>UnOp</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.UnsafeSource.html' title='syntex_syntax::ast::UnsafeSource'>UnsafeSource</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.ViewPath_.html' title='syntex_syntax::ast::ViewPath_'>ViewPath_</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.Visibility.html' title='syntex_syntax::ast::Visibility'>Visibility</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/ast/enum.PathParameters.html' title='syntex_syntax::ast::PathParameters'>PathParameters</a>::*;</code></td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AngleBracketedParameterData.html'
+                                  title='syntex_syntax::ast::AngleBracketedParameterData'>AngleBracketedParameterData</a></td>
+                           <td class='docblock short'>
+                                <p>A path like <code>Foo&lt;&#39;a, T&gt;</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Arg.html'
+                                  title='syntex_syntax::ast::Arg'>Arg</a></td>
+                           <td class='docblock short'>
+                                <p>represents an argument in a function header</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Arm.html'
+                                  title='syntex_syntax::ast::Arm'>Arm</a></td>
+                           <td class='docblock short'>
+                                <p>represents one arm of a &#39;match&#39;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.AttrId.html'
+                                  title='syntex_syntax::ast::AttrId'>AttrId</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Attribute_.html'
+                                  title='syntex_syntax::ast::Attribute_'>Attribute_</a></td>
+                           <td class='docblock short'>
+                                <p>Doc-comments are promoted to attributes that have is_sugared_doc = true</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BareFnTy.html'
+                                  title='syntex_syntax::ast::BareFnTy'>BareFnTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Block.html'
+                                  title='syntex_syntax::ast::Block'>Block</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Crate.html'
+                                  title='syntex_syntax::ast::Crate'>Crate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Delimited.html'
+                                  title='syntex_syntax::ast::Delimited'>Delimited</a></td>
+                           <td class='docblock short'>
+                                <p>A delimited sequence of token trees</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.EnumDef.html'
+                                  title='syntex_syntax::ast::EnumDef'>EnumDef</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Expr.html'
+                                  title='syntex_syntax::ast::Expr'>Expr</a></td>
+                           <td class='docblock short'>
+                                <p>An expression</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Field.html'
+                                  title='syntex_syntax::ast::Field'>Field</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FieldPat.html'
+                                  title='syntex_syntax::ast::FieldPat'>FieldPat</a></td>
+                           <td class='docblock short'>
+                                <p>A single field in a struct pattern</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FnDecl.html'
+                                  title='syntex_syntax::ast::FnDecl'>FnDecl</a></td>
+                           <td class='docblock short'>
+                                <p>Represents the header (not the body) of a function declaration</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ForeignItem.html'
+                                  title='syntex_syntax::ast::ForeignItem'>ForeignItem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ForeignMod.html'
+                                  title='syntex_syntax::ast::ForeignMod'>ForeignMod</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Generics.html'
+                                  title='syntex_syntax::ast::Generics'>Generics</a></td>
+                           <td class='docblock short'>
+                                <p>Represents lifetimes and type parameters attached to a declaration
+of a function, enum, trait, etc.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Ident.html'
+                                  title='syntex_syntax::ast::Ident'>Ident</a></td>
+                           <td class='docblock short'>
+                                <p>An identifier contains a Name (index into the interner
+table) and a SyntaxContext to track renaming and
+macro expansion per Flatt et al., &quot;Macros That Work Together&quot;</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ImplItem.html'
+                                  title='syntex_syntax::ast::ImplItem'>ImplItem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.InlineAsm.html'
+                                  title='syntex_syntax::ast::InlineAsm'>InlineAsm</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.InlineAsmOutput.html'
+                                  title='syntex_syntax::ast::InlineAsmOutput'>InlineAsmOutput</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Item.html'
+                                  title='syntex_syntax::ast::Item'>Item</a></td>
+                           <td class='docblock short'>
+                                <p>An item</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Lifetime.html'
+                                  title='syntex_syntax::ast::Lifetime'>Lifetime</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LifetimeDef.html'
+                                  title='syntex_syntax::ast::LifetimeDef'>LifetimeDef</a></td>
+                           <td class='docblock short'>
+                                <p>A lifetime definition, eg <code>&#39;a: &#39;b+&#39;c+&#39;d</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Local.html'
+                                  title='syntex_syntax::ast::Local'>Local</a></td>
+                           <td class='docblock short'>
+                                <p>Local represents a <code>let</code> statement, e.g., <code>let &lt;pat&gt;:&lt;ty&gt; = &lt;expr&gt;;</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Mac_.html'
+                                  title='syntex_syntax::ast::Mac_'>Mac_</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a macro invocation. The Path indicates which macro
+is being invoked, and the vector of token-trees contains the source
+of the macro invocation.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.MacroDef.html'
+                                  title='syntex_syntax::ast::MacroDef'>MacroDef</a></td>
+                           <td class='docblock short'>
+                                <p>A macro definition, in this crate or imported from another.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.MethodSig.html'
+                                  title='syntex_syntax::ast::MethodSig'>MethodSig</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a method&#39;s signature in a trait declaration,
+or in an implementation.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Mod.html'
+                                  title='syntex_syntax::ast::Mod'>Mod</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.MutTy.html'
+                                  title='syntex_syntax::ast::MutTy'>MutTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Name.html'
+                                  title='syntex_syntax::ast::Name'>Name</a></td>
+                           <td class='docblock short'>
+                                <p>A name is a part of an identifier, representing a string or gensym. It&#39;s
+the result of interning.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ParenthesizedParameterData.html'
+                                  title='syntex_syntax::ast::ParenthesizedParameterData'>ParenthesizedParameterData</a></td>
+                           <td class='docblock short'>
+                                <p>A path like <code>Foo(A,B) -&gt; C</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Pat.html'
+                                  title='syntex_syntax::ast::Pat'>Pat</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Path.html'
+                                  title='syntex_syntax::ast::Path'>Path</a></td>
+                           <td class='docblock short'>
+                                <p>A &quot;Path&quot; is essentially Rust&#39;s notion of a name; for instance:
+std::cmp::PartialEq  .  It&#39;s represented as a sequence of identifiers,
+along with a bunch of supporting information.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PathSegment.html'
+                                  title='syntex_syntax::ast::PathSegment'>PathSegment</a></td>
+                           <td class='docblock short'>
+                                <p>A segment of a path: an identifier, an optional lifetime, and a set of
+types.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PolyTraitRef.html'
+                                  title='syntex_syntax::ast::PolyTraitRef'>PolyTraitRef</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.QSelf.html'
+                                  title='syntex_syntax::ast::QSelf'>QSelf</a></td>
+                           <td class='docblock short'>
+                                <p>The explicit Self type in a &quot;qualified path&quot;. The actual
+path, including the trait and the associated item, is stored
+separately. <code>position</code> represents the index of the associated
+item qualified with this Self type.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.SequenceRepetition.html'
+                                  title='syntex_syntax::ast::SequenceRepetition'>SequenceRepetition</a></td>
+                           <td class='docblock short'>
+                                <p>A sequence of token treesee</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.StructField_.html'
+                                  title='syntex_syntax::ast::StructField_'>StructField_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.SyntaxContext.html'
+                                  title='syntex_syntax::ast::SyntaxContext'>SyntaxContext</a></td>
+                           <td class='docblock short'>
+                                <p>A SyntaxContext represents a chain of macro-expandings
+and renamings. Each macro expansion corresponds to
+a fresh u32. This u32 is a reference to a table stored</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TraitItem.html'
+                                  title='syntex_syntax::ast::TraitItem'>TraitItem</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a method declaration in a trait declaration, possibly including
+a default implementation A trait method is either required (meaning it
+doesn&#39;t have an implementation, just a signature) or provided (meaning it
+has a default implementation).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TraitRef.html'
+                                  title='syntex_syntax::ast::TraitRef'>TraitRef</a></td>
+                           <td class='docblock short'>
+                                <p>TraitRef&#39;s appear in impls.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Ty.html'
+                                  title='syntex_syntax::ast::Ty'>Ty</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TyParam.html'
+                                  title='syntex_syntax::ast::TyParam'>TyParam</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.TypeBinding.html'
+                                  title='syntex_syntax::ast::TypeBinding'>TypeBinding</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Variant_.html'
+                                  title='syntex_syntax::ast::Variant_'>Variant_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.WhereBoundPredicate.html'
+                                  title='syntex_syntax::ast::WhereBoundPredicate'>WhereBoundPredicate</a></td>
+                           <td class='docblock short'>
+                                <p>A type bound, eg <code>for&lt;&#39;c&gt; Foo: Send+Clone+&#39;c</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.WhereClause.html'
+                                  title='syntex_syntax::ast::WhereClause'>WhereClause</a></td>
+                           <td class='docblock short'>
+                                <p>A <code>where</code> clause in a definition</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.WhereEqPredicate.html'
+                                  title='syntex_syntax::ast::WhereEqPredicate'>WhereEqPredicate</a></td>
+                           <td class='docblock short'>
+                                <p>An equality predicate (unsupported), e.g. <code>T=int</code></p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.WhereRegionPredicate.html'
+                                  title='syntex_syntax::ast::WhereRegionPredicate'>WhereRegionPredicate</a></td>
+                           <td class='docblock short'>
+                                <p>A lifetime predicate, e.g. <code>&#39;a: &#39;b+&#39;c</code></p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.AsmDialect.html'
+                                  title='syntex_syntax::ast::AsmDialect'>AsmDialect</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.AttrStyle.html'
+                                  title='syntex_syntax::ast::AttrStyle'>AttrStyle</a></td>
+                           <td class='docblock short'>
+                                <p>Distinguishes between Attributes that decorate items and Attributes that
+are contained as statements within items. These two cases need to be
+distinguished for pretty-printing.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.BinOp_.html'
+                                  title='syntex_syntax::ast::BinOp_'>BinOp_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.BindingMode.html'
+                                  title='syntex_syntax::ast::BindingMode'>BindingMode</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.BlockCheckMode.html'
+                                  title='syntex_syntax::ast::BlockCheckMode'>BlockCheckMode</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.CaptureClause.html'
+                                  title='syntex_syntax::ast::CaptureClause'>CaptureClause</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Constness.html'
+                                  title='syntex_syntax::ast::Constness'>Constness</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Decl_.html'
+                                  title='syntex_syntax::ast::Decl_'>Decl_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ExplicitSelf_.html'
+                                  title='syntex_syntax::ast::ExplicitSelf_'>ExplicitSelf_</a></td>
+                           <td class='docblock short'>
+                                <p>Represents the kind of &#39;self&#39; associated with a method</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Expr_.html'
+                                  title='syntex_syntax::ast::Expr_'>Expr_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.FloatTy.html'
+                                  title='syntex_syntax::ast::FloatTy'>FloatTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ForeignItem_.html'
+                                  title='syntex_syntax::ast::ForeignItem_'>ForeignItem_</a></td>
+                           <td class='docblock short'>
+                                <p>An item within an <code>extern</code> block</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.FunctionRetTy.html'
+                                  title='syntex_syntax::ast::FunctionRetTy'>FunctionRetTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ImplItemKind.html'
+                                  title='syntex_syntax::ast::ImplItemKind'>ImplItemKind</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ImplPolarity.html'
+                                  title='syntex_syntax::ast::ImplPolarity'>ImplPolarity</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.IntTy.html'
+                                  title='syntex_syntax::ast::IntTy'>IntTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Item_.html'
+                                  title='syntex_syntax::ast::Item_'>Item_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.KleeneOp.html'
+                                  title='syntex_syntax::ast::KleeneOp'>KleeneOp</a></td>
+                           <td class='docblock short'>
+                                <p>A Kleene-style <a href="http://en.wikipedia.org/wiki/Kleene_star">repetition operator</a>
+for token sequences.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.LitIntType.html'
+                                  title='syntex_syntax::ast::LitIntType'>LitIntType</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Lit_.html'
+                                  title='syntex_syntax::ast::Lit_'>Lit_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.MacStmtStyle.html'
+                                  title='syntex_syntax::ast::MacStmtStyle'>MacStmtStyle</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.MetaItem_.html'
+                                  title='syntex_syntax::ast::MetaItem_'>MetaItem_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Mutability.html'
+                                  title='syntex_syntax::ast::Mutability'>Mutability</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Pat_.html'
+                                  title='syntex_syntax::ast::Pat_'>Pat_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.PathListItem_.html'
+                                  title='syntex_syntax::ast::PathListItem_'>PathListItem_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.PathParameters.html'
+                                  title='syntex_syntax::ast::PathParameters'>PathParameters</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.PrimTy.html'
+                                  title='syntex_syntax::ast::PrimTy'>PrimTy</a></td>
+                           <td class='docblock short'>
+                                <p>Not represented directly in the AST, referred to by name through a ty_path.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Sign.html'
+                                  title='syntex_syntax::ast::Sign'>Sign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Stmt_.html'
+                                  title='syntex_syntax::ast::Stmt_'>Stmt_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.StrStyle.html'
+                                  title='syntex_syntax::ast::StrStyle'>StrStyle</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.StructFieldKind.html'
+                                  title='syntex_syntax::ast::StructFieldKind'>StructFieldKind</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.TokenTree.html'
+                                  title='syntex_syntax::ast::TokenTree'>TokenTree</a></td>
+                           <td class='docblock short'>
+                                <p>When the main rust parser encounters a syntax-extension invocation, it
+parses the arguments to the invocation as a token-tree. This is a very
+loose structure, such that all sorts of different AST-fragments can
+be passed to syntax extensions using a uniform type.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.TraitBoundModifier.html'
+                                  title='syntex_syntax::ast::TraitBoundModifier'>TraitBoundModifier</a></td>
+                           <td class='docblock short'>
+                                <p>A modifier on a bound, currently this is only used for <code>?Sized</code>, where the
+modifier is <code>Maybe</code>. Negative bounds should also be handled here.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.TraitItem_.html'
+                                  title='syntex_syntax::ast::TraitItem_'>TraitItem_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.TyParamBound.html'
+                                  title='syntex_syntax::ast::TyParamBound'>TyParamBound</a></td>
+                           <td class='docblock short'>
+                                <p>The AST represents all type param bounds as types.
+typeck::collect::compute_bounds matches these against
+the &quot;special&quot; built-in traits (see middle::lang_items) and
+detects Copy, Send and Sync.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Ty_.html'
+                                  title='syntex_syntax::ast::Ty_'>Ty_</a></td>
+                           <td class='docblock short'>
+                                <p>The different kinds of types recognized by the compiler</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.UintTy.html'
+                                  title='syntex_syntax::ast::UintTy'>UintTy</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.UnOp.html'
+                                  title='syntex_syntax::ast::UnOp'>UnOp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.UnsafeSource.html'
+                                  title='syntex_syntax::ast::UnsafeSource'>UnsafeSource</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Unsafety.html'
+                                  title='syntex_syntax::ast::Unsafety'>Unsafety</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.VariantData.html'
+                                  title='syntex_syntax::ast::VariantData'>VariantData</a></td>
+                           <td class='docblock short'>
+                                <p>Fields and Ids of enum variants and structs</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ViewPath_.html'
+                                  title='syntex_syntax::ast::ViewPath_'>ViewPath_</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Visibility.html'
+                                  title='syntex_syntax::ast::Visibility'>Visibility</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.WherePredicate.html'
+                                  title='syntex_syntax::ast::WherePredicate'>WherePredicate</a></td>
+                           <td class='docblock short'>
+                                <p>A single predicate in a <code>where</code> clause</p>
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.CRATE_NODE_ID.html'
+                                  title='syntex_syntax::ast::CRATE_NODE_ID'>CRATE_NODE_ID</a></td>
+                           <td class='docblock short'>
+                                <p>Node id used to represent the root of the crate.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.DUMMY_NODE_ID.html'
+                                  title='syntex_syntax::ast::DUMMY_NODE_ID'>DUMMY_NODE_ID</a></td>
+                           <td class='docblock short'>
+                                <p>When parsing and doing expansions, we initially give all AST nodes this AST
+node value. Then later, in the renumber pass, we renumber them to have
+small, positive ids.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.EMPTY_CTXT.html'
+                                  title='syntex_syntax::ast::EMPTY_CTXT'>EMPTY_CTXT</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.IntSign.html'
+                                  title='syntex_syntax::ast::IntSign'>IntSign</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.NodeIdAssigner.html'
+                                  title='syntex_syntax::ast::NodeIdAssigner'>NodeIdAssigner</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Attribute.html'
+                                  title='syntex_syntax::ast::Attribute'>Attribute</a></td>
+                           <td class='docblock short'>
+                                <p>Meta-data associated with an item</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.BinOp.html'
+                                  title='syntex_syntax::ast::BinOp'>BinOp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.CrateConfig.html'
+                                  title='syntex_syntax::ast::CrateConfig'>CrateConfig</a></td>
+                           <td class='docblock short'>
+                                <p>The set of MetaItems that define the compilation environment of the crate,
+used to drive conditional compilation</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.CrateNum.html'
+                                  title='syntex_syntax::ast::CrateNum'>CrateNum</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Decl.html'
+                                  title='syntex_syntax::ast::Decl'>Decl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ExplicitSelf.html'
+                                  title='syntex_syntax::ast::ExplicitSelf'>ExplicitSelf</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Lit.html'
+                                  title='syntex_syntax::ast::Lit'>Lit</a></td>
+                           <td class='docblock short'>
+                                <p>A literal</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Mac.html'
+                                  title='syntex_syntax::ast::Mac'>Mac</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.MetaItem.html'
+                                  title='syntex_syntax::ast::MetaItem'>MetaItem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Mrk.html'
+                                  title='syntex_syntax::ast::Mrk'>Mrk</a></td>
+                           <td class='docblock short'>
+                                <p>A mark represents a unique id associated with a macro expansion</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.NodeId.html'
+                                  title='syntex_syntax::ast::NodeId'>NodeId</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.PathListItem.html'
+                                  title='syntex_syntax::ast::PathListItem'>PathListItem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.SpannedIdent.html'
+                                  title='syntex_syntax::ast::SpannedIdent'>SpannedIdent</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Stmt.html'
+                                  title='syntex_syntax::ast::Stmt'>Stmt</a></td>
+                           <td class='docblock short'>
+                                <p>A statement</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.StructField.html'
+                                  title='syntex_syntax::ast::StructField'>StructField</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.TyParamBounds.html'
+                                  title='syntex_syntax::ast::TyParamBounds'>TyParamBounds</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.Variant.html'
+                                  title='syntex_syntax::ast::Variant'>Variant</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.ViewPath.html'
+                                  title='syntex_syntax::ast::ViewPath'>ViewPath</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

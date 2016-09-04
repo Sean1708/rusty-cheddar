@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `AssocOp` enum in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, AssocOp">
+
+    <title>syntex_syntax::util::parser::AssocOp - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>util</a>::<wbr><a href='index.html'>parser</a></p><script>window.sidebarCurrent = {name: 'AssocOp', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>util</a>::<wbr><a href='index.html'>parser</a>::<wbr><a class='enum' href=''>AssocOp</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-411' class='srclink' href='../../../src/syntex_syntax/util/parser.rs.html#17-66' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum AssocOp {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulus,
+    LAnd,
+    LOr,
+    BitXor,
+    BitAnd,
+    BitOr,
+    ShiftLeft,
+    ShiftRight,
+    Equal,
+    Less,
+    LessEqual,
+    NotEqual,
+    Greater,
+    GreaterEqual,
+    Assign,
+    Inplace,
+    AssignOp(<a class='enum' href='../../../syntex_syntax/parse/token/enum.BinOpToken.html' title='syntex_syntax::parse::token::BinOpToken'>BinOpToken</a>),
+    As,
+    DotDot,
+    Colon,
+}</pre><div class='docblock'><p>Associative operator with precedence.</p>
+
+<p>This is the enum which specifies operator precedence and fixity to the parser.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Add' class='variant'><code>Add</code></span><div class='docblock'><p><code>+</code></p>
+</div><span id='variant.Subtract' class='variant'><code>Subtract</code></span><div class='docblock'><p><code>-</code></p>
+</div><span id='variant.Multiply' class='variant'><code>Multiply</code></span><div class='docblock'><p><code>*</code></p>
+</div><span id='variant.Divide' class='variant'><code>Divide</code></span><div class='docblock'><p><code>/</code></p>
+</div><span id='variant.Modulus' class='variant'><code>Modulus</code></span><div class='docblock'><p><code>%</code></p>
+</div><span id='variant.LAnd' class='variant'><code>LAnd</code></span><div class='docblock'><p><code>&amp;&amp;</code></p>
+</div><span id='variant.LOr' class='variant'><code>LOr</code></span><div class='docblock'><p><code>||</code></p>
+</div><span id='variant.BitXor' class='variant'><code>BitXor</code></span><div class='docblock'><p><code>^</code></p>
+</div><span id='variant.BitAnd' class='variant'><code>BitAnd</code></span><div class='docblock'><p><code>&amp;</code></p>
+</div><span id='variant.BitOr' class='variant'><code>BitOr</code></span><div class='docblock'><p><code>|</code></p>
+</div><span id='variant.ShiftLeft' class='variant'><code>ShiftLeft</code></span><div class='docblock'><p><code>&lt;&lt;</code></p>
+</div><span id='variant.ShiftRight' class='variant'><code>ShiftRight</code></span><div class='docblock'><p><code>&gt;&gt;</code></p>
+</div><span id='variant.Equal' class='variant'><code>Equal</code></span><div class='docblock'><p><code>==</code></p>
+</div><span id='variant.Less' class='variant'><code>Less</code></span><div class='docblock'><p><code>&lt;</code></p>
+</div><span id='variant.LessEqual' class='variant'><code>LessEqual</code></span><div class='docblock'><p><code>&lt;=</code></p>
+</div><span id='variant.NotEqual' class='variant'><code>NotEqual</code></span><div class='docblock'><p><code>!=</code></p>
+</div><span id='variant.Greater' class='variant'><code>Greater</code></span><div class='docblock'><p><code>&gt;</code></p>
+</div><span id='variant.GreaterEqual' class='variant'><code>GreaterEqual</code></span><div class='docblock'><p><code>&gt;=</code></p>
+</div><span id='variant.Assign' class='variant'><code>Assign</code></span><div class='docblock'><p><code>=</code></p>
+</div><span id='variant.Inplace' class='variant'><code>Inplace</code></span><div class='docblock'><p><code>&lt;-</code></p>
+</div><span id='variant.AssignOp' class='variant'><code>AssignOp(<a class='enum' href='../../../syntex_syntax/parse/token/enum.BinOpToken.html' title='syntex_syntax::parse::token::BinOpToken'>BinOpToken</a>)</code></span><div class='docblock'><p><code>?=</code> where ? is one of the BinOpToken</p>
+</div><span id='variant.As' class='variant'><code>As</code></span><div class='docblock'><p><code>as</code></p>
+</div><span id='variant.DotDot' class='variant'><code>DotDot</code></span><div class='docblock'><p><code>..</code> range</p>
+</div><span id='variant.Colon' class='variant'><code>Colon</code></span><div class='docblock'><p><code>:</code></p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-457' class='srclink' href='../../../src/syntex_syntax/util/parser.rs.html#78-212' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.from_token' class='method'><code>fn <a href='#method.from_token' class='fnname'>from_token</a>(t: &amp;<a class='enum' href='../../../syntex_syntax/parse/token/enum.Token.html' title='syntex_syntax::parse::token::Token'>Token</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a>&gt;</code></h4>
+<div class='docblock'><p>Create a new AssocOP from a token</p>
+</div><h4 id='method.from_ast_binop' class='method'><code>fn <a href='#method.from_ast_binop' class='fnname'>from_ast_binop</a>(op: <a class='enum' href='../../../syntex_syntax/ast/enum.BinOp_.html' title='syntex_syntax::ast::BinOp_'>BinOp_</a>) -&gt; Self</code></h4>
+<div class='docblock'><p>Create a new AssocOp from ast::BinOp_.</p>
+</div><h4 id='method.precedence' class='method'><code>fn <a href='#method.precedence' class='fnname'>precedence</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Gets the precedence of this operator</p>
+</div><h4 id='method.fixity' class='method'><code>fn <a href='#method.fixity' class='fnname'>fixity</a>(&amp;self) -&gt; <a class='enum' href='../../../syntex_syntax/util/parser/enum.Fixity.html' title='syntex_syntax::util::parser::Fixity'>Fixity</a></code></h4>
+<div class='docblock'><p>Gets the fixity of this operator</p>
+</div><h4 id='method.is_comparison' class='method'><code>fn <a href='#method.is_comparison' class='fnname'>is_comparison</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.is_assign_like' class='method'><code>fn <a href='#method.is_assign_like' class='fnname'>is_assign_like</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.to_ast_binop' class='method'><code>fn <a href='#method.to_ast_binop' class='fnname'>to_ast_binop</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='enum' href='../../../syntex_syntax/ast/enum.BinOp_.html' title='syntex_syntax::ast::BinOp_'>BinOp_</a>&gt;</code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-363' class='srclink' href='../../../src/syntex_syntax/util/parser.rs.html#16' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-367' class='srclink' href='../../../src/syntex_syntax/util/parser.rs.html#16' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../../syntex_syntax/util/parser/enum.AssocOp.html' title='syntex_syntax::util::parser::AssocOp'>AssocOp</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-382' class='srclink' href='../../../src/syntex_syntax/util/parser.rs.html#16' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

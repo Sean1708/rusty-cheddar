@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `IdVisitor` struct in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, IdVisitor">
+
+    <title>syntex_syntax::ast_util::IdVisitor - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast_util</a></p><script>window.sidebarCurrent = {name: 'IdVisitor', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast_util</a>::<wbr><a class='struct' href=''>IdVisitor</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-13824' class='srclink' href='../../src/syntex_syntax/ast_util.rs.html#137-140' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct IdVisitor&lt;'a,&nbsp;O:&nbsp;'a&gt; {
+    pub operation: &amp;'a mut O,
+    pub visited_outermost: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+}</pre><div class='docblock'><p>A visitor that applies its operation to all of the node IDs
+in a visitable thing.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.operation' class='structfield'><code>operation: &amp;'a mut O</code>
+                           </span><span class='stab '></span><span id='structfield.visited_outermost' class='structfield'><code>visited_outermost: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code>
+                           </span><span class='stab '></span><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a,&nbsp;'v,&nbsp;O:&nbsp;<a class='trait' href='../../syntex_syntax/ast_util/trait.IdVisitingOperation.html' title='syntex_syntax::ast_util::IdVisitingOperation'>IdVisitingOperation</a>&gt; <a class='trait' href='../../syntex_syntax/visit/trait.Visitor.html' title='syntex_syntax::visit::Visitor'>Visitor</a>&lt;'v&gt; for <a class='struct' href='../../syntex_syntax/ast_util/struct.IdVisitor.html' title='syntex_syntax::ast_util::IdVisitor'>IdVisitor</a>&lt;'a,&nbsp;O&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-13837' class='srclink' href='../../src/syntex_syntax/ast_util.rs.html#153-307' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.visit_mod' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_mod' class='fnname'>visit_mod</a>(&amp;mut self, module: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Mod.html' title='syntex_syntax::ast::Mod'>Mod</a>, _: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, node_id: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>)</code></h4>
+<h4 id='method.visit_foreign_item' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_foreign_item' class='fnname'>visit_foreign_item</a>(&amp;mut self, foreign_item: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.ForeignItem.html' title='syntex_syntax::ast::ForeignItem'>ForeignItem</a>)</code></h4>
+<h4 id='method.visit_item' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_item' class='fnname'>visit_item</a>(&amp;mut self, item: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Item.html' title='syntex_syntax::ast::Item'>Item</a>)</code></h4>
+<h4 id='method.visit_local' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_local' class='fnname'>visit_local</a>(&amp;mut self, local: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Local.html' title='syntex_syntax::ast::Local'>Local</a>)</code></h4>
+<h4 id='method.visit_block' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_block' class='fnname'>visit_block</a>(&amp;mut self, block: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Block.html' title='syntex_syntax::ast::Block'>Block</a>)</code></h4>
+<h4 id='method.visit_stmt' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_stmt' class='fnname'>visit_stmt</a>(&amp;mut self, statement: &amp;<a class='type' href='../../syntex_syntax/ast/type.Stmt.html' title='syntex_syntax::ast::Stmt'>Stmt</a>)</code></h4>
+<h4 id='method.visit_pat' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_pat' class='fnname'>visit_pat</a>(&amp;mut self, pattern: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>)</code></h4>
+<h4 id='method.visit_expr' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_expr' class='fnname'>visit_expr</a>(&amp;mut self, expression: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>)</code></h4>
+<h4 id='method.visit_ty' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_ty' class='fnname'>visit_ty</a>(&amp;mut self, typ: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>)</code></h4>
+<h4 id='method.visit_generics' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_generics' class='fnname'>visit_generics</a>(&amp;mut self, generics: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>)</code></h4>
+<h4 id='method.visit_fn' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_fn' class='fnname'>visit_fn</a>(&amp;mut self, function_kind: <a class='enum' href='../../syntex_syntax/visit/enum.FnKind.html' title='syntex_syntax::visit::FnKind'>FnKind</a>&lt;'v&gt;, function_declaration: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.FnDecl.html' title='syntex_syntax::ast::FnDecl'>FnDecl</a>, block: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Block.html' title='syntex_syntax::ast::Block'>Block</a>, span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, node_id: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>)</code></h4>
+<h4 id='method.visit_struct_field' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_struct_field' class='fnname'>visit_struct_field</a>(&amp;mut self, struct_field: &amp;<a class='type' href='../../syntex_syntax/ast/type.StructField.html' title='syntex_syntax::ast::StructField'>StructField</a>)</code></h4>
+<h4 id='method.visit_variant_data' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_variant_data' class='fnname'>visit_variant_data</a>(&amp;mut self, struct_def: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.VariantData.html' title='syntex_syntax::ast::VariantData'>VariantData</a>, _: <a class='struct' href='../../syntex_syntax/ast/struct.Ident.html' title='syntex_syntax::ast::Ident'>Ident</a>, _: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>, _: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>, _: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>)</code></h4>
+<h4 id='method.visit_trait_item' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_trait_item' class='fnname'>visit_trait_item</a>(&amp;mut self, ti: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.TraitItem.html' title='syntex_syntax::ast::TraitItem'>TraitItem</a>)</code></h4>
+<h4 id='method.visit_impl_item' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_impl_item' class='fnname'>visit_impl_item</a>(&amp;mut self, ii: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.ImplItem.html' title='syntex_syntax::ast::ImplItem'>ImplItem</a>)</code></h4>
+<h4 id='method.visit_lifetime' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_lifetime' class='fnname'>visit_lifetime</a>(&amp;mut self, lifetime: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.Lifetime.html' title='syntex_syntax::ast::Lifetime'>Lifetime</a>)</code></h4>
+<h4 id='method.visit_lifetime_def' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_lifetime_def' class='fnname'>visit_lifetime_def</a>(&amp;mut self, def: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.LifetimeDef.html' title='syntex_syntax::ast::LifetimeDef'>LifetimeDef</a>)</code></h4>
+<h4 id='method.visit_trait_ref' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_trait_ref' class='fnname'>visit_trait_ref</a>(&amp;mut self, trait_ref: &amp;<a class='struct' href='../../syntex_syntax/ast/struct.TraitRef.html' title='syntex_syntax::ast::TraitRef'>TraitRef</a>)</code></h4>
+<h4 id='method.visit_name' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_name' class='fnname'>visit_name</a>(&amp;mut self, _span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, _name: <a class='struct' href='../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>)</code></h4>
+<h4 id='method.visit_ident' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_ident' class='fnname'>visit_ident</a>(&amp;mut self, span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, ident: <a class='struct' href='../../syntex_syntax/ast/struct.Ident.html' title='syntex_syntax::ast::Ident'>Ident</a>)</code></h4>
+<h4 id='method.visit_arm' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_arm' class='fnname'>visit_arm</a>(&amp;mut self, a: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Arm.html' title='syntex_syntax::ast::Arm'>Arm</a>)</code></h4>
+<h4 id='method.visit_decl' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_decl' class='fnname'>visit_decl</a>(&amp;mut self, d: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.Decl.html' title='syntex_syntax::ast::Decl'>Decl</a>)</code></h4>
+<h4 id='method.visit_expr_post' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_expr_post' class='fnname'>visit_expr_post</a>(&amp;mut self, _ex: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>)</code></h4>
+<h4 id='method.visit_ty_param_bound' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_ty_param_bound' class='fnname'>visit_ty_param_bound</a>(&amp;mut self, bounds: &amp;'v <a class='enum' href='../../syntex_syntax/ast/enum.TyParamBound.html' title='syntex_syntax::ast::TyParamBound'>TyParamBound</a>)</code></h4>
+<h4 id='method.visit_poly_trait_ref' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_poly_trait_ref' class='fnname'>visit_poly_trait_ref</a>(&amp;mut self, t: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.PolyTraitRef.html' title='syntex_syntax::ast::PolyTraitRef'>PolyTraitRef</a>, m: &amp;'v <a class='enum' href='../../syntex_syntax/ast/enum.TraitBoundModifier.html' title='syntex_syntax::ast::TraitBoundModifier'>TraitBoundModifier</a>)</code></h4>
+<h4 id='method.visit_enum_def' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_enum_def' class='fnname'>visit_enum_def</a>(&amp;mut self, enum_definition: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.EnumDef.html' title='syntex_syntax::ast::EnumDef'>EnumDef</a>, generics: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>, item_id: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>, _: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>)</code></h4>
+<h4 id='method.visit_variant' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_variant' class='fnname'>visit_variant</a>(&amp;mut self, v: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.Variant.html' title='syntex_syntax::ast::Variant'>Variant</a>, g: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>, item_id: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>)</code></h4>
+<h4 id='method.visit_explicit_self' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_explicit_self' class='fnname'>visit_explicit_self</a>(&amp;mut self, es: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.ExplicitSelf.html' title='syntex_syntax::ast::ExplicitSelf'>ExplicitSelf</a>)</code></h4>
+<h4 id='method.visit_mac' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_mac' class='fnname'>visit_mac</a>(&amp;mut self, _mac: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.Mac.html' title='syntex_syntax::ast::Mac'>Mac</a>)</code></h4>
+<h4 id='method.visit_path' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_path' class='fnname'>visit_path</a>(&amp;mut self, path: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>, _id: <a class='type' href='../../syntex_syntax/ast/type.NodeId.html' title='syntex_syntax::ast::NodeId'>NodeId</a>)</code></h4>
+<h4 id='method.visit_path_list_item' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_path_list_item' class='fnname'>visit_path_list_item</a>(&amp;mut self, prefix: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>, item: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.PathListItem.html' title='syntex_syntax::ast::PathListItem'>PathListItem</a>)</code></h4>
+<h4 id='method.visit_path_segment' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_path_segment' class='fnname'>visit_path_segment</a>(&amp;mut self, path_span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, path_segment: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.PathSegment.html' title='syntex_syntax::ast::PathSegment'>PathSegment</a>)</code></h4>
+<h4 id='method.visit_path_parameters' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_path_parameters' class='fnname'>visit_path_parameters</a>(&amp;mut self, path_span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>, path_parameters: &amp;'v <a class='enum' href='../../syntex_syntax/ast/enum.PathParameters.html' title='syntex_syntax::ast::PathParameters'>PathParameters</a>)</code></h4>
+<h4 id='method.visit_assoc_type_binding' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_assoc_type_binding' class='fnname'>visit_assoc_type_binding</a>(&amp;mut self, type_binding: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.TypeBinding.html' title='syntex_syntax::ast::TypeBinding'>TypeBinding</a>)</code></h4>
+<h4 id='method.visit_attribute' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_attribute' class='fnname'>visit_attribute</a>(&amp;mut self, _attr: &amp;'v <a class='type' href='../../syntex_syntax/ast/type.Attribute.html' title='syntex_syntax::ast::Attribute'>Attribute</a>)</code></h4>
+<h4 id='method.visit_macro_def' class='method'><code>fn <a href='../../syntex_syntax/visit/trait.Visitor.html#method.visit_macro_def' class='fnname'>visit_macro_def</a>(&amp;mut self, macro_def: &amp;'v <a class='struct' href='../../syntex_syntax/ast/struct.MacroDef.html' title='syntex_syntax::ast::MacroDef'>MacroDef</a>)</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

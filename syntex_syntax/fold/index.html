@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `fold` mod in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, fold">
+
+    <title>syntex_syntax::fold - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a></p><script>window.sidebarCurrent = {name: 'fold', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>syntex_syntax</a>::<wbr><a class='mod' href=''>fold</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-17172' class='srclink' href='../../src/syntex_syntax/fold.rs.html#11-1457' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>A Folder represents an AST-&gt;AST fold; it accepts an AST piece,
+and returns a piece of the same type. So, for instance, macro
+expansion is a Folder that walks over an AST and produces another
+AST.</p>
+
+<p>Note: using a Folder (other than the MacroExpander Folder) on
+an AST before macro expansion is probably a bad idea. For instance,
+a folder renaming item names in a module will miss all of those
+that are created by the expansion of a macro.</p>
+</div><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Folder.html'
+                                  title='syntex_syntax::fold::Folder'>Folder</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.fold_attrs.html'
+                                  title='syntex_syntax::fold::fold_attrs'>fold_attrs</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.fold_thin_attrs.html'
+                                  title='syntex_syntax::fold::fold_thin_attrs'>fold_thin_attrs</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_angle_bracketed_parameter_data.html'
+                                  title='syntex_syntax::fold::noop_fold_angle_bracketed_parameter_data'>noop_fold_angle_bracketed_parameter_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_arg.html'
+                                  title='syntex_syntax::fold::noop_fold_arg'>noop_fold_arg</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_arm.html'
+                                  title='syntex_syntax::fold::noop_fold_arm'>noop_fold_arm</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_attribute.html'
+                                  title='syntex_syntax::fold::noop_fold_attribute'>noop_fold_attribute</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_block.html'
+                                  title='syntex_syntax::fold::noop_fold_block'>noop_fold_block</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_crate.html'
+                                  title='syntex_syntax::fold::noop_fold_crate'>noop_fold_crate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_decl.html'
+                                  title='syntex_syntax::fold::noop_fold_decl'>noop_fold_decl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_explicit_self.html'
+                                  title='syntex_syntax::fold::noop_fold_explicit_self'>noop_fold_explicit_self</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_explicit_self_underscore.html'
+                                  title='syntex_syntax::fold::noop_fold_explicit_self_underscore'>noop_fold_explicit_self_underscore</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_expr.html'
+                                  title='syntex_syntax::fold::noop_fold_expr'>noop_fold_expr</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_exprs.html'
+                                  title='syntex_syntax::fold::noop_fold_exprs'>noop_fold_exprs</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_field.html'
+                                  title='syntex_syntax::fold::noop_fold_field'>noop_fold_field</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_fn_decl.html'
+                                  title='syntex_syntax::fold::noop_fold_fn_decl'>noop_fold_fn_decl</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_foreign_item.html'
+                                  title='syntex_syntax::fold::noop_fold_foreign_item'>noop_fold_foreign_item</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_foreign_mod.html'
+                                  title='syntex_syntax::fold::noop_fold_foreign_mod'>noop_fold_foreign_mod</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_generics.html'
+                                  title='syntex_syntax::fold::noop_fold_generics'>noop_fold_generics</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ident.html'
+                                  title='syntex_syntax::fold::noop_fold_ident'>noop_fold_ident</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_impl_item.html'
+                                  title='syntex_syntax::fold::noop_fold_impl_item'>noop_fold_impl_item</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_interpolated.html'
+                                  title='syntex_syntax::fold::noop_fold_interpolated'>noop_fold_interpolated</a></td>
+                           <td class='docblock short'>
+                                <p>apply folder to elements of interpolated nodes</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_item.html'
+                                  title='syntex_syntax::fold::noop_fold_item'>noop_fold_item</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_item_simple.html'
+                                  title='syntex_syntax::fold::noop_fold_item_simple'>noop_fold_item_simple</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_item_underscore.html'
+                                  title='syntex_syntax::fold::noop_fold_item_underscore'>noop_fold_item_underscore</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_lifetime.html'
+                                  title='syntex_syntax::fold::noop_fold_lifetime'>noop_fold_lifetime</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_lifetime_def.html'
+                                  title='syntex_syntax::fold::noop_fold_lifetime_def'>noop_fold_lifetime_def</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_lifetime_defs.html'
+                                  title='syntex_syntax::fold::noop_fold_lifetime_defs'>noop_fold_lifetime_defs</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_lifetimes.html'
+                                  title='syntex_syntax::fold::noop_fold_lifetimes'>noop_fold_lifetimes</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_local.html'
+                                  title='syntex_syntax::fold::noop_fold_local'>noop_fold_local</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_mac.html'
+                                  title='syntex_syntax::fold::noop_fold_mac'>noop_fold_mac</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_meta_item.html'
+                                  title='syntex_syntax::fold::noop_fold_meta_item'>noop_fold_meta_item</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_meta_items.html'
+                                  title='syntex_syntax::fold::noop_fold_meta_items'>noop_fold_meta_items</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_method_sig.html'
+                                  title='syntex_syntax::fold::noop_fold_method_sig'>noop_fold_method_sig</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_mod.html'
+                                  title='syntex_syntax::fold::noop_fold_mod'>noop_fold_mod</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_mt.html'
+                                  title='syntex_syntax::fold::noop_fold_mt'>noop_fold_mt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_opt_bounds.html'
+                                  title='syntex_syntax::fold::noop_fold_opt_bounds'>noop_fold_opt_bounds</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_opt_expr.html'
+                                  title='syntex_syntax::fold::noop_fold_opt_expr'>noop_fold_opt_expr</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_opt_lifetime.html'
+                                  title='syntex_syntax::fold::noop_fold_opt_lifetime'>noop_fold_opt_lifetime</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_parenthesized_parameter_data.html'
+                                  title='syntex_syntax::fold::noop_fold_parenthesized_parameter_data'>noop_fold_parenthesized_parameter_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_pat.html'
+                                  title='syntex_syntax::fold::noop_fold_pat'>noop_fold_pat</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_path.html'
+                                  title='syntex_syntax::fold::noop_fold_path'>noop_fold_path</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_path_parameters.html'
+                                  title='syntex_syntax::fold::noop_fold_path_parameters'>noop_fold_path_parameters</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_poly_trait_ref.html'
+                                  title='syntex_syntax::fold::noop_fold_poly_trait_ref'>noop_fold_poly_trait_ref</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_stmt.html'
+                                  title='syntex_syntax::fold::noop_fold_stmt'>noop_fold_stmt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_struct_field.html'
+                                  title='syntex_syntax::fold::noop_fold_struct_field'>noop_fold_struct_field</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_token.html'
+                                  title='syntex_syntax::fold::noop_fold_token'>noop_fold_token</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_trait_item.html'
+                                  title='syntex_syntax::fold::noop_fold_trait_item'>noop_fold_trait_item</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_trait_ref.html'
+                                  title='syntex_syntax::fold::noop_fold_trait_ref'>noop_fold_trait_ref</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_tt.html'
+                                  title='syntex_syntax::fold::noop_fold_tt'>noop_fold_tt</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_tts.html'
+                                  title='syntex_syntax::fold::noop_fold_tts'>noop_fold_tts</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ty.html'
+                                  title='syntex_syntax::fold::noop_fold_ty'>noop_fold_ty</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ty_binding.html'
+                                  title='syntex_syntax::fold::noop_fold_ty_binding'>noop_fold_ty_binding</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ty_param.html'
+                                  title='syntex_syntax::fold::noop_fold_ty_param'>noop_fold_ty_param</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ty_param_bound.html'
+                                  title='syntex_syntax::fold::noop_fold_ty_param_bound'>noop_fold_ty_param_bound</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_ty_params.html'
+                                  title='syntex_syntax::fold::noop_fold_ty_params'>noop_fold_ty_params</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_usize.html'
+                                  title='syntex_syntax::fold::noop_fold_usize'>noop_fold_usize</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_variant.html'
+                                  title='syntex_syntax::fold::noop_fold_variant'>noop_fold_variant</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_variant_data.html'
+                                  title='syntex_syntax::fold::noop_fold_variant_data'>noop_fold_variant_data</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_view_path.html'
+                                  title='syntex_syntax::fold::noop_fold_view_path'>noop_fold_view_path</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_where_clause.html'
+                                  title='syntex_syntax::fold::noop_fold_where_clause'>noop_fold_where_clause</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.noop_fold_where_predicate.html'
+                                  title='syntex_syntax::fold::noop_fold_where_predicate'>noop_fold_where_predicate</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

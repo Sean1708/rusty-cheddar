@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Item_` enum in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Item_">
+
+    <title>syntex_syntax::ast::Item_ - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a></p><script>window.sidebarCurrent = {name: 'Item_', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a>::<wbr><a class='enum' href=''>Item_</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-13252' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2008-2051' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Item_ {
+    ItemExternCrate(<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>&gt;),
+    ItemUse(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='type' href='../../syntex_syntax/ast/type.ViewPath.html' title='syntex_syntax::ast::ViewPath'>ViewPath</a>&gt;),
+    ItemStatic(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Mutability.html' title='syntex_syntax::ast::Mutability'>Mutability</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;),
+    ItemConst(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;),
+    ItemFn(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.FnDecl.html' title='syntex_syntax::ast::FnDecl'>FnDecl</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Constness.html' title='syntex_syntax::ast::Constness'>Constness</a>,&nbsp;<a class='enum' href='../../syntex_syntax/abi/enum.Abi.html' title='syntex_syntax::abi::Abi'>Abi</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Block.html' title='syntex_syntax::ast::Block'>Block</a>&gt;),
+    ItemMod(<a class='struct' href='../../syntex_syntax/ast/struct.Mod.html' title='syntex_syntax::ast::Mod'>Mod</a>),
+    ItemForeignMod(<a class='struct' href='../../syntex_syntax/ast/struct.ForeignMod.html' title='syntex_syntax::ast::ForeignMod'>ForeignMod</a>),
+    ItemTy(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>),
+    ItemEnum(<a class='struct' href='../../syntex_syntax/ast/struct.EnumDef.html' title='syntex_syntax::ast::EnumDef'>EnumDef</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>),
+    ItemStruct(<a class='enum' href='../../syntex_syntax/ast/enum.VariantData.html' title='syntex_syntax::ast::VariantData'>VariantData</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>),
+    ItemTrait(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='type' href='../../syntex_syntax/ast/type.TyParamBounds.html' title='syntex_syntax::ast::TyParamBounds'>TyParamBounds</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.TraitItem.html' title='syntex_syntax::ast::TraitItem'>TraitItem</a>&gt;&gt;),
+    ItemDefaultImpl(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.TraitRef.html' title='syntex_syntax::ast::TraitRef'>TraitRef</a>),
+    ItemImpl(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.ImplPolarity.html' title='syntex_syntax::ast::ImplPolarity'>ImplPolarity</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.TraitRef.html' title='syntex_syntax::ast::TraitRef'>TraitRef</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.ImplItem.html' title='syntex_syntax::ast::ImplItem'>ImplItem</a>&gt;&gt;),
+    ItemMac(<a class='type' href='../../syntex_syntax/ast/type.Mac.html' title='syntex_syntax::ast::Mac'>Mac</a>),
+}</pre><h2 class='variants'>Variants</h2>
+<span id='variant.ItemExternCrate' class='variant'><code>ItemExternCrate(<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Name.html' title='syntex_syntax::ast::Name'>Name</a>&gt;)</code></span><div class='docblock'><p>An<code>extern crate</code> item, with optional original crate name,</p>
+
+<p>e.g. <code>extern crate foo</code> or <code>extern crate foo_bar as foo</code></p>
+</div><span id='variant.ItemUse' class='variant'><code>ItemUse(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='type' href='../../syntex_syntax/ast/type.ViewPath.html' title='syntex_syntax::ast::ViewPath'>ViewPath</a>&gt;)</code></span><div class='docblock'><p>A <code>use</code> or <code>pub use</code> item</p>
+</div><span id='variant.ItemStatic' class='variant'><code>ItemStatic(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Mutability.html' title='syntex_syntax::ast::Mutability'>Mutability</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;)</code></span><div class='docblock'><p>A <code>static</code> item</p>
+</div><span id='variant.ItemConst' class='variant'><code>ItemConst(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;)</code></span><div class='docblock'><p>A <code>const</code> item</p>
+</div><span id='variant.ItemFn' class='variant'><code>ItemFn(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.FnDecl.html' title='syntex_syntax::ast::FnDecl'>FnDecl</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Constness.html' title='syntex_syntax::ast::Constness'>Constness</a>,&nbsp;<a class='enum' href='../../syntex_syntax/abi/enum.Abi.html' title='syntex_syntax::abi::Abi'>Abi</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Block.html' title='syntex_syntax::ast::Block'>Block</a>&gt;)</code></span><div class='docblock'><p>A function declaration</p>
+</div><span id='variant.ItemMod' class='variant'><code>ItemMod(<a class='struct' href='../../syntex_syntax/ast/struct.Mod.html' title='syntex_syntax::ast::Mod'>Mod</a>)</code></span><div class='docblock'><p>A module</p>
+</div><span id='variant.ItemForeignMod' class='variant'><code>ItemForeignMod(<a class='struct' href='../../syntex_syntax/ast/struct.ForeignMod.html' title='syntex_syntax::ast::ForeignMod'>ForeignMod</a>)</code></span><div class='docblock'><p>An external module</p>
+</div><span id='variant.ItemTy' class='variant'><code>ItemTy(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>)</code></span><div class='docblock'><p>A type alias, e.g. <code>type Foo = Bar&lt;u8&gt;</code></p>
+</div><span id='variant.ItemEnum' class='variant'><code>ItemEnum(<a class='struct' href='../../syntex_syntax/ast/struct.EnumDef.html' title='syntex_syntax::ast::EnumDef'>EnumDef</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>)</code></span><div class='docblock'><p>An enum definition, e.g. <code>enum Foo&lt;A, B&gt; {C&lt;A&gt;, D&lt;B&gt;}</code></p>
+</div><span id='variant.ItemStruct' class='variant'><code>ItemStruct(<a class='enum' href='../../syntex_syntax/ast/enum.VariantData.html' title='syntex_syntax::ast::VariantData'>VariantData</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>)</code></span><div class='docblock'><p>A struct definition, e.g. <code>struct Foo&lt;A&gt; {x: A}</code></p>
+</div><span id='variant.ItemTrait' class='variant'><code>ItemTrait(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='type' href='../../syntex_syntax/ast/type.TyParamBounds.html' title='syntex_syntax::ast::TyParamBounds'>TyParamBounds</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.TraitItem.html' title='syntex_syntax::ast::TraitItem'>TraitItem</a>&gt;&gt;)</code></span><div class='docblock'><p>Represents a Trait Declaration</p>
+</div><span id='variant.ItemDefaultImpl' class='variant'><code>ItemDefaultImpl(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.TraitRef.html' title='syntex_syntax::ast::TraitRef'>TraitRef</a>)</code></span><div class='docblock'></div><span id='variant.ItemImpl' class='variant'><code>ItemImpl(<a class='enum' href='../../syntex_syntax/ast/enum.Unsafety.html' title='syntex_syntax::ast::Unsafety'>Unsafety</a>,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.ImplPolarity.html' title='syntex_syntax::ast::ImplPolarity'>ImplPolarity</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Generics.html' title='syntex_syntax::ast::Generics'>Generics</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.TraitRef.html' title='syntex_syntax::ast::TraitRef'>TraitRef</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Ty.html' title='syntex_syntax::ast::Ty'>Ty</a>&gt;,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.ImplItem.html' title='syntex_syntax::ast::ImplItem'>ImplItem</a>&gt;&gt;)</code></span><div class='docblock'><p>An implementation, eg <code>impl&lt;A&gt; Trait for Foo { .. }</code></p>
+</div><span id='variant.ItemMac' class='variant'><code>ItemMac(<a class='type' href='../../syntex_syntax/ast/type.Mac.html' title='syntex_syntax::ast::Mac'>Mac</a>)</code></span><div class='docblock'><p>A macro invocation (which includes macro definition)</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-13301' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2053-2072' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.descriptive_variant' class='method'><code>fn <a href='#method.descriptive_variant' class='fnname'>descriptive_variant</a>(&amp;self) -&gt; &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a></code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-12646' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-12698' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.hash' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash' class='fnname'>hash</a>&lt;__H:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __H)</code></h4>
+<div class='docblock'><p>Feeds this value into the state given, updating the hasher as necessary.</p>
+</div><h4 id='method.hash_slice' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice' class='fnname'>hash_slice</a>&lt;H&gt;(data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[Self]</a>, state: &amp;mut H) <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a></span></code><div class='since' title='Stable since Rust version 1.3.0'>1.3.0</div></h4>
+<div class='docblock'><p>Feeds a slice of this type into the state provided.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-12737' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.decode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Decodable.html#tymethod.decode' class='fnname'>decode</a>&lt;__D:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Decoder.html' title='rustc_serialize::serialize::Decoder'>Decoder</a>&gt;(__arg_0: &amp;mut __D) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a>,&nbsp;__D::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-12814' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.encode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Encodable.html#tymethod.encode' class='fnname'>encode</a>&lt;__S:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Encoder.html' title='rustc_serialize::serialize::Encoder'>Encoder</a>&gt;(&amp;self, __arg_0: &amp;mut __S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;__S::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-13031' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-13068' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-13215' class='srclink' href='../../src/syntex_syntax/ast.rs.html#2007' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../syntex_syntax/ast/enum.Item_.html' title='syntex_syntax::ast::Item_'>Item_</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

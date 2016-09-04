@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `CodeMap` struct in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, CodeMap">
+
+    <title>syntex_syntax::codemap::CodeMap - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>codemap</a></p><script>window.sidebarCurrent = {name: 'CodeMap', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>codemap</a>::<wbr><a class='struct' href=''>CodeMap</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-15907' class='srclink' href='../../src/syntex_syntax/codemap.rs.html#596-600' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct CodeMap {
+    pub files: <a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;&gt;&gt;,
+    // some fields omitted
+}</pre><h2 class='fields'>Fields</h2><span id='structfield.files' class='structfield'><code>files: <a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;&gt;&gt;</code>
+                           </span><span class='stab '></span><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='struct' href='../../syntex_syntax/codemap/struct.CodeMap.html' title='syntex_syntax::codemap::CodeMap'>CodeMap</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-15911' class='srclink' href='../../src/syntex_syntax/codemap.rs.html#602-1126' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.CodeMap.html' title='syntex_syntax::codemap::CodeMap'>CodeMap</a></code></h4>
+<h4 id='method.with_file_loader' class='method'><code>fn <a href='#method.with_file_loader' class='fnname'>with_file_loader</a>(file_loader: <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='../../syntex_syntax/codemap/trait.FileLoader.html' title='syntex_syntax::codemap::FileLoader'>FileLoader</a>&gt;) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.CodeMap.html' title='syntex_syntax::codemap::CodeMap'>CodeMap</a></code></h4>
+<h4 id='method.file_exists' class='method'><code>fn <a href='#method.file_exists' class='fnname'>file_exists</a>(&amp;self, path: &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.load_file' class='method'><code>fn <a href='#method.load_file' class='fnname'>load_file</a>(&amp;self, path: &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;&gt;</code></h4>
+<h4 id='method.new_filemap' class='method'><code>fn <a href='#method.new_filemap' class='fnname'>new_filemap</a>(&amp;self, filename: <a class='type' href='../../syntex_syntax/codemap/type.FileName.html' title='syntex_syntax::codemap::FileName'>FileName</a>, src: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new filemap without setting its line information. If you don&#39;t
+intend to set the line information yourself, you should use new_filemap_and_lines.</p>
+</div><h4 id='method.new_filemap_and_lines' class='method'><code>fn <a href='#method.new_filemap_and_lines' class='fnname'>new_filemap_and_lines</a>(&amp;self, filename: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, src: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;</code></h4>
+<div class='docblock'><p>Creates a new filemap and sets its line information.</p>
+</div><h4 id='method.new_imported_filemap' class='method'><code>fn <a href='#method.new_imported_filemap' class='fnname'>new_imported_filemap</a>(&amp;self, filename: <a class='type' href='../../syntex_syntax/codemap/type.FileName.html' title='syntex_syntax::codemap::FileName'>FileName</a>, source_len: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, file_local_lines: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.BytePos.html' title='syntex_syntax::codemap::BytePos'>BytePos</a>&gt;, file_local_multibyte_chars: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.MultiByteChar.html' title='syntex_syntax::codemap::MultiByteChar'>MultiByteChar</a>&gt;) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;</code></h4>
+<div class='docblock'><p>Allocates a new FileMap representing a source file from an external
+crate. The source code of such an &quot;imported filemap&quot; is not available,
+but we still know enough to generate accurate debuginfo location
+information for things inlined from other crates.</p>
+</div><h4 id='method.mk_substr_filename' class='method'><code>fn <a href='#method.mk_substr_filename' class='fnname'>mk_substr_filename</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<h4 id='method.lookup_char_pos' class='method'><code>fn <a href='#method.lookup_char_pos' class='fnname'>lookup_char_pos</a>(&amp;self, pos: <a class='struct' href='../../syntex_syntax/codemap/struct.BytePos.html' title='syntex_syntax::codemap::BytePos'>BytePos</a>) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.Loc.html' title='syntex_syntax::codemap::Loc'>Loc</a></code></h4>
+<div class='docblock'><p>Lookup source information about a BytePos</p>
+</div><h4 id='method.lookup_char_pos_adj' class='method'><code>fn <a href='#method.lookup_char_pos_adj' class='fnname'>lookup_char_pos_adj</a>(&amp;self, pos: <a class='struct' href='../../syntex_syntax/codemap/struct.BytePos.html' title='syntex_syntax::codemap::BytePos'>BytePos</a>) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.LocWithOpt.html' title='syntex_syntax::codemap::LocWithOpt'>LocWithOpt</a></code></h4>
+<h4 id='method.span_to_string' class='method'><code>fn <a href='#method.span_to_string' class='fnname'>span_to_string</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<h4 id='method.span_to_expanded_string' class='method'><code>fn <a href='#method.span_to_expanded_string' class='fnname'>span_to_expanded_string</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<div class='docblock'><p>Returns a formatted string showing the expansion chain of a span</p>
+
+<p>Spans are printed in the following format:</p>
+
+<p>filename:start_line:col: end_line:col
+snippet
+  Callee:
+  Callee span
+  Callsite:
+  Callsite span</p>
+
+<p>Callees and callsites are printed recursively (if available, otherwise header
+and span is omitted), expanding into their own callee/callsite spans.
+Each layer of recursion has an increased indent, and snippets are truncated
+to at most 50 characters. Finally, recursive calls to the same macro are squashed,
+with &#39;...&#39; used to represent any number of recursive calls.</p>
+</div><h4 id='method.span_to_filename' class='method'><code>fn <a href='#method.span_to_filename' class='fnname'>span_to_filename</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='type' href='../../syntex_syntax/codemap/type.FileName.html' title='syntex_syntax::codemap::FileName'>FileName</a></code></h4>
+<h4 id='method.span_to_lines' class='method'><code>fn <a href='#method.span_to_lines' class='fnname'>span_to_lines</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='type' href='../../syntex_syntax/codemap/type.FileLinesResult.html' title='syntex_syntax::codemap::FileLinesResult'>FileLinesResult</a></code></h4>
+<h4 id='method.span_to_snippet' class='method'><code>fn <a href='#method.span_to_snippet' class='fnname'>span_to_snippet</a>(&amp;self, sp: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,&nbsp;<a class='enum' href='../../syntex_syntax/codemap/enum.SpanSnippetError.html' title='syntex_syntax::codemap::SpanSnippetError'>SpanSnippetError</a>&gt;</code></h4>
+<h4 id='method.get_filemap' class='method'><code>fn <a href='#method.get_filemap' class='fnname'>get_filemap</a>(&amp;self, filename: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.FileMap.html' title='syntex_syntax::codemap::FileMap'>FileMap</a>&gt;</code></h4>
+<h4 id='method.lookup_byte_offset' class='method'><code>fn <a href='#method.lookup_byte_offset' class='fnname'>lookup_byte_offset</a>(&amp;self, bpos: <a class='struct' href='../../syntex_syntax/codemap/struct.BytePos.html' title='syntex_syntax::codemap::BytePos'>BytePos</a>) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.FileMapAndBytePos.html' title='syntex_syntax::codemap::FileMapAndBytePos'>FileMapAndBytePos</a></code></h4>
+<div class='docblock'><p>For a global BytePos compute the local offset within the containing FileMap</p>
+</div><h4 id='method.bytepos_to_file_charpos' class='method'><code>fn <a href='#method.bytepos_to_file_charpos' class='fnname'>bytepos_to_file_charpos</a>(&amp;self, bpos: <a class='struct' href='../../syntex_syntax/codemap/struct.BytePos.html' title='syntex_syntax::codemap::BytePos'>BytePos</a>) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.CharPos.html' title='syntex_syntax::codemap::CharPos'>CharPos</a></code></h4>
+<div class='docblock'><p>Converts an absolute BytePos to a CharPos relative to the filemap.</p>
+</div><h4 id='method.record_expansion' class='method'><code>fn <a href='#method.record_expansion' class='fnname'>record_expansion</a>(&amp;self, expn_info: <a class='struct' href='../../syntex_syntax/codemap/struct.ExpnInfo.html' title='syntex_syntax::codemap::ExpnInfo'>ExpnInfo</a>) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.ExpnId.html' title='syntex_syntax::codemap::ExpnId'>ExpnId</a></code></h4>
+<h4 id='method.with_expn_info' class='method'><code>fn <a href='#method.with_expn_info' class='fnname'>with_expn_info</a>&lt;T,&nbsp;F&gt;(&amp;self, id: <a class='struct' href='../../syntex_syntax/codemap/struct.ExpnId.html' title='syntex_syntax::codemap::ExpnId'>ExpnId</a>, f: F) -&gt; T <span class='where'>where F: <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.FnOnce.html' title='core::ops::FnOnce'>FnOnce</a>(<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a class='struct' href='../../syntex_syntax/codemap/struct.ExpnInfo.html' title='syntex_syntax::codemap::ExpnInfo'>ExpnInfo</a>&gt;) -&gt; T</span></code></h4>
+<h4 id='method.span_allows_unstable' class='method'><code>fn <a href='#method.span_allows_unstable' class='fnname'>span_allows_unstable</a>(&amp;self, span: <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Check if a span is &quot;internal&quot; to a macro in which #[unstable]
+items can be used (that is, a macro marked with
+<code>#[allow_internal_unstable]</code>).</p>
+</div><h4 id='method.count_lines' class='method'><code>fn <a href='#method.count_lines' class='fnname'>count_lines</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

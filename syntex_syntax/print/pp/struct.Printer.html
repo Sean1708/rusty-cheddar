@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Printer` struct in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Printer">
+
+    <title>syntex_syntax::print::pp::Printer - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>print</a>::<wbr><a href='index.html'>pp</a></p><script>window.sidebarCurrent = {name: 'Printer', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>print</a>::<wbr><a href='index.html'>pp</a>::<wbr><a class='struct' href=''>Printer</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-26662' class='srclink' href='../../../src/syntex_syntax/print/pp.rs.html#269-305' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Printer&lt;'a&gt; {
+    pub out: <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a> + 'a&gt;,
+    // some fields omitted
+}</pre><div class='docblock'><p>In case you do not have the paper, here is an explanation of what&#39;s going
+on.</p>
+
+<p>There is a stream of input tokens flowing through this printer.</p>
+
+<p>The printer buffers up to 3N tokens inside itself, where N is linewidth.
+Yes, linewidth is chars and tokens are multi-char, but in the worst
+case every token worth buffering is 1 char long, so it&#39;s ok.</p>
+
+<p>Tokens are String, Break, and Begin/End to delimit blocks.</p>
+
+<p>Begin tokens can carry an offset, saying &quot;how far to indent when you break
+inside here&quot;, as well as a flag indicating &quot;consistent&quot; or &quot;inconsistent&quot;
+breaking. Consistent breaking means that after the first break, no attempt
+will be made to flow subsequent breaks together onto lines. Inconsistent
+is the opposite. Inconsistent breaking example would be, say:</p>
+
+<p>foo(hello, there, good, friends)</p>
+
+<p>breaking inconsistently to become</p>
+
+<p>foo(hello, there
+     good, friends);</p>
+
+<p>whereas a consistent breaking would yield:</p>
+
+<p>foo(hello,
+     there
+     good,
+     friends);</p>
+
+<p>That is, in the consistent-break blocks we value vertical alignment
+more than the ability to cram stuff onto a line. But in all cases if it
+can make a block a one-liner, it&#39;ll do so.</p>
+
+<p>Carrying on with high-level logic:</p>
+
+<p>The buffered tokens go through a ring-buffer, &#39;tokens&#39;. The &#39;left&#39; and
+&#39;right&#39; indices denote the active portion of the ring buffer as well as
+describing hypothetical points-in-the-infinite-stream at most 3N tokens
+apart (i.e. &quot;not wrapped to ring-buffer boundaries&quot;). The paper will switch
+between using &#39;left&#39; and &#39;right&#39; terms to denote the wrapped-to-ring-buffer
+and point-in-infinite-stream senses freely.</p>
+
+<p>There is a parallel ring buffer, &#39;size&#39;, that holds the calculated size of
+each token. Why calculated? Because for Begin/End pairs, the &quot;size&quot;
+includes everything between the pair. That is, the &quot;size&quot; of Begin is
+actually the sum of the sizes of everything between Begin and the paired
+End that follows. Since that is arbitrarily far in the future, &#39;size&#39; is
+being rewritten regularly while the printer runs; in fact most of the
+machinery is here to work out &#39;size&#39; entries on the fly (and give up when
+they&#39;re so obviously over-long that &quot;infinity&quot; is a good enough
+approximation for purposes of line breaking).</p>
+
+<p>The &quot;input side&quot; of the printer is managed as an abstract process called
+SCAN, which uses &#39;scan_stack&#39;, &#39;scan_stack_empty&#39;, &#39;top&#39; and &#39;bottom&#39;, to
+manage calculating &#39;size&#39;. SCAN is, in other words, the process of
+calculating &#39;size&#39; entries.</p>
+
+<p>The &quot;output side&quot; of the printer is managed by an abstract process called
+PRINT, which uses &#39;print_stack&#39;, &#39;margin&#39; and &#39;space&#39; to figure out what to
+do with each token/size pair it consumes as it goes. It&#39;s trying to consume
+the entire buffered window, but can&#39;t output anything until the size is &gt;=
+0 (sizes are set to negative while they&#39;re pending calculation).</p>
+
+<p>So SCAN takes input and buffers tokens and pending calculations, while
+PRINT gobbles up completed calculations and tokens from the buffer. The
+theory is that the two can never get more than 3N tokens apart, because
+once there&#39;s &quot;obviously&quot; too much data to fit on a line, in a size
+calculation, SCAN will write &quot;infinity&quot; to the size and let PRINT consume
+it.</p>
+
+<p>In this implementation (following the paper, again) the SCAN process is
+the method called &#39;pretty_print&#39;, and the &#39;PRINT&#39; process is the method
+called &#39;print&#39;.</p>
+</div><h2 class='fields'>Fields</h2><span id='structfield.out' class='structfield'><code>out: <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a> + 'a&gt;</code>
+                           </span><span class='stab '></span><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../../../syntex_syntax/print/pp/struct.Printer.html' title='syntex_syntax::print::pp::Printer'>Printer</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a id='src-26680' class='srclink' href='../../../src/syntex_syntax/print/pp.rs.html#307-619' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.last_token' class='method'><code>fn <a href='#method.last_token' class='fnname'>last_token</a>(&amp;mut self) -&gt; <a class='enum' href='../../../syntex_syntax/print/pp/enum.Token.html' title='syntex_syntax::print::pp::Token'>Token</a></code></h4>
+<h4 id='method.replace_last_token' class='method'><code>fn <a href='#method.replace_last_token' class='fnname'>replace_last_token</a>(&amp;mut self, t: <a class='enum' href='../../../syntex_syntax/print/pp/enum.Token.html' title='syntex_syntax::print::pp::Token'>Token</a>)</code></h4>
+<h4 id='method.pretty_print' class='method'><code>fn <a href='#method.pretty_print' class='fnname'>pretty_print</a>(&amp;mut self, token: <a class='enum' href='../../../syntex_syntax/print/pp/enum.Token.html' title='syntex_syntax::print::pp::Token'>Token</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.check_stream' class='method'><code>fn <a href='#method.check_stream' class='fnname'>check_stream</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.scan_push' class='method'><code>fn <a href='#method.scan_push' class='fnname'>scan_push</a>(&amp;mut self, x: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>)</code></h4>
+<h4 id='method.scan_pop' class='method'><code>fn <a href='#method.scan_pop' class='fnname'>scan_pop</a>(&amp;mut self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<h4 id='method.scan_top' class='method'><code>fn <a href='#method.scan_top' class='fnname'>scan_top</a>(&amp;mut self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<h4 id='method.scan_pop_bottom' class='method'><code>fn <a href='#method.scan_pop_bottom' class='fnname'>scan_pop_bottom</a>(&amp;mut self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<h4 id='method.advance_right' class='method'><code>fn <a href='#method.advance_right' class='fnname'>advance_right</a>(&amp;mut self)</code></h4>
+<h4 id='method.advance_left' class='method'><code>fn <a href='#method.advance_left' class='fnname'>advance_left</a>(&amp;mut self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.check_stack' class='method'><code>fn <a href='#method.check_stack' class='fnname'>check_stack</a>(&amp;mut self, k: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a>)</code></h4>
+<h4 id='method.print_newline' class='method'><code>fn <a href='#method.print_newline' class='fnname'>print_newline</a>(&amp;mut self, amount: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.indent' class='method'><code>fn <a href='#method.indent' class='fnname'>indent</a>(&amp;mut self, amount: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a>)</code></h4>
+<h4 id='method.get_top' class='method'><code>fn <a href='#method.get_top' class='fnname'>get_top</a>(&amp;mut self) -&gt; <a class='struct' href='../../../syntex_syntax/print/pp/struct.PrintStackElem.html' title='syntex_syntax::print::pp::PrintStackElem'>PrintStackElem</a></code></h4>
+<h4 id='method.print_str' class='method'><code>fn <a href='#method.print_str' class='fnname'>print_str</a>(&amp;mut self, s: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+<h4 id='method.print' class='method'><code>fn <a href='#method.print' class='fnname'>print</a>(&amp;mut self, token: <a class='enum' href='../../../syntex_syntax/print/pp/enum.Token.html' title='syntex_syntax::print::pp::Token'>Token</a>, l: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.isize.html'>isize</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt;</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

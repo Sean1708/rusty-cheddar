@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `syntex_syntax` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, syntex_syntax">
+
+    <title>syntex_syntax - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'syntex_syntax', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>syntex_syntax</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/syntex_syntax/lib.rs.html#11-111' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The Rust parser and macro expander.</p>
+
+<h1 id='note' class='section-header'><a href='#note'>Note</a></h1>
+<p>This API is completely unstable and subject to change.</p>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='abi/index.html'
+                                  title='syntex_syntax::abi'>abi</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='ast/index.html'
+                                  title='syntex_syntax::ast'>ast</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='ast_util/index.html'
+                                  title='syntex_syntax::ast_util'>ast_util</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='attr/index.html'
+                                  title='syntex_syntax::attr'>attr</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='codemap/index.html'
+                                  title='syntex_syntax::codemap'>codemap</a></td>
+                           <td class='docblock short'>
+                                <p>The CodeMap tracks all the source code used within a single crate, mapping
+from integer byte positions to the original source code location. Each bit
+of source parsed during crate parsing (typically files, in-memory strings,
+or various bits of macro expansion) cover a continuous range of bytes in the
+CodeMap and are represented by FileMaps. Byte positions are stored in
+<code>spans</code> and used pervasively in the compiler. They are absolute positions
+within the CodeMap, which upon request can be converted to line and column
+information, source code snippets, etc.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='config/index.html'
+                                  title='syntex_syntax::config'>config</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='diagnostics/index.html'
+                                  title='syntex_syntax::diagnostics'>diagnostics</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='entry/index.html'
+                                  title='syntex_syntax::entry'>entry</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='errors/index.html'
+                                  title='syntex_syntax::errors'>errors</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='ext/index.html'
+                                  title='syntex_syntax::ext'>ext</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='feature_gate/index.html'
+                                  title='syntex_syntax::feature_gate'>feature_gate</a></td>
+                           <td class='docblock short'>
+                                <p>Feature gating</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='fold/index.html'
+                                  title='syntex_syntax::fold'>fold</a></td>
+                           <td class='docblock short'>
+                                <p>A Folder represents an AST-&gt;AST fold; it accepts an AST piece,
+and returns a piece of the same type. So, for instance, macro
+expansion is a Folder that walks over an AST and produces another
+AST.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='owned_slice/index.html'
+                                  title='syntex_syntax::owned_slice'>owned_slice</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='parse/index.html'
+                                  title='syntex_syntax::parse'>parse</a></td>
+                           <td class='docblock short'>
+                                <p>The main parser interface</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='print/index.html'
+                                  title='syntex_syntax::print'>print</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='ptr/index.html'
+                                  title='syntex_syntax::ptr'>ptr</a></td>
+                           <td class='docblock short'>
+                                <p>The AST pointer</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='show_span/index.html'
+                                  title='syntex_syntax::show_span'>show_span</a></td>
+                           <td class='docblock short'>
+                                <p>Span debugger</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='std_inject/index.html'
+                                  title='syntex_syntax::std_inject'>std_inject</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='str/index.html'
+                                  title='syntex_syntax::str'>str</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='syntax/index.html'
+                                  title='syntex_syntax::syntax'>syntax</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='test/index.html'
+                                  title='syntex_syntax::test'>test</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='util/index.html'
+                                  title='syntex_syntax::util'>util</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='visit/index.html'
+                                  title='syntex_syntax::visit'>visit</a></td>
+                           <td class='docblock short'>
+                                <p>AST walker. Each overridden visit method has full control over what
+happens with its node, it can do its own traversal of the node&#39;s children,
+call <code>visit::walk_*</code> to apply the default traversal algorithm, or prevent
+deeper traversal by doing nothing.</p>
+                           </td>
+                       </tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.fileline_help!.html'
+                                  title='syntex_syntax::fileline_help!'>fileline_help!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.register_diagnostic!.html'
+                                  title='syntex_syntax::register_diagnostic!'>register_diagnostic!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.register_diagnostics!.html'
+                                  title='syntex_syntax::register_diagnostics!'>register_diagnostics!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.register_long_diagnostics!.html'
+                                  title='syntex_syntax::register_long_diagnostics!'>register_long_diagnostics!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_err!.html'
+                                  title='syntex_syntax::span_err!'>span_err!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_err_or_warn!.html'
+                                  title='syntex_syntax::span_err_or_warn!'>span_err_or_warn!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_fatal!.html'
+                                  title='syntex_syntax::span_fatal!'>span_fatal!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_help!.html'
+                                  title='syntex_syntax::span_help!'>span_help!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_note!.html'
+                                  title='syntex_syntax::span_note!'>span_note!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.span_warn!.html'
+                                  title='syntex_syntax::span_warn!'>span_warn!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.walk_list!.html'
+                                  title='syntex_syntax::walk_list!'>walk_list!</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

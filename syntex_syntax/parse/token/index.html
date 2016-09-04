@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `token` mod in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, token">
+
+    <title>syntex_syntax::parse::token - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>parse</a></p><script>window.sidebarCurrent = {name: 'token', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>parse</a>::<wbr><a class='mod' href=''>token</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-22791' class='srclink' href='../../../src/syntex_syntax/parse/token.rs.html#11-778' title='goto source code'>[src]</a></span></h1>
+<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.BinOpToken.html' title='syntex_syntax::parse::token::BinOpToken'>BinOpToken</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.Nonterminal.html' title='syntex_syntax::parse::token::Nonterminal'>Nonterminal</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.DelimToken.html' title='syntex_syntax::parse::token::DelimToken'>DelimToken</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.IdentStyle.html' title='syntex_syntax::parse::token::IdentStyle'>IdentStyle</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.Lit.html' title='syntex_syntax::parse::token::Lit'>Lit</a>::*;</code></td></tr><tr><td><code>pub use self::<a class='enum' href='../../../syntex_syntax/parse/token/enum.Token.html' title='syntex_syntax::parse::token::Token'>Token</a>::*;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='keywords/index.html'
+                                  title='syntex_syntax::parse::token::keywords'>keywords</a></td>
+                           <td class='docblock short'>
+                                <p>All the valid words that have meaning in the Rust language.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='special_idents/index.html'
+                                  title='syntex_syntax::parse::token::special_idents'>special_idents</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='special_names/index.html'
+                                  title='syntex_syntax::parse::token::special_names'>special_names</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.InternedString.html'
+                                  title='syntex_syntax::parse::token::InternedString'>InternedString</a></td>
+                           <td class='docblock short'>
+                                <p>Represents a string stored in the thread-local interner. Because the
+interner lives for the life of the thread, this can be safely treated as an
+immortal string, as long as it never crosses between threads.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.BinOpToken.html'
+                                  title='syntex_syntax::parse::token::BinOpToken'>BinOpToken</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.DelimToken.html'
+                                  title='syntex_syntax::parse::token::DelimToken'>DelimToken</a></td>
+                           <td class='docblock short'>
+                                <p>A delimiter token</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.IdentStyle.html'
+                                  title='syntex_syntax::parse::token::IdentStyle'>IdentStyle</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Lit.html'
+                                  title='syntex_syntax::parse::token::Lit'>Lit</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Nonterminal.html'
+                                  title='syntex_syntax::parse::token::Nonterminal'>Nonterminal</a></td>
+                           <td class='docblock short'>
+                                <p>For interpolation during macro expansion.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.SpecialMacroVar.html'
+                                  title='syntex_syntax::parse::token::SpecialMacroVar'>SpecialMacroVar</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Token.html'
+                                  title='syntex_syntax::parse::token::Token'>Token</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SELF_KEYWORD_NAME.html'
+                                  title='syntex_syntax::parse::token::SELF_KEYWORD_NAME'>SELF_KEYWORD_NAME</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.SELF_KEYWORD_NAME_NUM.html'
+                                  title='syntex_syntax::parse::token::SELF_KEYWORD_NAME_NUM'>SELF_KEYWORD_NAME_NUM</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.fresh_mark.html'
+                                  title='syntex_syntax::parse::token::fresh_mark'>fresh_mark</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.fresh_name.html'
+                                  title='syntex_syntax::parse::token::fresh_name'>fresh_name</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.gensym.html'
+                                  title='syntex_syntax::parse::token::gensym'>gensym</a></td>
+                           <td class='docblock short'>
+                                <p>gensym&#39;s a new usize, using the current interner.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.gensym_ident.html'
+                                  title='syntex_syntax::parse::token::gensym_ident'>gensym_ident</a></td>
+                           <td class='docblock short'>
+                                <p>Maps a string to a gensym&#39;ed identifier.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.get_ident_interner.html'
+                                  title='syntex_syntax::parse::token::get_ident_interner'>get_ident_interner</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.intern.html'
+                                  title='syntex_syntax::parse::token::intern'>intern</a></td>
+                           <td class='docblock short'>
+                                <p>Maps a string to its interned representation.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.intern_and_get_ident.html'
+                                  title='syntex_syntax::parse::token::intern_and_get_ident'>intern_and_get_ident</a></td>
+                           <td class='docblock short'>
+                                <p>Interns and returns the string contents of an identifier, using the
+thread-local interner.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.reset_ident_interner.html'
+                                  title='syntex_syntax::parse::token::reset_ident_interner'>reset_ident_interner</a></td>
+                           <td class='docblock short'>
+                                <p>Reset the ident interner to its initial state.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.str_to_ident.html'
+                                  title='syntex_syntax::parse::token::str_to_ident'>str_to_ident</a></td>
+                           <td class='docblock short'>
+                                <p>Maps a string to an identifier with an empty syntax context.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.IdentInterner.html'
+                                  title='syntex_syntax::parse::token::IdentInterner'>IdentInterner</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>

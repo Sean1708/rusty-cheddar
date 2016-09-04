@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `codemap` mod in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, codemap">
+
+    <title>syntex_syntax::codemap - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a></p><script>window.sidebarCurrent = {name: 'codemap', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>syntex_syntax</a>::<wbr><a class='mod' href=''>codemap</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-15069' class='srclink' href='../../src/syntex_syntax/codemap.rs.html#11-1485' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The CodeMap tracks all the source code used within a single crate, mapping
+from integer byte positions to the original source code location. Each bit
+of source parsed during crate parsing (typically files, in-memory strings,
+or various bits of macro expansion) cover a continuous range of bytes in the
+CodeMap and are represented by FileMaps. Byte positions are stored in
+<code>spans</code> and used pervasively in the compiler. They are absolute positions
+within the CodeMap, which upon request can be converted to line and column
+information, source code snippets, etc.</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use self::<a class='enum' href='../../syntex_syntax/codemap/enum.ExpnFormat.html' title='syntex_syntax::codemap::ExpnFormat'>ExpnFormat</a>::*;</code></td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BytePos.html'
+                                  title='syntex_syntax::codemap::BytePos'>BytePos</a></td>
+                           <td class='docblock short'>
+                                <p>A byte offset. Keep this small (currently 32-bits), as AST contains
+a lot of them.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CharPos.html'
+                                  title='syntex_syntax::codemap::CharPos'>CharPos</a></td>
+                           <td class='docblock short'>
+                                <p>A character offset. Because of multibyte utf8 characters, a byte offset
+is not equivalent to a character offset. The CodeMap will convert BytePos
+values to CharPos values as necessary.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.CodeMap.html'
+                                  title='syntex_syntax::codemap::CodeMap'>CodeMap</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.DistinctSources.html'
+                                  title='syntex_syntax::codemap::DistinctSources'>DistinctSources</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ExpnId.html'
+                                  title='syntex_syntax::codemap::ExpnId'>ExpnId</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.ExpnInfo.html'
+                                  title='syntex_syntax::codemap::ExpnInfo'>ExpnInfo</a></td>
+                           <td class='docblock short'>
+                                <p>Extra information for tracking spans of macro and syntax sugar expansion</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FileLines.html'
+                                  title='syntex_syntax::codemap::FileLines'>FileLines</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FileMap.html'
+                                  title='syntex_syntax::codemap::FileMap'>FileMap</a></td>
+                           <td class='docblock short'>
+                                <p>A single source in the CodeMap.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FileMapAndBytePos.html'
+                                  title='syntex_syntax::codemap::FileMapAndBytePos'>FileMapAndBytePos</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FileMapAndLine.html'
+                                  title='syntex_syntax::codemap::FileMapAndLine'>FileMapAndLine</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LineInfo.html'
+                                  title='syntex_syntax::codemap::LineInfo'>LineInfo</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Loc.html'
+                                  title='syntex_syntax::codemap::Loc'>Loc</a></td>
+                           <td class='docblock short'>
+                                <p>A source code location used for error reporting</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.LocWithOpt.html'
+                                  title='syntex_syntax::codemap::LocWithOpt'>LocWithOpt</a></td>
+                           <td class='docblock short'>
+                                <p>A source code location used as the result of lookup_char_pos_adj</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.MalformedCodemapPositions.html'
+                                  title='syntex_syntax::codemap::MalformedCodemapPositions'>MalformedCodemapPositions</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.MultiByteChar.html'
+                                  title='syntex_syntax::codemap::MultiByteChar'>MultiByteChar</a></td>
+                           <td class='docblock short'>
+                                <p>Identifies an offset of a multi-byte character in a FileMap</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.NameAndSpan.html'
+                                  title='syntex_syntax::codemap::NameAndSpan'>NameAndSpan</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.RealFileLoader.html'
+                                  title='syntex_syntax::codemap::RealFileLoader'>RealFileLoader</a></td>
+                           <td class='docblock short'>
+                                <p>A FileLoader that uses std::fs to load real files.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Span.html'
+                                  title='syntex_syntax::codemap::Span'>Span</a></td>
+                           <td class='docblock short'>
+                                <p>Spans represent a region of code, used for error reporting. Positions in spans
+are <em>absolute</em> positions from the beginning of the codemap, not positions
+relative to FileMaps. Methods on the CodeMap can be used to relate spans back
+to the original source.
+You must be careful if the span crosses more than one file - you will not be
+able to use many of the functions on spans in codemap and you cannot assume
+that the length of the span = hi - lo; there may be space in the BytePos
+range between files.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Spanned.html'
+                                  title='syntex_syntax::codemap::Spanned'>Spanned</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.ExpnFormat.html'
+                                  title='syntex_syntax::codemap::ExpnFormat'>ExpnFormat</a></td>
+                           <td class='docblock short'>
+                                <p>The source of expansion.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.SpanLinesError.html'
+                                  title='syntex_syntax::codemap::SpanLinesError'>SpanLinesError</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.SpanSnippetError.html'
+                                  title='syntex_syntax::codemap::SpanSnippetError'>SpanSnippetError</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.COMMAND_LINE_EXPN.html'
+                                  title='syntex_syntax::codemap::COMMAND_LINE_EXPN'>COMMAND_LINE_EXPN</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.COMMAND_LINE_SP.html'
+                                  title='syntex_syntax::codemap::COMMAND_LINE_SP'>COMMAND_LINE_SP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.DUMMY_SP.html'
+                                  title='syntex_syntax::codemap::DUMMY_SP'>DUMMY_SP</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='constant' href='constant.NO_EXPANSION.html'
+                                  title='syntex_syntax::codemap::NO_EXPANSION'>NO_EXPANSION</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='statics' class='section-header'><a href="#statics">Statics</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='static' href='static.SPAN_DEBUG.html'
+                                  title='syntex_syntax::codemap::SPAN_DEBUG'>SPAN_DEBUG</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.FileLoader.html'
+                                  title='syntex_syntax::codemap::FileLoader'>FileLoader</a></td>
+                           <td class='docblock short'>
+                                <p>An abstraction over the fs operations used by the Parser.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='trait' href='trait.Pos.html'
+                                  title='syntex_syntax::codemap::Pos'>Pos</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.dummy_spanned.html'
+                                  title='syntex_syntax::codemap::dummy_spanned'>dummy_spanned</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.mk_sp.html'
+                                  title='syntex_syntax::codemap::mk_sp'>mk_sp</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.original_sp.html'
+                                  title='syntex_syntax::codemap::original_sp'>original_sp</a></td>
+                           <td class='docblock short'>
+                                <p>Return the span itself if it doesn&#39;t come from a macro expansion,
+otherwise return the call site span up to the <code>enclosing_sp</code> by
+following the <code>expn_info</code> chain.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.respan.html'
+                                  title='syntex_syntax::codemap::respan'>respan</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.spanned.html'
+                                  title='syntex_syntax::codemap::spanned'>spanned</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.FileLinesResult.html'
+                                  title='syntex_syntax::codemap::FileLinesResult'>FileLinesResult</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.FileName.html'
+                                  title='syntex_syntax::codemap::FileName'>FileName</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

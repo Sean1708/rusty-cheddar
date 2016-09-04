@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["P","Construct a `P<T>` from a `T` value."]],"struct":[["P","An owned smart pointer."]]});

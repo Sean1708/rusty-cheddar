@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `TokenTree` enum in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, TokenTree">
+
+    <title>syntex_syntax::ast::TokenTree - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a></p><script>window.sidebarCurrent = {name: 'TokenTree', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a>::<wbr><a class='enum' href=''>TokenTree</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-7786' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1132-1143' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum TokenTree {
+    Token(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='enum' href='../../syntex_syntax/parse/token/enum.Token.html' title='syntex_syntax::parse::token::Token'>Token</a>),
+    Delimited(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Delimited.html' title='syntex_syntax::ast::Delimited'>Delimited</a>&gt;),
+    Sequence(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.SequenceRepetition.html' title='syntex_syntax::ast::SequenceRepetition'>SequenceRepetition</a>&gt;),
+}</pre><div class='docblock'><p>When the main rust parser encounters a syntax-extension invocation, it
+parses the arguments to the invocation as a token-tree. This is a very
+loose structure, such that all sorts of different AST-fragments can
+be passed to syntax extensions using a uniform type.</p>
+
+<p>If the syntax extension is an MBE macro, it will attempt to match its
+LHS token tree against the provided token tree, and if it finds a
+match, will transcribe the RHS token tree, splicing in any captured
+macro_parser::matched_nonterminals into the <code>SubstNt</code>s it finds.</p>
+
+<p>The RHS of an MBE macro is the only place <code>SubstNt</code>s are substituted.
+Nothing special happens to misnamed or misplaced <code>SubstNt</code>s.</p>
+</div><h2 class='variants'>Variants</h2>
+<span id='variant.Token' class='variant'><code>Token(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='enum' href='../../syntex_syntax/parse/token/enum.Token.html' title='syntex_syntax::parse::token::Token'>Token</a>)</code></span><div class='docblock'><p>A single token</p>
+</div><span id='variant.Delimited' class='variant'><code>Delimited(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Delimited.html' title='syntex_syntax::ast::Delimited'>Delimited</a>&gt;)</code></span><div class='docblock'><p>A delimited sequence of token trees</p>
+</div><span id='variant.Sequence' class='variant'><code>Sequence(<a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.SequenceRepetition.html' title='syntex_syntax::ast::SequenceRepetition'>SequenceRepetition</a>&gt;)</code></span><div class='docblock'><p>A kleene-style repetition sequence with a span</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7796' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1145-1236' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.len' class='method'><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<h4 id='method.get_tt' class='method'><code>fn <a href='#method.get_tt' class='fnname'>get_tt</a>(&amp;self, index: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></h4>
+<h4 id='method.get_span' class='method'><code>fn <a href='#method.get_span' class='fnname'>get_span</a>(&amp;self) -&gt; <a class='struct' href='../../syntex_syntax/codemap/struct.Span.html' title='syntex_syntax::codemap::Span'>Span</a></code></h4>
+<div class='docblock'><p>Returns the <code>Span</code> corresponding to this token tree.</p>
+</div><h4 id='method.parse' class='method'><code>fn <a href='#method.parse' class='fnname'>parse</a>(cx: &amp;<a class='struct' href='../../syntex_syntax/ext/base/struct.ExtCtxt.html' title='syntex_syntax::ext::base::ExtCtxt'>ExtCtxt</a>, mtch: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>, tts: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='type' href='../../syntex_syntax/ext/tt/macro_parser/type.NamedParseResult.html' title='syntex_syntax::ext::tt::macro_parser::NamedParseResult'>NamedParseResult</a></code></h4>
+<div class='docblock'><p>Use this token tree as a matcher to parse given tts.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7644' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7657' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.hash' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash' class='fnname'>hash</a>&lt;__H:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __H)</code></h4>
+<div class='docblock'><p>Feeds this value into the state given, updating the hasher as necessary.</p>
+</div><h4 id='method.hash_slice' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice' class='fnname'>hash_slice</a>&lt;H&gt;(data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[Self]</a>, state: &amp;mut H) <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a></span></code><div class='since' title='Stable since Rust version 1.3.0'>1.3.0</div></h4>
+<div class='docblock'><p>Feeds a slice of this type into the state provided.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7668' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.decode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Decodable.html#tymethod.decode' class='fnname'>decode</a>&lt;__D:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Decoder.html' title='rustc_serialize::serialize::Decoder'>Decoder</a>&gt;(__arg_0: &amp;mut __D) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a>,&nbsp;__D::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7689' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.encode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Encodable.html#tymethod.encode' class='fnname'>encode</a>&lt;__S:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Encoder.html' title='rustc_serialize::serialize::Encoder'>Encoder</a>&gt;(&amp;self, __arg_0: &amp;mut __S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;__S::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7733' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7742' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-7777' class='srclink' href='../../src/syntex_syntax/ast.rs.html#1131' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../syntex_syntax/ext/quote/rt/trait.ToTokens.html' title='syntex_syntax::ext::quote::rt::ToTokens'>ToTokens</a> for <a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-32572' class='srclink' href='../../src/syntex_syntax/ext/quote.rs.html#45-49' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.to_tokens' class='method'><code>fn <a href='../../syntex_syntax/ext/quote/rt/trait.ToTokens.html#tymethod.to_tokens' class='fnname'>to_tokens</a>(&amp;self, _cx: &amp;<a class='struct' href='../../syntex_syntax/ext/base/struct.ExtCtxt.html' title='syntex_syntax::ext::base::ExtCtxt'>ExtCtxt</a>) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../../syntex_syntax/ast/enum.TokenTree.html' title='syntex_syntax::ast::TokenTree'>TokenTree</a>&gt;</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

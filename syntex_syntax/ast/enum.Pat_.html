@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Pat_` enum in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Pat_">
+
+    <title>syntex_syntax::ast::Pat_ - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a></p><script>window.sidebarCurrent = {name: 'Pat_', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>ast</a>::<wbr><a class='enum' href=''>Pat_</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-4595' class='srclink' href='../../src/syntex_syntax/ast.rs.html#581-622' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum Pat_ {
+    PatWild,
+    PatIdent(<a class='enum' href='../../syntex_syntax/ast/enum.BindingMode.html' title='syntex_syntax::ast::BindingMode'>BindingMode</a>,&nbsp;<a class='type' href='../../syntex_syntax/ast/type.SpannedIdent.html' title='syntex_syntax::ast::SpannedIdent'>SpannedIdent</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;),
+    PatEnum(<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;&gt;),
+    PatQPath(<a class='struct' href='../../syntex_syntax/ast/struct.QSelf.html' title='syntex_syntax::ast::QSelf'>QSelf</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>),
+    PatStruct(<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.Spanned.html' title='syntex_syntax::codemap::Spanned'>Spanned</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.FieldPat.html' title='syntex_syntax::ast::FieldPat'>FieldPat</a>&gt;&gt;,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>),
+    PatTup(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;),
+    PatBox(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;),
+    PatRegion(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Mutability.html' title='syntex_syntax::ast::Mutability'>Mutability</a>),
+    PatLit(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;),
+    PatRange(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;),
+    PatVec(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;),
+    PatMac(<a class='type' href='../../syntex_syntax/ast/type.Mac.html' title='syntex_syntax::ast::Mac'>Mac</a>),
+}</pre><h2 class='variants'>Variants</h2>
+<span id='variant.PatWild' class='variant'><code>PatWild</code></span><div class='docblock'><p>Represents a wildcard pattern (<code>_</code>)</p>
+</div><span id='variant.PatIdent' class='variant'><code>PatIdent(<a class='enum' href='../../syntex_syntax/ast/enum.BindingMode.html' title='syntex_syntax::ast::BindingMode'>BindingMode</a>,&nbsp;<a class='type' href='../../syntex_syntax/ast/type.SpannedIdent.html' title='syntex_syntax::ast::SpannedIdent'>SpannedIdent</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;)</code></span><div class='docblock'><p>A PatIdent may either be a new bound variable,
+or a nullary enum (in which case the third field
+is None).</p>
+
+<p>In the nullary enum case, the parser can&#39;t determine
+which it is. The resolver determines this, and
+records this pattern&#39;s NodeId in an auxiliary
+set (of &quot;PatIdents that refer to nullary enums&quot;)</p>
+</div><span id='variant.PatEnum' class='variant'><code>PatEnum(<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;&gt;)</code></span><div class='docblock'><p>&quot;None&quot; means a <code>Variant(..)</code> pattern where we don&#39;t bind the fields to names.</p>
+</div><span id='variant.PatQPath' class='variant'><code>PatQPath(<a class='struct' href='../../syntex_syntax/ast/struct.QSelf.html' title='syntex_syntax::ast::QSelf'>QSelf</a>,&nbsp;<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>)</code></span><div class='docblock'><p>An associated const named using the qualified path <code>&lt;T&gt;::CONST</code> or
+<code>&lt;T as Trait&gt;::CONST</code>. Associated consts from inherent impls can be
+referred to as simply <code>T::CONST</code>, in which case they will end up as
+PatEnum, and the resolver will have to sort that out.</p>
+</div><span id='variant.PatStruct' class='variant'><code>PatStruct(<a class='struct' href='../../syntex_syntax/ast/struct.Path.html' title='syntex_syntax::ast::Path'>Path</a>,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/codemap/struct.Spanned.html' title='syntex_syntax::codemap::Spanned'>Spanned</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.FieldPat.html' title='syntex_syntax::ast::FieldPat'>FieldPat</a>&gt;&gt;,&nbsp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>)</code></span><div class='docblock'><p>Destructuring of a struct, e.g. <code>Foo {x, y, ..}</code>
+The <code>bool</code> is <code>true</code> in the presence of a <code>..</code></p>
+</div><span id='variant.PatTup' class='variant'><code>PatTup(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;)</code></span><div class='docblock'><p>A tuple pattern <code>(a, b)</code></p>
+</div><span id='variant.PatBox' class='variant'><code>PatBox(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;)</code></span><div class='docblock'><p>A <code>box</code> pattern</p>
+</div><span id='variant.PatRegion' class='variant'><code>PatRegion(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;,&nbsp;<a class='enum' href='../../syntex_syntax/ast/enum.Mutability.html' title='syntex_syntax::ast::Mutability'>Mutability</a>)</code></span><div class='docblock'><p>A reference pattern, e.g. <code>&amp;mut (a, b)</code></p>
+</div><span id='variant.PatLit' class='variant'><code>PatLit(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;)</code></span><div class='docblock'><p>A literal</p>
+</div><span id='variant.PatRange' class='variant'><code>PatRange(<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;,&nbsp;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Expr.html' title='syntex_syntax::ast::Expr'>Expr</a>&gt;)</code></span><div class='docblock'><p>A range pattern, e.g. <code>1...2</code></p>
+</div><span id='variant.PatVec' class='variant'><code>PatVec(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;,&nbsp;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;,&nbsp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='struct' href='../../syntex_syntax/ptr/struct.P.html' title='syntex_syntax::ptr::P'>P</a>&lt;<a class='struct' href='../../syntex_syntax/ast/struct.Pat.html' title='syntex_syntax::ast::Pat'>Pat</a>&gt;&gt;)</code></span><div class='docblock'><p><code>[a, b, ..i, y, z]</code> is represented as:
+<code>PatVec(box [a, b], Some(i), box [y, z])</code></p>
+</div><span id='variant.PatMac' class='variant'><code>PatMac(<a class='type' href='../../syntex_syntax/ast/type.Mac.html' title='syntex_syntax::ast::Mac'>Mac</a>)</code></span><div class='docblock'><p>A macro pattern; pre-expansion</p>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4190' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Formats the value using the given formatter.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html' title='core::hash::Hash'>Hash</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4227' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.hash' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash' class='fnname'>hash</a>&lt;__H:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a>&gt;(&amp;self, __arg_0: &amp;mut __H)</code></h4>
+<div class='docblock'><p>Feeds this value into the state given, updating the hasher as necessary.</p>
+</div><h4 id='method.hash_slice' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#method.hash_slice' class='fnname'>hash_slice</a>&lt;H&gt;(data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[Self]</a>, state: &amp;mut H) <span class='where'>where H: <a class='trait' href='https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html' title='core::hash::Hasher'>Hasher</a></span></code><div class='since' title='Stable since Rust version 1.3.0'>1.3.0</div></h4>
+<div class='docblock'><p>Feeds a slice of this type into the state provided.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4253' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.decode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Decodable.html#tymethod.decode' class='fnname'>decode</a>&lt;__D:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Decoder.html' title='rustc_serialize::serialize::Decoder'>Decoder</a>&gt;(__arg_0: &amp;mut __D) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a>,&nbsp;__D::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4304' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.encode' class='method'><code>fn <a href='../../rustc_serialize/serialize/trait.Encodable.html#tymethod.encode' class='fnname'>encode</a>&lt;__S:&nbsp;<a class='trait' href='../../rustc_serialize/serialize/trait.Encoder.html' title='rustc_serialize::serialize::Encoder'>Encoder</a>&gt;(&amp;self, __arg_0: &amp;mut __S) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;__S::Error&gt;</code></h4>
+</div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4452' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4476' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>self</code> and <code>other</code> values to be equal, and is used by <code>==</code>. <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq">Read more</a></p>
+</div><h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>This method tests for <code>!=</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-4571' class='srclink' href='../../src/syntex_syntax/ast.rs.html#580' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='enum' href='../../syntex_syntax/ast/enum.Pat_.html' title='syntex_syntax::ast::Pat_'>Pat_</a></code></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `KNOWN_ATTRIBUTES` constant in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, KNOWN_ATTRIBUTES">
+
+    <title>syntex_syntax::feature_gate::KNOWN_ATTRIBUTES - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>feature_gate</a></p><script>window.sidebarCurrent = {name: 'KNOWN_ATTRIBUTES', ty: 'constant', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content constant">
+<h1 class='fqn'><span class='in-band'><a href='../index.html'>syntex_syntax</a>::<wbr><a href='index.html'>feature_gate</a>::<wbr><a class='constant' href=''>KNOWN_ATTRIBUTES</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-16715' class='srclink' href='../../src/syntex_syntax/feature_gate.rs.html#258-405' title='goto source code'>[src]</a></span></h1>
+<pre class='rust const'>pub const KNOWN_ATTRIBUTES: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'static [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a>&amp;'static <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, <a class='enum' href='../../syntex_syntax/feature_gate/enum.AttributeType.html' title='syntex_syntax::feature_gate::AttributeType'>AttributeType</a>, <a class='enum' href='../../syntex_syntax/feature_gate/enum.AttributeGate.html' title='syntex_syntax::feature_gate::AttributeGate'>AttributeGate</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a><code> = </code><code>&amp;[(&quot;warn&quot;, Normal, Ungated), (&quot;allow&quot;, Normal, Ungated),
+  (&quot;forbid&quot;, Normal, Ungated), (&quot;deny&quot;, Normal, Ungated),
+  (&quot;macro_reexport&quot;, Normal, Ungated), (&quot;macro_use&quot;, Normal, Ungated),
+  (&quot;macro_export&quot;, Normal, Ungated), (&quot;plugin_registrar&quot;, Normal, Ungated),
+  (&quot;cfg&quot;, Normal, Ungated), (&quot;cfg_attr&quot;, Normal, Ungated),
+  (&quot;main&quot;, Normal, Ungated), (&quot;start&quot;, Normal, Ungated),
+  (&quot;test&quot;, Normal, Ungated), (&quot;bench&quot;, Normal, Ungated),
+  (&quot;simd&quot;, Normal, Ungated), (&quot;repr&quot;, Normal, Ungated),
+  (&quot;path&quot;, Normal, Ungated), (&quot;abi&quot;, Normal, Ungated),
+  (&quot;automatically_derived&quot;, Normal, Ungated), (&quot;no_mangle&quot;, Normal, Ungated),
+  (&quot;no_link&quot;, Normal, Ungated), (&quot;derive&quot;, Normal, Ungated),
+  (&quot;should_panic&quot;, Normal, Ungated), (&quot;ignore&quot;, Normal, Ungated),
+  (&quot;no_implicit_prelude&quot;, Normal, Ungated),
+  (&quot;reexport_test_harness_main&quot;, Normal, Ungated),
+  (&quot;link_args&quot;, Normal, Ungated), (&quot;macro_escape&quot;, Normal, Ungated),
+  (&quot;no_stack_check&quot;, Normal, Ungated),
+  (&quot;plugin&quot;, CrateLevel,
+   Gated(&quot;plugin&quot;, &quot;compiler plugins are experimental and possibly buggy&quot;)),
+  (&quot;no_std&quot;, CrateLevel, Ungated),
+  (&quot;no_core&quot;, CrateLevel, Gated(&quot;no_core&quot;, &quot;no_core is experimental&quot;)),
+  (&quot;lang&quot;, Normal,
+   Gated(&quot;lang_items&quot;, &quot;language items are subject to change&quot;)),
+  (&quot;linkage&quot;, Whitelisted,
+   Gated(&quot;linkage&quot;,
+         &quot;the `linkage` attribute is experimental and not portable across platforms&quot;)),
+  (&quot;thread_local&quot;, Whitelisted,
+   Gated(&quot;thread_local&quot;,
+         &quot;`#[thread_local]` is an experimental feature, and does not currently handle destructors. There is no corresponding `#[task_local]` mapping to the task model&quot;)),
+  (&quot;rustc_on_unimplemented&quot;, Normal,
+   Gated(&quot;on_unimplemented&quot;,
+         &quot;the `#[rustc_on_unimplemented]` attribute is an experimental feature&quot;)),
+  (&quot;allocator&quot;, Whitelisted,
+   Gated(&quot;allocator&quot;,
+         &quot;the `#[allocator]` attribute is an experimental feature&quot;)),
+  (&quot;needs_allocator&quot;, Normal,
+   Gated(&quot;needs_allocator&quot;,
+         &quot;the `#[needs_allocator]` attribute is an experimental feature&quot;)),
+  (&quot;rustc_variance&quot;, Normal,
+   Gated(&quot;rustc_attrs&quot;,
+         &quot;the `#[rustc_variance]` attribute is just used for rustc unit tests and will never be stable&quot;)),
+  (&quot;rustc_error&quot;, Whitelisted,
+   Gated(&quot;rustc_attrs&quot;,
+         &quot;the `#[rustc_error]` attribute is just used for rustc unit tests and will never be stable&quot;)),
+  (&quot;rustc_move_fragments&quot;, Normal,
+   Gated(&quot;rustc_attrs&quot;,
+         &quot;the `#[rustc_move_fragments]` attribute is just used for rustc unit tests and will never be stable&quot;)),
+  (&quot;rustc_mir&quot;, Normal,
+   Gated(&quot;rustc_attrs&quot;,
+         &quot;the `#[rustc_mir]` attribute is just used for rustc unit tests and will never be stable&quot;)),
+  (&quot;allow_internal_unstable&quot;, Normal,
+   Gated(&quot;allow_internal_unstable&quot;, EXPLAIN_ALLOW_INTERNAL_UNSTABLE)),
+  (&quot;fundamental&quot;, Whitelisted,
+   Gated(&quot;fundamental&quot;,
+         &quot;the `#[fundamental]` attribute is an experimental feature&quot;)),
+  (&quot;linked_from&quot;, Normal,
+   Gated(&quot;linked_from&quot;,
+         &quot;the `#[linked_from]` attribute is an experimental feature&quot;)),
+  (&quot;doc&quot;, Whitelisted, Ungated), (&quot;cold&quot;, Whitelisted, Ungated),
+  (&quot;export_name&quot;, Whitelisted, Ungated), (&quot;inline&quot;, Whitelisted, Ungated),
+  (&quot;link&quot;, Whitelisted, Ungated), (&quot;link_name&quot;, Whitelisted, Ungated),
+  (&quot;link_section&quot;, Whitelisted, Ungated),
+  (&quot;no_builtins&quot;, Whitelisted, Ungated), (&quot;no_mangle&quot;, Whitelisted, Ungated),
+  (&quot;no_debug&quot;, Whitelisted,
+   Gated(&quot;no_debug&quot;,
+         &quot;the `#[no_debug]` attribute is an experimental feature&quot;)),
+  (&quot;omit_gdb_pretty_printer_section&quot;, Whitelisted,
+   Gated(&quot;omit_gdb_pretty_printer_section&quot;,
+         &quot;the `#[omit_gdb_pretty_printer_section]` attribute is just used for the Rust test suite&quot;)),
+  (&quot;unsafe_no_drop_flag&quot;, Whitelisted,
+   Gated(&quot;unsafe_no_drop_flag&quot;,
+         &quot;unsafe_no_drop_flag has unstable semantics and may be removed in the future&quot;)),
+  (&quot;unsafe_destructor_blind_to_params&quot;, Normal,
+   Gated(&quot;dropck_parametricity&quot;,
+         &quot;unsafe_destructor_blind_to_params has unstable semantics and may be removed in the future&quot;)),
+  (&quot;unwind&quot;, Whitelisted,
+   Gated(&quot;unwind_attributes&quot;, &quot;#[unwind] is experimental&quot;)),
+  (&quot;prelude_import&quot;, Whitelisted,
+   Gated(&quot;prelude_import&quot;, &quot;`#[prelude_import]` is for use by rustc only&quot;)),
+  (&quot;rustc_deprecated&quot;, Whitelisted, Ungated),
+  (&quot;must_use&quot;, Whitelisted, Ungated), (&quot;stable&quot;, Whitelisted, Ungated),
+  (&quot;unstable&quot;, Whitelisted, Ungated),
+  (&quot;deprecated&quot;, Normal,
+   Gated(&quot;deprecated&quot;, &quot;`#[deprecated]` attribute is unstable&quot;)),
+  (&quot;rustc_paren_sugar&quot;, Normal,
+   Gated(&quot;unboxed_closures&quot;, &quot;unboxed_closures are still evolving&quot;)),
+  (&quot;rustc_reflect_like&quot;, Whitelisted,
+   Gated(&quot;reflect&quot;, &quot;defining reflective traits is still evolving&quot;)),
+  (&quot;crate_name&quot;, CrateLevel, Ungated), (&quot;crate_type&quot;, CrateLevel, Ungated),
+  (&quot;crate_id&quot;, CrateLevel, Ungated), (&quot;feature&quot;, CrateLevel, Ungated),
+  (&quot;no_start&quot;, CrateLevel, Ungated), (&quot;no_main&quot;, CrateLevel, Ungated),
+  (&quot;no_builtins&quot;, CrateLevel, Ungated),
+  (&quot;recursion_limit&quot;, CrateLevel, Ungated)]</code></pre></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

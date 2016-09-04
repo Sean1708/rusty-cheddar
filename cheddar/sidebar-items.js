@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Level",""]],"struct":[["Cheddar","Stores configuration for the Cheddar compiler."],["Error","Describes an error encountered by the compiler."]]});

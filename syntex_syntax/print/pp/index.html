@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `pp` mod in crate `syntex_syntax`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, pp">
+
+    <title>syntex_syntax::print::pp - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
+
+    <link rel="shortcut icon" href="https://doc.rust-lang.org/favicon.ico">
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../../syntex_syntax/index.html'><img src='https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>print</a></p><script>window.sidebarCurrent = {name: 'pp', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../../index.html'>syntex_syntax</a>::<wbr><a href='../index.html'>print</a>::<wbr><a class='mod' href=''>pp</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-26548' class='srclink' href='../../../src/syntex_syntax/print/pp.rs.html#11-688' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>This pretty-printer is a direct reimplementation of Philip Karlton&#39;s
+Mesa pretty-printer, as described in appendix A of</p>
+
+<pre class='rust rust-example-rendered'>
+<span class='ident'>STAN</span><span class='op'>-</span><span class='ident'>CS</span><span class='op'>-</span><span class='number'>79</span><span class='op'>-</span><span class='number'>770</span>: <span class='string'>&quot;Pretty Printing&quot;</span>, <span class='ident'>by</span> <span class='ident'>Derek</span> <span class='ident'>C</span>. <span class='ident'>Oppen</span>.
+<span class='ident'>Stanford</span> <span class='ident'>Department</span> <span class='ident'>of</span> <span class='ident'>Computer</span> <span class='ident'>Science</span>, <span class='number'>1979.</span></pre>
+
+<p>The algorithm&#39;s aim is to break a stream into as few lines as possible
+while respecting the indentation-consistency requirements of the enclosing
+block, and avoiding breaking at silly places on block boundaries, for
+example, between &quot;x&quot; and &quot;)&quot; in &quot;x)&quot;.</p>
+
+<p>I am implementing this algorithm because it comes with 20 pages of
+documentation explaining its theory, and because it addresses the set of
+concerns I&#39;ve seen other pretty-printers fall down on. Weirdly. Even though
+it&#39;s 32 years old. What can I say?</p>
+
+<p>Despite some redundancies and quirks in the way it&#39;s implemented in that
+paper, I&#39;ve opted to keep the implementation here as similar as I can,
+changing only what was blatantly wrong, a typo, or sufficiently
+non-idiomatic rust that it really stuck out.</p>
+
+<p>In particular you&#39;ll see a certain amount of churn related to INTEGER vs.
+CARDINAL in the Mesa implementation. Mesa apparently interconverts the two
+somewhat readily? In any case, I&#39;ve used usize for indices-in-buffers and
+ints for character-sizes-and-indentation-offsets. This respects the need
+for ints to &quot;go negative&quot; while carrying a pending-calculation balance, and
+helps differentiate all the numbers flying around internally (slightly).</p>
+
+<p>I also inverted the indentation arithmetic used in the print stack, since
+the Mesa implementation (somewhat randomly) stores the offset on the print
+stack in terms of margin-col rather than col itself. I store col.</p>
+
+<p>I also implemented a small change in the String token, in that I store an
+explicit length for the string. For most tokens this is just the length of
+the accompanying string. But it&#39;s necessary to permit it to differ, for
+encoding things that are supposed to &quot;go on their own line&quot; -- certain
+classes of comment and blank-line -- where relying on adjacent
+hardbreak-like Break tokens with long blankness indication doesn&#39;t actually
+work. To see why, consider when there is a &quot;thing that should be on its own
+line&quot; between two long blocks, say functions. If you put a hardbreak after
+each function (or before each) and the breaking algorithm decides to break
+there anyways (because the functions themselves are long) you wind up with
+extra blank lines. If you don&#39;t put hardbreaks you can wind up with the
+&quot;thing which should be on its own line&quot; not getting its own line in the
+rare case of &quot;really small functions&quot; or such. This re-occurs with comments
+and explicit blank lines. So in those cases we use a string with a payload
+we want isolated to a line and an explicit length that&#39;s huge, surrounded
+by two zero-length breaks. The algorithm will try its best to fit it on a
+line (which it can&#39;t) and so naturally place the content on its own line to
+avoid combining it with other lines and making matters even worse.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BeginToken.html'
+                                  title='syntex_syntax::print::pp::BeginToken'>BeginToken</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.BreakToken.html'
+                                  title='syntex_syntax::print::pp::BreakToken'>BreakToken</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.PrintStackElem.html'
+                                  title='syntex_syntax::print::pp::PrintStackElem'>PrintStackElem</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.Printer.html'
+                                  title='syntex_syntax::print::pp::Printer'>Printer</a></td>
+                           <td class='docblock short'>
+                                <p>In case you do not have the paper, here is an explanation of what&#39;s going
+on.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Breaks.html'
+                                  title='syntex_syntax::print::pp::Breaks'>Breaks</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.PrintStackBreak.html'
+                                  title='syntex_syntax::print::pp::PrintStackBreak'>PrintStackBreak</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='enum' href='enum.Token.html'
+                                  title='syntex_syntax::print::pp::Token'>Token</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.break_offset.html'
+                                  title='syntex_syntax::print::pp::break_offset'>break_offset</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.buf_str.html'
+                                  title='syntex_syntax::print::pp::buf_str'>buf_str</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.cbox.html'
+                                  title='syntex_syntax::print::pp::cbox'>cbox</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.end.html'
+                                  title='syntex_syntax::print::pp::end'>end</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.eof.html'
+                                  title='syntex_syntax::print::pp::eof'>eof</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.hardbreak.html'
+                                  title='syntex_syntax::print::pp::hardbreak'>hardbreak</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.hardbreak_tok.html'
+                                  title='syntex_syntax::print::pp::hardbreak_tok'>hardbreak_tok</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.hardbreak_tok_offset.html'
+                                  title='syntex_syntax::print::pp::hardbreak_tok_offset'>hardbreak_tok_offset</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.huge_word.html'
+                                  title='syntex_syntax::print::pp::huge_word'>huge_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.ibox.html'
+                                  title='syntex_syntax::print::pp::ibox'>ibox</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.mk_printer.html'
+                                  title='syntex_syntax::print::pp::mk_printer'>mk_printer</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.rbox.html'
+                                  title='syntex_syntax::print::pp::rbox'>rbox</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.space.html'
+                                  title='syntex_syntax::print::pp::space'>space</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.spaces.html'
+                                  title='syntex_syntax::print::pp::spaces'>spaces</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.tok_str.html'
+                                  title='syntex_syntax::print::pp::tok_str'>tok_str</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.word.html'
+                                  title='syntex_syntax::print::pp::word'>word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.zero_word.html'
+                                  title='syntex_syntax::print::pp::zero_word'>zero_word</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.zerobreak.html'
+                                  title='syntex_syntax::print::pp::zerobreak'>zerobreak</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "syntex_syntax";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script defer src="../../../search-index.js"></script>
+</body>
+</html>
