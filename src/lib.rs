@@ -18,30 +18,9 @@
 //! # Cargo.toml
 //!
 //! [build-dependencies]
+//! rusty-binder = { git = "https://gitlab.com/rusty-binder/rusty-binder" }
 //! rusty-cheddar = "0.3.0"
 //! ```
-//!
-//! Then create the following `build.rs`:
-//!
-//! ```no_run
-//! // build.rs
-//!
-//! extern crate cheddar;
-//!
-//! fn main() {
-//!     cheddar::Cheddar::new().expect("could not read manifest")
-//!         .run_build("include/my_header.h");
-//! }
-//! ```
-//!
-//! This should work as is providing you've set up your project correctly. **Don't forget to add a
-//! `build = ...` to your `[package]` section, see [the cargo docs] for more info.**
-//!
-//! rusty-cheddar will then create a `my_header.h` file in `include/`. Note that rusty-cheddar
-//! emits very few warnings, it is up to the programmer to write a library which can be correctly
-//! called from C.
-//!
-//! ### API In a Module
 //!
 //! You can also place your API in a module to help keep your source code neat. To do this you must
 //! supply the name of the module to Cheddar, then ensure that the items are available in the
@@ -49,13 +28,14 @@
 //!
 //! ```no_run
 //! // build.rs
-//!
+//! extern crate binder;
 //! extern crate cheddar;
 //!
 //! fn main() {
-//!     cheddar::Cheddar::new().expect("could not read manifest")
+//!     binder::Binder::new().expect("could not read manifest")
+//!         .register(cheddar::Cheddar::default())
 //!         .module("c_api").expect("malformed module path")
-//!         .run_build("target/include/rusty.h");
+//!         .run_build();
 //! }
 //! ```
 //!
@@ -68,8 +48,10 @@
 //!     // api goes here ...
 //! }
 //! ```
+//! The generated header could be found in targed/binder/C/c_api.h
 //!
-//! There is also the `.compile()` and `.compile_code()` methods for finer control.
+//! There is also the `.compile()` method for finer control.
+//! See the documentation of [rusty-binder](https://gitlab.com/rusty-binder/rusty-binder) for details
 //!
 //! # Conversions
 //!
@@ -264,395 +246,272 @@
 //! rusty-cheddar can not yet search other modules.
 //!
 //! The very important exception to this rule are the C ABI types defined in
-//! the `libc` crate and `std::os::raw`. Types from these two modules _must_
-//! be fully qualified (e.g. `libc::c_void` or `std::os::raw::c_longlong)
-//! so that they can be converted properly. Importing them with a `use`
-//! statement will not work.
+//! the `libc` crate and `std::os::raw`. 
+//!
+//! If absolute needed it is also possible to add more custom modules.
+//!
+//! ```no_run
+//! // build.rs
+//! extern crate binder;
+//! extern crate cheddar;
+//!
+//!
+//! fn custom_convert(t: &str) -> &str {
+//!     // your convert code
+//!     t
+//! }
+//!
+//! fn main() {
+//!     let custom = cheddar::CustomTypeModule::new("my::module", custom_convert);
+//!
+//!     binder::Binder::new().expect("could not read manifest")
+//!         .register(cheddar::Cheddar::with_custom_type_module(vec![custom]))
+//!         .module("c_api").expect("malformed module path")
+//!         .run_build();
+//! }
+//! ```
+//!
 //!
 //! [the cargo docs]: http://doc.crates.io/build-script.html
 //! [repo]: https://github.com/Sean1708/rusty-cheddar
+extern crate binder;
+extern crate itertools;
 
-extern crate syntex_syntax as syntax;
-extern crate toml;
+use std::collections::HashMap;
 
-use std::convert;
-use std::io::Read;
-use std::io::Write;
-use std::path;
-
-
-/// Unwraps Result<Option<..>> if it is Ok(Some(..)) else returns.
-macro_rules! try_some {
-    ($expr:expr) => {{ match $expr {
-        Ok(Some(val)) => val,
-        expr => return expr,
-    }}};
-}
-
+use binder::compiler::*;
+use binder::compiler::syntax::*;
+use itertools::Itertools;
 
 mod types;
-mod parse;
+pub use self::types::CustomTypeModule;
 
-
-pub use syntax::errors::Level;
-
-/// Describes an error encountered by the compiler.
-///
-/// These can be printed nicely using the `Cheddar::print_err` method.
-#[derive(Debug)]
-pub struct Error {
-    pub level: Level,
-    span: Option<syntax::codemap::Span>,
-    pub message: String,
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "{}: {}", self.level, self.message)
-    }
-}
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        match self.level {
-            Level::Bug => "internal error",
-            Level::Fatal | Level::Error => "error",
-            Level::Warning => "warning",
-            Level::Note => "note",
-            Level::Help => "help",
-        }
-    }
-}
-
-impl Error {
-    /// Use a ParseSess to print the error in the correct format.
-    #[allow(unused_must_use)]
-    fn print(&self, sess: &syntax::parse::ParseSess) {
-        // TODO: there must be some way to reduce the amount of code here.
-        // Throw away the results (with { ...; }) since they are handled elsewhere.
-        if let Some(span) = self.span {
-            match self.level {
-                Level::Bug => { sess.span_diagnostic.span_bug(span, &self.message); },
-                Level::Fatal => { sess.span_diagnostic.span_fatal(span, &self.message); },
-                Level::Error => { sess.span_diagnostic.span_err(span, &self.message); },
-                Level::Warning => { sess.span_diagnostic.span_warn(span, &self.message); },
-                Level::Note => { sess.span_diagnostic.span_note(span, &self.message); },
-                Level::Help => { sess.span_diagnostic.span_help(span, &self.message); },
-            };
-        } else {
-            match self.level {
-                Level::Bug => { sess.span_diagnostic.bug(&self.message); },
-                Level::Fatal => { sess.span_diagnostic.fatal(&self.message); },
-                Level::Error => { sess.span_diagnostic.err(&self.message); },
-                Level::Warning => { sess.span_diagnostic.warn(&self.message); },
-                Level::Note => { sess.span_diagnostic.note(&self.message); },
-                Level::Help => { sess.span_diagnostic.help(&self.message); },
-            };
-        }
-    }
-}
-
-
-/// Store the source code.
-enum Source {
-    String(String),
-    File(path::PathBuf),
-}
-
-/// Stores configuration for the Cheddar compiler.
-///
-/// # Examples
-///
-/// Since construction can only fail if there is an error _while_ reading the cargo manifest it is
-/// usually safe to call `.unwrap()` on the result (though `.expect()` is considered better
-/// practice).
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest");
-/// ```
-///
-/// If your project is a valid cargo project or follows the same structure, you can simply place
-/// the following in your build script.
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .run_build("path/to/output/file");
-/// ```
-///
-/// If you use a different structure you should use `.source_file("...")` to set the path to the
-/// root crate file.
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .source_file("src/root.rs")
-///     .run_build("include/my_header.h");
-/// ```
-///
-/// You can also supply the Rust source as a string.
-///
-/// ```no_run
-/// let rust = "pub type Float32 = f32;";
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .source_string(rust)
-///     .run_build("target/include/header.h");
-/// ```
-///
-/// If you wish to hide your C API behind a module you must specify the module with `.module()`
-/// (don't forget to `pub use` the items in the module!).
-///
-/// ```no_run
-/// cheddar::Cheddar::new().expect("unable to read cargo manifest")
-///     .module("c_api").expect("malformed header path")
-///     .run_build("header.h");
-/// ```
 pub struct Cheddar {
-    /// The root source file of the crate.
-    input: Source,
-    // TODO: this should be part of a ParseOpts struct
-    /// The module which contains the C API.
-    module: Option<syntax::ast::Path>,
-    /// Custom C code which is placed after the `#include`s.
-    custom_code: String,
-    /// The current parser session.
-    ///
-    /// Used for printing errors.
-    session: syntax::parse::ParseSess,
+    buf: HashMap<String, String>,
+    type_factory: HashMap<String, self::types::TypeFactory>,
+    default_factory: self::types::TypeFactory,
+    custom: Vec<self::types::CustomTypeModule>,
+}
+
+impl Default for Cheddar {
+    fn default() -> Self {
+        Cheddar {
+            buf: HashMap::default(),
+            type_factory: HashMap::default(),
+            default_factory: self::types::TypeFactory::new(Vec::new(), Vec::new()),
+            custom: Vec::new(),
+        }
+    }
 }
 
 impl Cheddar {
-    /// Create a new Cheddar compiler.
-    ///
-    /// This can only fail if there are issues reading the cargo manifest. If there is no cargo
-    /// manifest available then the source file defaults to `src/lib.rs`.
-    pub fn new() -> std::result::Result<Cheddar, Error> {
-        let source_path = try!(source_file_from_cargo());
-        let input = Source::File(path::PathBuf::from(source_path));
+    pub fn with_custom_type_module(custom: Vec<self::types::CustomTypeModule>) -> Self {
+        Cheddar {
+            buf: HashMap::default(),
+            type_factory: HashMap::default(),
+            default_factory: self::types::TypeFactory::new(Vec::new(), custom.clone()),
+            custom: custom,
+        }
+    }
 
-        Ok(Cheddar {
-            input: input,
-            module: None,
-            custom_code: String::new(),
-            session: syntax::parse::ParseSess::new(),
+    fn ident_to_str(i: ast::Ident) -> parse::token::InternedString {
+        i.name.as_str()
+    }
+
+    fn retrieve_docstring(attrs: &[ast::Attribute], indent: usize) -> String {
+        let doc = utils::docs_from_attrs(attrs, "// ", "");
+        if doc.is_empty() {
+            String::new()
+        } else {
+            let i = ::std::iter::repeat(" ").take(indent).collect::<String>();
+            format!("{}{}", i, doc)
+        }
+    }
+
+    fn get_mod_name(mod_path: &Option<ast::Path>) -> String {
+        mod_path.clone().map_or(String::from("capi"), {
+            |p| {
+                p.segments
+                    .iter()
+                    .map(|s| (&*Self::ident_to_str(s.identifier)).to_owned())
+                    .join("_")
+            }
         })
     }
 
-    /// Set the path to the root source file of the crate.
-    ///
-    /// This should only be used when not using a `cargo` build system.
-    pub fn source_file<T>(&mut self, path: T) -> &mut Cheddar
-        where path::PathBuf: convert::From<T>,
-    {
-        self.input = Source::File(path::PathBuf::from(path));
-        self
+    fn add_to_buf(&mut self, mod_path: &Option<ast::Path>, content: &str) {
+        let mod_name = Self::get_mod_name(mod_path);
+        let mut mod_content = self.buf.entry(mod_name.to_owned()).or_insert(String::new());
+        println!("{}\n", content);
+        *mod_content = format!("{}\n\n{}", mod_content, content);
     }
 
-    /// Set a string to be used as source code.
-    ///
-    /// Currently this should only be used with small strings as it requires at least one `.clone()`.
-    pub fn source_string(&mut self, source: &str) -> &mut Cheddar {
-        self.input = Source::String(source.to_owned());
-        self
+    fn type_factory(&self, mod_name: &String) -> &self::types::TypeFactory {
+        self.type_factory
+            .get(mod_name)
+            .unwrap_or(&self.default_factory)
     }
 
-    /// Set the module which contains the header file.
-    ///
-    /// The module should be described using Rust's path syntax, i.e. in the same way that you
-    /// would `use` the module (`"path::to::api"`).
-    ///
-    /// # Fails
-    ///
-    /// If the path is malformed (e.g. `path::to:module`).
-    pub fn module(&mut self, module: &str) -> Result<&mut Cheddar, Vec<Error>> {
-        // TODO: `parse_item_from_source_str` doesn't work. Why?
-        let sess = syntax::parse::ParseSess::new();
-        let mut parser = ::syntax::parse::new_parser_from_source_str(
-            &sess,
-            vec![],
-            "".into(),
-            module.into(),
-        );
-
-        if let Ok(path) = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed) {
-            self.module = Some(path);
-            Ok(self)
-        } else {
-            Err(vec![Error {
-                level: Level::Fatal,
-                span: None,
-                message: format!("malformed module path `{}`", module),
-            }])
-        }
-    }
-
-    /// Insert custom code before the declarations which are parsed from the Rust source.
-    ///
-    /// If you compile a full header file, this is inserted after the `#include`s.
-    ///
-    /// This can be called multiple times, each time appending more code.
-    pub fn insert_code(&mut self, code: &str) -> &mut Cheddar {
-        self.custom_code.push_str(code);
-        self
-    }
-
-    /// Compile just the code into header declarations.
-    ///
-    /// This does not add any include-guards, includes, or extern declarations. It is mainly
-    /// intended for internal use, but may be of interest to people who wish to embed
-    /// rusty-cheddar's generated code in another file.
-    pub fn compile_code(&self) -> Result<String, Vec<Error>> {
-        let sess = &self.session;
-        let krate = match self.input {
-            Source::File(ref path) => syntax::parse::parse_crate_from_file(path, vec![], sess),
-            Source::String(ref source) => syntax::parse::parse_crate_from_source_str(
-                "cheddar_source".to_owned(),
-                // TODO: this clone could be quite costly, maybe rethink this design?
-                //     or just use a slice.
-                source.clone(),
-                vec![],
-                sess,
-            ),
-        };
-
-        if let Some(ref module) = self.module {
-            parse::parse_crate(&krate, module)
-        } else {
-            parse::parse_mod(&krate.module)
-        }.map(|source| format!("{}\n\n{}", self.custom_code, source))
-    }
-
-    /// Compile the header declarations then add the needed `#include`s.
-    ///
-    /// Currently includes:
-    ///
-    /// - `stdint.h`
-    /// - `stdbool.h`
-    fn compile_with_includes(&self) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_code());
-
-        Ok(format!("#include <stdint.h>\n#include <stdbool.h>\n\n{}", code))
-    }
-
-    /// Compile a header while conforming to C89 (or ANSI C).
-    ///
-    /// This does not include `stdint.h` or `stdbool.h` and also wraps single line comments with
-    /// `/*` and `*/`.
-    ///
-    /// `id` is used to help generate the include guard and may be empty.
-    ///
-    /// # TODO
-    ///
-    /// This is intended to be a public API, but currently comments are not handled correctly so it
-    /// is being kept private.
-    ///
-    /// The parser should warn on uses of `bool` or fixed-width integers (`i16`, `u32`, etc.).
-    #[allow(dead_code)]
-    fn compile_c89(&self, id: &str) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_code());
-
-        Ok(wrap_guard(&wrap_extern(&code), id))
-    }
-
-    /// Compile a header.
-    ///
-    /// `id` is used to help generate the include guard and may be empty.
-    pub fn compile(&self, id: &str) -> Result<String, Vec<Error>> {
-        let code = try!(self.compile_with_includes());
-
-        Ok(wrap_guard(&wrap_extern(&code), id))
-    }
-
-    /// Write the header to a file.
-    pub fn write<P: AsRef<path::Path>>(&self, file: P) -> Result<(), Vec<Error>> {
-        let file = file.as_ref();
-
-        if let Some(dir) = file.parent() {
-            if let Err(error) = std::fs::create_dir_all(dir) {
-                return Err(vec![Error {
-                    level: Level::Fatal,
-                    span: None,
-                    message: format!("could not create directories in '{}': {}", dir.display(), error),
-                }]);
-            }
-        }
-
-        let file_name = file.file_stem().map_or("default".into(), |os| os.to_string_lossy());
-        let header = try!(self.compile(&file_name));
-
-        let bytes_buf = header.into_bytes();
-        if let Err(error) = std::fs::File::create(&file).and_then(|mut f| f.write_all(&bytes_buf)) {
-            Err(vec![Error {
-                level: Level::Fatal,
-                span: None,
-                message: format!("could not write to '{}': {}", file.display(), error),
-            }])
-        } else {
-            Ok(())
-        }
-    }
-
-    /// Write the header to a file, panicking on error.
-    ///
-    /// This is a convenience method for use in build scripts. If errors occur during compilation
-    /// they will be printed then the function will panic.
-    ///
-    /// # Panics
-    ///
-    /// Panics on any compilation error so that the build script exits and prints output.
-    pub fn run_build<P: AsRef<path::Path>>(&self, file: P) {
-        if let Err(errors) = self.write(file) {
-            for error in &errors {
-                self.print_error(error);
-            }
-
-            panic!("errors compiling header file");
-        }
-    }
-
-    /// Print an error using the ParseSess stored in Cheddar.
-    pub fn print_error(&self, error: &Error) {
-        error.print(&self.session);
+    fn struct_is_opaque(fields: &[ast::StructField]) -> bool {
+        fields.iter().any(|field| field.ident.is_none())
     }
 }
 
-/// Extract the path to the root source file from a `Cargo.toml`.
-fn source_file_from_cargo() -> std::result::Result<String, Error> {
-    let cargo_toml = path::Path::new(
-        &std::env::var_os("CARGO_MANIFEST_DIR")
-            .unwrap_or(std::ffi::OsString::from(""))
-    ).join("Cargo.toml");
 
-    // If no `Cargo.toml` assume `src/lib.rs` until told otherwise.
-    let default = "src/lib.rs";
-    let mut cargo_toml = match std::fs::File::open(&cargo_toml) {
-        Ok(value) => value,
-        Err(..) => return Ok(default.to_owned()),
-    };
+impl Compiler for Cheddar {
+    fn compile_mod(&mut self, session: &mut session::Session, module: &ast::Mod) -> Result {
+        let uses = module.items
+            .iter()
+            .filter_map(|i| {
+                match i.node {
+                    ast::ItemKind::Use(ref p) => Some(p.node.clone()),
+                    _ => None,
+                }
+            });
+        let mod_name = Self::get_mod_name(&session.module);
+        self.type_factory
+            .entry(mod_name)
+            .or_insert(self::types::TypeFactory::new(uses.collect(), self.custom.clone()));
+        Ok(())
+    }
 
-    let mut buf = String::new();
-    match cargo_toml.read_to_string(&mut buf) {
-        Ok(..) => {},
-        Err(..) => return Err(Error {
-            level: Level::Fatal,
-            span: None,
-            message: "could not read cargo manifest".into(),
-        }),
-    };
+    fn compile_ty_item(&mut self, session: &mut session::Session, type_item: &ast::Item) -> Result {
+        let doc = Self::retrieve_docstring(&type_item.attrs, 0);
+        let mod_name = Self::get_mod_name(&session.module);
+        let new_type = Self::ident_to_str(type_item.ident);
+        let tpe = try!(utils::ty_from_item(session, type_item));
+        let to_type = try!(self.type_factory(&mod_name).rust_to_c(&*tpe, &new_type, Some(session)));
+        let t = format!("{doc}typedef {tpe};", doc = doc, tpe = to_type.unwrap());
+        self.add_to_buf(&session.module, &t);
+        Ok(())
+    }
 
-    let table = match toml::Parser::new(&buf).parse() {
-        Some(value) => value,
-        None => return Err(Error {
-            level: Level::Fatal,
-            span: None,
-            message: "could not parse cargo manifest".into(),
-        }),
-    };
+    fn compile_enum_item(&mut self,
+                         session: &mut session::Session,
+                         enum_item: &ast::Item)
+                         -> Result {
+        let doc = Self::retrieve_docstring(&enum_item.attrs, 0);
+        let enum_def = try!(utils::enum_from_item(session, enum_item));
+        let variants = enum_def.variants
+            .iter()
+            .map(|i| {
+                let name = Self::ident_to_str(i.node.name);
+                let doc = Self::retrieve_docstring(&i.node.attrs, 4);
+                if let Some(ref e) = i.node.disr_expr {
+                    format!("{doc}    {item} = {expr},",
+                            doc = doc,
+                            item = name,
+                            expr = print::pprust::expr_to_string(&*e))
+                } else {
+                    format!("{}    {},", doc, name)
+                }
+            })
+            .fold(String::new(), |acc, r| format!("{}\n{}", acc, r));
+        let name = Self::ident_to_str(enum_item.ident);
+        let e = format!("{doc}typedef enum {enum_name} {{{variants}\n}} {enum_name};",
+                        doc = doc,
+                        enum_name = name,
+                        variants = variants);
+        self.add_to_buf(&session.module, &e);
+        Ok(())
+    }
 
-    // If not explicitly stated then defaults to `src/lib.rs`.
-    Ok(table.get("lib")
-        .and_then(|t| t.lookup("path"))
-        .and_then(|s| s.as_str())
-        .unwrap_or(default)
-        .into())
+    fn compile_struct_item(&mut self,
+                           session: &mut session::Session,
+                           struct_item: &ast::Item)
+                           -> Result {
+        let mod_name = Self::get_mod_name(&session.module);
+        let doc = Self::retrieve_docstring(&struct_item.attrs, 0);
+        let fields = try!(utils::struct_from_item(session, struct_item));
+        let name = Self::ident_to_str(struct_item.ident);
+        let s = if Self::struct_is_opaque(fields) {
+            format!("{doc}typedef struct {struct_name} {struct_name};",
+                    doc = doc,
+                    struct_name = name)
+        } else {
+            let fields = try!(fields.iter()
+                .map(|f| {
+                    let name = Self::ident_to_str(f.ident.unwrap());
+                    let tpe = try!(self.type_factory(&mod_name)
+                        .rust_to_c(&*f.ty, &*name, Some(session)));
+                    if let Some(t) = tpe {
+                        let doc = Self::retrieve_docstring(&f.attrs, 4);
+                        Ok(Some(format!("{}    {};", doc, t)))
+                    } else {
+                        Ok(None)
+                    }
+                })
+                .fold_results(String::new(), |acc, r| {
+                    if let Some(r) = r {
+                        format!("{}\n{}", acc, r)
+                    } else {
+                        acc
+                    }
+                }));
+            format!("{doc}typedef struct {struct_name} {{{struct_fields}\n}} {struct_name};",
+                    doc = doc,
+                    struct_name = name,
+                    struct_fields = fields)
+        };
+
+        self.add_to_buf(&session.module, &s);
+        Ok(())
+    }
+
+    fn compile_fn_item(&mut self, session: &mut session::Session, fn_item: &ast::Item) -> Result {
+
+        let mod_name = Self::get_mod_name(&session.module);
+        let doc = Self::retrieve_docstring(&fn_item.attrs, 0);
+        let name = Self::ident_to_str(fn_item.ident);
+        let decl = try!(utils::fn_from_item(session, fn_item));
+        let args = try!(decl.inputs
+                .iter()
+                .filter_map(|arg| {
+                    let arg_name = match utils::arg_name_from_pattern(session, &*arg.pat) {
+                        Ok(a) => a,
+                        Err(e) => return Some(Err(e)),
+                    };
+                    match self.type_factory(&mod_name)
+                        .rust_to_c(&*arg.ty, &arg_name, Some(session)) {
+                        Err(e) => Some(Err(e)),
+                        Ok(None) => None,
+                        Ok(Some(s)) => Some(Ok(s.trim().to_owned())),
+                    }
+                })
+                .fold_results(Vec::new(), |mut acc, r| {
+                    acc.push(r);
+                    acc
+                }))
+            .iter()
+            .join(", ");
+        let name = format!("{}({})", name, args);
+        let ret: String = match decl.output {
+            ast::FunctionRetTy::Default(_) => format!("void {}", name),
+            ast::FunctionRetTy::Ty(ref t) => {
+                try!(self.type_factory(&mod_name).rust_to_c(&*t, &name, Some(session))).unwrap()
+            }
+        };
+        let f = format!("{doc}extern {fn_decl};", doc = doc, fn_decl = ret);
+        self.add_to_buf(&session.module, &f);
+        Ok(())
+    }
+
+    fn compile_bindings(&self) -> Vec<File> {
+        self.buf
+            .iter()
+            .map(|(mod_name, content)| {
+                let filecontent = wrap_guard(content, mod_name);
+                File {
+                    path: ::std::path::PathBuf::from(format!("{}.h", mod_name)),
+                    contents: filecontent,
+                }
+            })
+            .collect()
+    }
+
+    fn language(&self) -> String {
+        String::from("C")
+    }
 }
 
 /// Wrap a block of code with an extern declaration.
@@ -660,26 +519,28 @@ fn wrap_extern(code: &str) -> String {
     format!(r#"
 #ifdef __cplusplus
 extern "C" {{
-#endif
+#endif{}
 
-{}
 
 #ifdef __cplusplus
 }}
 #endif
-"#, code)
+"#,
+            code)
 }
 
 /// Wrap a block of code with an include-guard.
 fn wrap_guard(code: &str, id: &str) -> String {
-    format!(r"
-#ifndef cheddar_generated_{0}_h
+    format!(r"#ifndef cheddar_generated_{0}_h
 #define cheddar_generated_{0}_h
 
+#include <stdint.h>
+#include <stdbool.h>
 {1}
-
 #endif
-", sanitise_id(id), code)
+",
+            sanitise_id(id),
+            wrap_extern(code))
 }
 
 /// Remove illegal characters from the identifier.
@@ -689,16 +550,4 @@ fn wrap_guard(code: &str, id: &str) -> String {
 fn sanitise_id(id: &str) -> String {
     // `char.is_digit(36)` ensures `char` is in `[A-Za-z0-9]`
     id.chars().filter(|ch| ch.is_digit(36) || *ch == '_').collect()
-}
-
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn sanitise_id() {
-        assert!(super::sanitise_id("") == "");
-        assert!(super::sanitise_id("!@£$%^&*()_+") == "_");
-        // https://github.com/Sean1708/rusty-cheddar/issues/29
-        assert!(super::sanitise_id("filename.h") == "filenameh");
-    }
 }

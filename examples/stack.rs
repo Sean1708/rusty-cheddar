@@ -1,5 +1,6 @@
 //! Demonstrates a C API based on the stack.
 extern crate cheddar;
+extern crate binder;
 
 const RUST: &'static str = r#"
 #[repr(C)]
@@ -32,11 +33,12 @@ pub extern fn Student_change_grade(student: Student, changer: extern fn(f64) -> 
 "#;
 
 fn main() {
-    let header = cheddar::Cheddar::new().expect("failed to read cargo manifest")
+    let header = binder::Binder::new().expect("failed to read cargo manifest")
+        .register(cheddar::Cheddar::default())
         .source_string(RUST)
-        .compile("SOME_HEADER_NAME")
+        .compile()
         .expect("header could not be compiled");
 
     println!("RUST SOURCE FILE:\n{}\n", RUST);
-    println!("GENERATED HEADER:\n\n{}", header);
+    println!("GENERATED HEADER:\n\n{}", header[0].files[0].contents);
 }

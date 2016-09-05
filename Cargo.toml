@@ -21,6 +21,7 @@ name = "cheddar"
 doc = false
 
 [dependencies]
-syntex_syntax = "0.24.0"
-toml = "0.1.25"
+itertools = "0.4.18"
+# TODO: change this as soon as syntex update is merged
+rusty-binder = { git = "https://gitlab.com/weiznich/rusty-binder", rev = "1fa14ace139c6aba839f3b86d6ea2a71f32d49c7" }
 clap = "1"
