@@ -276,7 +276,7 @@ rusty-cheddar can not yet search other modules.
 
 The very important exception to this rule are the C ABI types defined in
 the `libc` crate and `std::os::raw`. Types from these two modules _must_
-be fully qualified (e.g. `libc::c_void` or `std::os::raw::c_longlong)
+be fully qualified (e.g. `libc::c_void` or `std::os::raw::c_longlong`)
 so that they can be converted properly. Importing them with a `use`
 statement will not work.
 
