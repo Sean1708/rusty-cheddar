@@ -11,7 +11,7 @@ use Level;
 pub fn rust_to_c(ty: &ast::Ty, assoc: &str) -> Result<Option<String>, Error> {
     match ty.node {
         // Function pointers make life an absolute pain here.
-        ast::Ty_::TyBareFn(ref bare_fn) => fn_ptr_to_c(bare_fn, ty.span, assoc),
+        ast::TyKind::BareFn(ref bare_fn) => fn_ptr_to_c(bare_fn, ty.span, assoc),
         // All other types just have a name associated with them.
         _ => Ok(Some(format!("{} {}", try_some!(anon_rust_to_c(ty)), assoc))),
     }
@@ -21,15 +21,15 @@ pub fn rust_to_c(ty: &ast::Ty, assoc: &str) -> Result<Option<String>, Error> {
 fn anon_rust_to_c(ty: &ast::Ty) -> Result<Option<String>, Error> {
     match ty.node {
         // Function pointers should not be in this function.
-        ast::Ty_::TyBareFn(..) => Err(Error {
+        ast::TyKind::BareFn(..) => Err(Error {
             level: Level::Error,
             span: Some(ty.span),
             message: "C function pointers must have a name or function declaration associated with them".into(),
         }),
         // Standard pointers.
-        ast::Ty_::TyPtr(ref ptr) => ptr_to_c(ptr),
+        ast::TyKind::Ptr(ref ptr) => ptr_to_c(ptr),
         // Plain old types.
-        ast::Ty_::TyPath(None, ref path) => path_to_c(path),
+        ast::TyKind::Path(None, ref path) => path_to_c(path),
         // Possibly void, likely not.
         _ => {
             let new_type = print::pprust::ty_to_string(ty);
@@ -51,9 +51,9 @@ fn ptr_to_c(ty: &ast::MutTy) -> Result<Option<String>, Error> {
     let new_type = try_some!(anon_rust_to_c(&ty.ty));
     let const_spec = match ty.mutbl {
         // *const T
-        ast::Mutability::MutImmutable => " const" ,
+        ast::Mutability::Immutable => " const" ,
         // *mut T
-        ast::Mutability::MutMutable => "",
+        ast::Mutability::Mutable => "",
     };
 
     Ok(Some(format!("{}{}*", new_type, const_spec)))
@@ -115,15 +115,15 @@ fn fn_ptr_to_c(fn_ty: &ast::BareFnTy, fn_span: codemap::Span, inner: &str) -> Re
 
     let output_type = &fn_decl.output;
     let full_declaration = match *output_type {
-        ast::FunctionRetTy::NoReturn(span) => {
+        ast::FunctionRetTy::None(span) => {
             return Err(Error {
                 level: Level::Error,
                 span: Some(span),
                 message: "panics across a C boundary are naughty!".into(),
             });
         },
-        ast::FunctionRetTy::DefaultReturn(..) => format!("void {}", buf_without_return),
-        ast::FunctionRetTy::Return(ref ty) => try_some!(rust_to_c(&*ty, &buf_without_return)),
+        ast::FunctionRetTy::Default(..) => format!("void {}", buf_without_return),
+        ast::FunctionRetTy::Ty(ref ty) => try_some!(rust_to_c(&*ty, &buf_without_return)),
     };
 
 
@@ -251,7 +251,8 @@ mod test {
             source.into(),
         );
 
-        match parser.parse_ty() {
+        let ty = parser.parse_ty();
+        match ty {
             Ok(p) => (*p).clone(),
             _ => panic!("internal testing error: could not parse type from {:?}", source),
         }
