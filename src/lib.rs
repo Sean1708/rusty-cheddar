@@ -315,8 +315,8 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {
     fn description(&self) -> &str {
         match self.level {
-            Level::Bug => "internal error",
-            Level::Fatal | Level::Error => "error",
+            Level::Bug | Level::Cancelled => "internal error",
+            Level::Fatal | Level::Error | Level::PhaseFatal => "error",
             Level::Warning => "warning",
             Level::Note => "note",
             Level::Help => "help",
@@ -333,20 +333,34 @@ impl Error {
         if let Some(span) = self.span {
             match self.level {
                 Level::Bug => { sess.span_diagnostic.span_bug(span, &self.message); },
-                Level::Fatal => { sess.span_diagnostic.span_fatal(span, &self.message); },
+                Level::Fatal | Level::PhaseFatal => {
+                    sess.span_diagnostic.span_fatal(span, &self.message);
+                },
                 Level::Error => { sess.span_diagnostic.span_err(span, &self.message); },
                 Level::Warning => { sess.span_diagnostic.span_warn(span, &self.message); },
-                Level::Note => { sess.span_diagnostic.span_note(span, &self.message); },
-                Level::Help => { sess.span_diagnostic.span_help(span, &self.message); },
+                Level::Note => {
+                    sess.span_diagnostic.emit(Some(&span.into()), &self.message, Level::Note);
+                },
+                Level::Help => {
+                    sess.span_diagnostic.emit(Some(&span.into()), &self.message, Level::Help);
+                },
+                Level::Cancelled => {}
             };
         } else {
             match self.level {
                 Level::Bug => { sess.span_diagnostic.bug(&self.message); },
-                Level::Fatal => { sess.span_diagnostic.fatal(&self.message); },
+                Level::Fatal | Level::PhaseFatal => {
+                    sess.span_diagnostic.fatal(&self.message);
+                },
                 Level::Error => { sess.span_diagnostic.err(&self.message); },
                 Level::Warning => { sess.span_diagnostic.warn(&self.message); },
-                Level::Note => { sess.span_diagnostic.note(&self.message); },
-                Level::Help => { sess.span_diagnostic.help(&self.message); },
+                Level::Note => {
+                    sess.span_diagnostic.emit(None, &self.message, Level::Note);
+                },
+                Level::Help => {
+                    sess.span_diagnostic.emit(None, &self.message, Level::Help);
+                },
+                Level::Cancelled => {}
             };
         }
     }
@@ -472,7 +486,8 @@ impl Cheddar {
             module.into(),
         );
 
-        if let Ok(path) = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed) {
+        let path = parser.parse_path(syntax::parse::parser::PathParsingMode::NoTypesAllowed);
+        if let Ok(path) = path {
             self.module = Some(path);
             Ok(self)
         } else {
