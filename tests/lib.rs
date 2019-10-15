@@ -129,18 +129,18 @@ cheddar_cmp_test! { compilable_typedefs,
 cheddar_cmp_test! { compilable_enums,
     "
     typedef enum Colours {
-        Red,
-        Orange,
-        Yellow,
-        Green,
-        Blue,
-        Indigo,
-        Violet,
+        Colours_Red,
+        Colours_Orange,
+        Colours_Yellow,
+        Colours_Green,
+        Colours_Blue,
+        Colours_Indigo,
+        Colours_Violet,
     } Colours;
 
     typedef enum TypesOfLabrador {
-        Stupid = -8,
-        Braindead,
+        TypesOfLabrador_Stupid = -8,
+        TypesOfLabrador_Braindead,
     } TypesOfLabrador;
     ",
     "
@@ -477,9 +477,9 @@ cheddar_cmp_test! { general_interplay,
     typedef float Ins;
 
     typedef enum Eye {
-        Blue = -1,
-        Green,
-        Red,
+        Eye_Blue = -1,
+        Eye_Green,
+        Eye_Red,
     } Eye;
 
     typedef struct Person {
