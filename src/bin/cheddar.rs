@@ -3,7 +3,7 @@ extern crate cheddar;
 
 fn main() {
     let matches = clap::App::new("cheddar")
-        .version(&crate_version!())
+        .version(crate_version!())
         .author("Sean Marshallsay <srm.1708@gmail.com>")
         .about("create a C header file using a Rust source file")
         .arg(clap::Arg::with_name("FILE")
