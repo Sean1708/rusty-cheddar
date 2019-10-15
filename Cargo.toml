@@ -13,6 +13,13 @@ documentation = "http://sean1708.github.io/rusty-cheddar"
 
 license = "MIT"
 
+[features]
+default = ["with-syntex"]
+with-syntex = [
+    "syntex_errors",
+    "syntex_syntax",
+]
+
 [lib]
 name = "cheddar"
 
@@ -21,6 +28,7 @@ name = "cheddar"
 doc = false
 
 [dependencies]
-syntex_syntax = "0.24.0"
+syntex_errors = {version = "0.42.0", optional = true}
+syntex_syntax = {version = "0.42.0", optional = true}
 toml = "0.1.25"
 clap = "1"
